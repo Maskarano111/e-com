@@ -139,6 +139,25 @@ export const api = {
     return res.json() as Promise<Product[]>;
   },
 
+  async getProductReviews(productId: string) {
+    const res = await fetch(`${API_BASE}/products/${productId}/reviews`);
+    if (!res.ok) return [];
+    return res.json() as Promise<Review[]>;
+  },
+
+  async createProductReview(productId: string, data: { rating: number; comment: string; userName?: string; userEmail?: string; title?: string }) {
+    const res = await fetch(`${API_BASE}/products/${productId}/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to submit review');
+    }
+    return res.json() as Promise<Review>;
+  },
+
   async createProduct(data: Partial<Product>) {
     const res = await fetch(`${API_BASE}/products`, {
       method: 'POST',

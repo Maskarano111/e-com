@@ -404,6 +404,56 @@ router.get('/products/:idOrSlug', (req: Request, res: Response) => {
   res.json({ product, related });
 });
 
+// Product Reviews
+router.get('/products/:idOrSlug/reviews', (req: Request, res: Response) => {
+  const { idOrSlug } = req.params;
+  const reviews = db.get('reviews') || [];
+  const productReviews = reviews.filter(
+    (r) => (r.productId === idOrSlug || r.status === 'approved') && r.productId === idOrSlug
+  );
+  res.json(productReviews);
+});
+
+router.post('/products/:idOrSlug/reviews', (req: Request, res: Response) => {
+  const { idOrSlug } = req.params;
+  const { userName, userEmail, rating, comment, title } = req.body;
+  if (!rating || !comment) {
+    return res.status(400).json({ error: 'Rating and comment are required' });
+  }
+
+  const reviews = db.get('reviews') || [];
+  const newReview = {
+    id: `rev-${Date.now()}`,
+    productId: idOrSlug,
+    userId: 'usr-guest',
+    userName: userName || 'Verified Buyer',
+    userEmail: userEmail || '',
+    rating: Number(rating) || 5,
+    title: title || '',
+    comment,
+    verifiedPurchase: true,
+    status: 'approved' as const,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  reviews.unshift(newReview);
+  db.set('reviews', reviews);
+
+  // Update product average rating
+  const products = db.get('products');
+  const prodIndex = products.findIndex((p) => p.id === idOrSlug);
+  if (prodIndex !== -1) {
+    const prodReviews = reviews.filter((r) => r.productId === idOrSlug);
+    const avgRating = prodReviews.reduce((sum, r) => sum + r.rating, 0) / prodReviews.length;
+    products[prodIndex].rating = parseFloat(avgRating.toFixed(1));
+    products[prodIndex].reviewCount = prodReviews.length;
+    db.set('products', products);
+  }
+
+  res.status(201).json(newReview);
+});
+
 // Admin Product CRUD
 router.post('/products', (req: Request, res: Response) => {
   const productData = req.body;

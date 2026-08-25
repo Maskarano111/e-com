@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Star,
   ShoppingBag,
@@ -9,13 +9,21 @@ import {
   RotateCcw,
   Check,
   ChevronRight,
+  ChevronLeft,
   Sparkles,
   Share2,
   PhoneCall,
   Zap,
   MessageSquarePlus,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Maximize2,
+  X,
+  Package,
+  HelpCircle,
+  ChevronDown,
+  Info,
+  CheckCircle2
 } from 'lucide-react';
 import { Product, ProductVariation, Review } from '../types/index';
 import { useCart } from '../context/CartContext';
@@ -47,24 +55,26 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProductsList, setRelatedProductsList] = useState<Product[]>([]);
-  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | undefined>(undefined);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'shipping' | 'reviews'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'box' | 'faq' | 'shipping' | 'reviews'>('description');
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewsList, setReviewsList] = useState<Review[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // Load product data
   useEffect(() => {
     const loadProductData = async () => {
       setIsLoadingProduct(true);
+      setSelectedImageIndex(0);
       if (allProducts && allProducts.length > 0) {
         const found = allProducts.find((p) => p.id === productId);
         if (found) {
           setProduct(found);
-          setSelectedImage(found.featuredImage);
           if (found.variations && found.variations.length > 0) {
             setSelectedVariation(found.variations[0]);
           } else {
@@ -81,7 +91,6 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         const res = await api.getProduct(productId);
         if (res && res.product) {
           setProduct(res.product);
-          setSelectedImage(res.product.featuredImage);
           if (res.product.variations && res.product.variations.length > 0) {
             setSelectedVariation(res.product.variations[0]);
           } else {
@@ -98,50 +107,64 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
     if (productId) {
       loadProductData();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [productId, allProducts]);
 
   // Load reviews
-  const fetchReviews = async () => {
-    if (!productId) return;
-    setIsLoadingReviews(true);
-    try {
-      const data = await api.getReviews({ productId });
-      setReviewsList(data || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoadingReviews(false);
-    }
-  };
-
   useEffect(() => {
-    fetchReviews();
+    if (productId) {
+      const fetchReviews = async () => {
+        setIsLoadingReviews(true);
+        try {
+          const res = await api.getProductReviews(productId);
+          setReviewsList(res || []);
+        } catch (err) {
+          console.error('Failed to load reviews:', err);
+        } finally {
+          setIsLoadingReviews(false);
+        }
+      };
+      fetchReviews();
+    }
   }, [productId]);
 
   if (isLoadingProduct) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center space-y-4">
-        <div className="w-12 h-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin mx-auto" />
-        <p className="text-xs text-slate-500">Loading product details...</p>
+      <div className="max-w-7xl mx-auto px-4 py-20 flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
+        <p className="text-sm font-semibold text-slate-500">Loading product details & gallery...</p>
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center space-y-4">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Product Not Found</h2>
-        <p className="text-xs text-slate-500">The product you are looking for does not exist or has been removed.</p>
+      <div className="max-w-7xl mx-auto px-4 py-24 text-center space-y-4">
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Product Not Found</h2>
+        <p className="text-xs text-slate-500">The product you are looking for might have been retired or moved.</p>
         <button
           onClick={() => onNavigate('shop')}
-          className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold"
+          className="px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
         >
-          Return to Catalog
+          Return to Superstore Catalog
         </button>
       </div>
     );
   }
+
+  // Multi-image list
+  const rawImages = product.images && product.images.length > 0 ? product.images : [product.featuredImage];
+  const imagesList = Array.from(new Set(rawImages.filter(Boolean)));
+  const currentImage = imagesList[selectedImageIndex] || product.featuredImage;
+
+  const prevImage = () => {
+    setSelectedImageIndex((prev) => (prev - 1 + imagesList.length) % imagesList.length);
+  };
+
+  const nextImage = () => {
+    setSelectedImageIndex((prev) => (prev + 1) % imagesList.length);
+  };
 
   const isLiked = isInWishlist(product.id);
   const currentPrice = selectedVariation
@@ -149,18 +172,18 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     : product.discountPrice || product.price;
 
   const regularPrice = selectedVariation ? selectedVariation.price : product.price;
+  const discountPercent = regularPrice > currentPrice
+    ? Math.round(((regularPrice - currentPrice) / regularPrice) * 100)
+    : null;
+
   const availableStock = selectedVariation ? selectedVariation.stockQuantity : product.stockQuantity;
   const isOutOfStock = availableStock <= 0;
 
-  const discountPercent =
-    regularPrice > currentPrice
-      ? Math.round(((regularPrice - currentPrice) / regularPrice) * 100)
-      : null;
-
-  const imagesList = product.images && product.images.length > 0 ? product.images : [product.featuredImage];
-
   const handleAddToCart = () => {
-    addToCart(product, selectedVariation, quantity);
+    if (addToCart(product, selectedVariation, quantity)) {
+      showToast(`${product.name} added to your shopping bag`, 'success');
+      setIsCartDrawerOpen(true);
+    }
   };
 
   const handleBuyNow = () => {
@@ -170,21 +193,47 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   };
 
   const handleShare = () => {
-    if (navigator.clipboard) {
+    if (navigator.share) {
+      navigator.share({
+        title: product.name,
+        text: `Check out ${product.name} on NovaMart Ghana!`,
+        url: window.location.href
+      }).catch(() => {});
+    } else {
       navigator.clipboard.writeText(window.location.href);
-      showToast('info', 'Link Copied', 'Product link copied to clipboard.');
+      showToast('Product link copied to clipboard!', 'info');
     }
   };
 
-  const safeAllProducts = Array.isArray(allProducts) && allProducts.length > 0 ? allProducts : relatedProductsList;
-  const relatedProducts = safeAllProducts
+  const safeAllProducts = Array.isArray(allProducts) ? allProducts : [];
+  const relatedProducts = (relatedProductsList.length > 0 ? relatedProductsList : safeAllProducts)
     .filter((p) => p.id !== product.id && (!product.categoryId || p.categoryId === product.categoryId))
     .slice(0, 4);
+
+  // Dynamic FAQs based on product category & details
+  const productFaqs = [
+    {
+      q: `Is this ${product.name} 100% genuine and brand new?`,
+      a: `Yes, absolutely. All items sold on NovaMart Ghana are 100% brand new, authentic, and sourced directly from official manufacturers or authorized distributors. Each unit arrives in sealed original packaging with full documentation.`
+    },
+    {
+      q: 'How fast will my order arrive in Ghana?',
+      a: 'Orders within Accra and Tema are delivered same-day or within 24 hours. For Kumasi, Takoradi, Tamale, and all other 16 regions, delivery takes 1 to 3 business days via our secure door-to-door courier.'
+    },
+    {
+      q: 'What payment methods can I use at checkout?',
+      a: 'We support all major Ghanaian payment methods including MTN Mobile Money (MoMo), Telecel Cash, AT Money, Visa & Mastercard, Bank Cards, and Cash on Delivery (COD) in Accra & Tema.'
+    },
+    {
+      q: 'What is your return and warranty policy?',
+      a: 'This product includes our 7-Day Hassle-Free Return Guarantee and a minimum 12-Month Official Manufacturer Warranty against defects. If you experience any issues, our dedicated customer support team is available on WhatsApp.'
+    }
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
       {/* 1. BREADCRUMB */}
-      <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+      <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 flex-wrap">
         <button onClick={() => onNavigate('home')} className="hover:text-emerald-600 transition-colors">
           Home
         </button>
@@ -195,21 +244,22 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         <ChevronRight className="w-3.5 h-3.5" />
         <button
           onClick={() => onNavigate('shop', { category: product.categoryId })}
-          className="hover:text-emerald-600 transition-colors truncate max-w-[150px]"
+          className="hover:text-emerald-600 transition-colors font-medium text-emerald-600 dark:text-emerald-400"
         >
           {product.categoryName}
         </button>
         <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-slate-900 dark:text-white font-semibold truncate max-w-[200px]">
+        <span className="text-slate-900 dark:text-white font-semibold truncate max-w-[240px]">
           {product.name}
         </span>
       </div>
 
-      {/* 2. PRODUCT STAGE (LEFT GALLERY, RIGHT ACTIONS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Left: Gallery (5 cols) */}
+      {/* 2. PRODUCT STAGE (LEFT MULTI-IMAGE GALLERY, RIGHT ACTIONS) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        
+        {/* Left: Gallery (6 cols) */}
         <div className="lg:col-span-6 space-y-4">
-          <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 shadow-md flex items-center justify-center group">
+          <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 shadow-lg flex items-center justify-center group">
             {discountPercent && (
               <span className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-black tracking-wide shadow-md flex items-center gap-1">
                 <Zap className="w-3.5 h-3.5 fill-white" />
@@ -217,50 +267,107 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               </span>
             )}
 
-            <button
-              onClick={() => toggleWishlist(product)}
-              className={`absolute top-4 right-4 z-10 p-3 rounded-2xl backdrop-blur-md shadow-md transition-all ${
-                isLiked
-                  ? 'bg-rose-500 text-white'
-                  : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-rose-500'
-              }`}
-            >
-              <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-            </button>
+            {/* Photo Counter Badge */}
+            {imagesList.length > 1 && (
+              <span className="absolute bottom-4 left-4 z-10 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold border border-white/20">
+                Photo {selectedImageIndex + 1} of {imagesList.length}
+              </span>
+            )}
 
-            <img
-              src={selectedImage || product.featuredImage}
-              alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            {/* Wishlist & Lightbox Zoom Buttons */}
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+              <button
+                onClick={() => setIsLightboxOpen(true)}
+                title="Click to zoom in high resolution"
+                className="p-2.5 rounded-2xl bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 hover:text-emerald-600 backdrop-blur-md shadow-md transition-all hover:scale-105"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => toggleWishlist(product)}
+                className={`p-2.5 rounded-2xl backdrop-blur-md shadow-md transition-all hover:scale-105 ${
+                  isLiked
+                    ? 'bg-rose-500 text-white'
+                    : 'bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 hover:text-rose-500'
+                }`}
+              >
+                <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+              </button>
+            </div>
+
+            {/* Main Image with Smooth Fade */}
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={currentImage}
+                src={currentImage}
+                alt={`${product.name} - View ${selectedImageIndex + 1}`}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                onClick={() => setIsLightboxOpen(true)}
+                className="w-full h-full object-cover cursor-zoom-in"
+              />
+            </AnimatePresence>
+
+            {/* Previous / Next Arrows Overlay */}
+            {imagesList.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-white shadow-lg hover:bg-emerald-600 hover:text-white transition-all backdrop-blur-sm opacity-90 hover:opacity-100 hover:scale-110 z-10"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-white shadow-lg hover:bg-emerald-600 hover:text-white transition-all backdrop-blur-sm opacity-90 hover:opacity-100 hover:scale-110 z-10"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
           </div>
 
-          {/* Thumbnails */}
+          {/* Interactive Thumbnails Carousel Strip */}
           {imagesList.length > 1 && (
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              {imagesList.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImage(img)}
-                  className={`w-20 h-20 rounded-2xl overflow-hidden border-2 shrink-0 transition-all ${
-                    selectedImage === img
-                      ? 'border-emerald-500 ring-2 ring-emerald-500/20'
-                      : 'border-transparent opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img} alt={`thumb-${i}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                <span>Multiple Angles & Product Photos ({imagesList.length}):</span>
+                <span className="text-emerald-600 dark:text-emerald-400">Click to preview</span>
+              </p>
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
+                {imagesList.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImageIndex(i)}
+                    className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
+                      selectedImageIndex === i
+                        ? 'border-emerald-500 ring-4 ring-emerald-500/20 scale-105 shadow-md'
+                        : 'border-slate-200 dark:border-slate-700 opacity-70 hover:opacity-100 hover:border-slate-400'
+                    }`}
+                  >
+                    <img src={img} alt={`Thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+                    {selectedImageIndex === i && (
+                      <span className="absolute inset-0 bg-emerald-500/10 pointer-events-none" />
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right: Details & Purchase Options (6 cols) */}
+        {/* Right: Details, Variations & Actions (6 cols) */}
         <div className="lg:col-span-6 space-y-6">
           <div>
             <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-semibold mb-2">
-              <span className="uppercase tracking-wider text-emerald-600 font-bold">{product.brand}</span>
-              <span>SKU: <strong className="text-slate-700 dark:text-slate-300">{selectedVariation?.sku || product.sku}</strong></span>
+              <span className="uppercase tracking-wider text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-900/40">
+                {product.brand}
+              </span>
+              <span>SKU: <strong className="text-slate-800 dark:text-slate-200">{selectedVariation?.sku || product.sku}</strong></span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
@@ -278,17 +385,17 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                     />
                   ))}
                 </div>
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <span className="text-xs font-bold text-slate-900 dark:text-white">
                   {product.rating.toFixed(1)}
                 </span>
-                <span className="text-xs text-slate-600">
-                  ({reviewsList.length || product.reviewCount} customer reviews)
+                <span className="text-xs text-slate-500">
+                  ({reviewsList.length || product.reviewCount} verified buyer reviews)
                 </span>
               </div>
 
               <button
                 onClick={handleShare}
-                className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-emerald-600 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-emerald-600 transition-colors cursor-pointer"
               >
                 <Share2 className="w-4 h-4" />
                 <span>Share</span>
@@ -297,61 +404,83 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           </div>
 
           {/* Pricing Card */}
-          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 flex items-baseline justify-between gap-4">
+          <div className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 flex items-baseline justify-between gap-4">
             <div>
               <div className="flex items-baseline gap-3">
                 <span className="text-3xl font-black text-slate-900 dark:text-white">
                   {formatPrice(currentPrice)}
                 </span>
                 {regularPrice > currentPrice && (
-                  <span className="text-sm text-slate-600 line-through">
+                  <span className="text-sm text-slate-500 line-through font-semibold">
                     {formatPrice(regularPrice)}
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                Inclusive of all statutory taxes. Free returns within 7 days.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                Inclusive of VAT & Ghana customs duties. Free returns within 7 days.
               </p>
             </div>
 
             <div className="text-right shrink-0">
               {availableStock > 0 ? (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
                   <Check className="w-3.5 h-3.5" />
                   <span>{availableStock} in Stock</span>
                 </span>
               ) : (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
+                <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
                   Out of Stock
                 </span>
               )}
             </div>
           </div>
 
-          {/* Short description */}
-          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-            {product.shortDescription || product.description}
-          </p>
+          {/* Quick Summary Highlights */}
+          <div className="space-y-2">
+            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+              {product.shortDescription || product.description}
+            </p>
+            <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>100% Genuine Brand Guarantee</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>Same-Day Dispatch in Accra</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>7-Day Return & Replacement</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>MTN MoMo & Card Payments</span>
+              </div>
+            </div>
+          </div>
 
           {/* Variations selector */}
           {product.variations && product.variations.length > 0 && (
             <div className="space-y-3 pt-2">
               <label className="block text-xs font-bold text-slate-900 dark:text-white">
-                Select Option / Variation:
+                Select Option / Model:
               </label>
               <div className="flex flex-wrap gap-2.5">
                 {product.variations.map((v) => (
                   <button
                     key={v.id}
                     onClick={() => setSelectedVariation(v)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+                    className={`px-4 py-2.5 rounded-2xl text-xs font-bold border transition-all cursor-pointer ${
                       selectedVariation?.id === v.id
                         ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20'
                         : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400'
                     }`}
                   >
                     <span>{v.name}</span>
-                    <span className="ml-2 opacity-75 font-normal">({v.stockQuantity > 0 ? `${v.stockQuantity} left` : 'Sold out'})</span>
+                    <span className="ml-2 opacity-75 font-normal">
+                      ({v.stockQuantity > 0 ? `${v.stockQuantity} left` : 'Sold out'})
+                    </span>
                   </button>
                 ))}
               </div>
@@ -366,7 +495,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 <button
                   id="btn-detail-qty-minus"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold cursor-pointer"
                 >
                   -
                 </button>
@@ -377,7 +506,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   id="btn-detail-qty-plus"
                   onClick={() => setQuantity((q) => Math.min(availableStock, q + 1))}
                   disabled={quantity >= availableStock}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold disabled:opacity-30"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold disabled:opacity-30 cursor-pointer"
                 >
                   +
                 </button>
@@ -388,7 +517,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 id="btn-detail-add-to-cart"
                 onClick={handleAddToCart}
                 disabled={isOutOfStock}
-                className="flex-1 py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-slate-100 hover:bg-emerald-600 dark:hover:bg-emerald-500 text-white dark:text-slate-900 dark:hover:text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-slate-100 hover:bg-emerald-600 dark:hover:bg-emerald-500 text-white dark:text-slate-900 dark:hover:text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>Add to Shopping Bag</span>
@@ -399,7 +528,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 id="btn-detail-buy-now"
                 onClick={handleBuyNow}
                 disabled={isOutOfStock}
-                className="flex-1 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-40"
+                className="flex-1 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all disabled:opacity-40 cursor-pointer"
               >
                 <Zap className="w-4 h-4" />
                 <span>Buy Now</span>
@@ -412,148 +541,223 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               href={generateWhatsAppProductLink(product, selectedVariation || undefined, settings.socialLinks?.whatsapp || '233245550199')}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-3 px-4 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+              className="w-full py-3 px-4 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Instant Order & Inquiry via WhatsApp Concierge</span>
+              <span>Instant Order & Product Inquiries via WhatsApp</span>
             </a>
           </div>
 
-          {/* Delivery & Trust Value Blocks */}
+          {/* Value Blocks */}
           <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
-            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+            <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
               <Truck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold text-slate-900 dark:text-white">Next-Day Delivery</p>
-                <p className="text-[10px] text-slate-500">Accra, Kumasi & nationwide</p>
+                <p className="font-bold text-slate-900 dark:text-white">Express Delivery</p>
+                <p className="text-[10px] text-slate-500">Accra, Tema & Nationwide across Ghana</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+            <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
               <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
               <div>
                 <p className="font-bold text-slate-900 dark:text-white">Official Warranty</p>
-                <p className="text-[10px] text-slate-500">12 Months manufacturer cover</p>
+                <p className="text-[10px] text-slate-500">12 Months manufacturer cover included</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. TABS SECTION: DESCRIPTION, SPECS, SHIPPING, REVIEWS */}
+      {/* 3. EXTENDED DETAIL TABS: DESCRIPTION, SPECS, WHAT'S IN THE BOX, FAQS, SHIPPING, REVIEWS */}
       <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
-        {/* Tab Headers */}
-        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-px">
-          <button
-            id="tab-btn-desc"
-            onClick={() => setActiveTab('description')}
-            className={`px-6 py-3 font-bold text-xs tracking-wide transition-all border-b-2 whitespace-nowrap ${
-              activeTab === 'description'
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            Product Overview
-          </button>
-          <button
-            id="tab-btn-specs"
-            onClick={() => setActiveTab('specs')}
-            className={`px-6 py-3 font-bold text-xs tracking-wide transition-all border-b-2 whitespace-nowrap ${
-              activeTab === 'specs'
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            Technical Specifications
-          </button>
-          <button
-            id="tab-btn-shipping"
-            onClick={() => setActiveTab('shipping')}
-            className={`px-6 py-3 font-bold text-xs tracking-wide transition-all border-b-2 whitespace-nowrap ${
-              activeTab === 'shipping'
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            Shipping & Return Policy
-          </button>
-          <button
-            id="tab-btn-reviews"
-            onClick={() => setActiveTab('reviews')}
-            className={`px-6 py-3 font-bold text-xs tracking-wide transition-all border-b-2 whitespace-nowrap ${
-              activeTab === 'reviews'
-                ? 'border-emerald-600 text-emerald-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            Customer Reviews ({reviewsList.length})
-          </button>
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-px scrollbar-none">
+          {[
+            { id: 'description', label: 'Detailed Overview', icon: Info },
+            { id: 'specs', label: 'Technical Specifications', icon: Sparkles },
+            { id: 'box', label: "What's in the Box", icon: Package },
+            { id: 'faq', label: 'FAQs & Guide', icon: HelpCircle },
+            { id: 'shipping', label: 'Delivery & Returns', icon: Truck },
+            { id: 'reviews', label: `Reviews (${reviewsList.length || product.reviewCount})`, icon: Star }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-5 py-3 font-bold text-xs tracking-wide transition-all border-b-2 whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+                  activeTab === tab.id
+                    ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Tab Content Panes */}
         <div className="py-8">
+          {/* TAB 1: OVERVIEW */}
           {activeTab === 'description' && (
-            <div className="max-w-3xl space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              <p>{product.description}</p>
-              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200 space-y-1">
-                <h4 className="font-bold text-xs">Why buy from NovaMart Ghana?</h4>
-                <ul className="list-disc pl-5 text-xs space-y-1">
-                  <li>Original physical inventory in Ghana (no waiting for international sea freight)</li>
-                  <li>Fast dispatch via our dispatch fleet and trusted delivery partners</li>
-                  <li>Receipt and warranty documents included in every package</li>
+            <div className="max-w-4xl space-y-6 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+              <div className="space-y-3">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Product Description</h3>
+                <p className="leading-relaxed whitespace-pre-line">{product.description}</p>
+              </div>
+
+              {/* Highlights Feature Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 space-y-2">
+                  <h4 className="font-bold text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>100% Genuine Physical Inventory</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                    Stocked directly in our Accra fulfilment warehouse. Every item is inspected for quality and serial-verified prior to dispatch.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/40 space-y-2">
+                  <h4 className="font-bold text-xs text-indigo-900 dark:text-indigo-200 flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-indigo-600" />
+                    <span>Fast Express Doorstep Dispatch</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                    Same-day delivery across Accra & Tema. Real-time SMS tracking updates and dispatch rider call confirmation.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: SPECIFICATIONS */}
+          {activeTab === 'specs' && (
+            <div className="max-w-3xl space-y-4">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Technical Specifications</h3>
+              {product.specifications && (Array.isArray(product.specifications) ? product.specifications.length > 0 : Object.keys(product.specifications).length > 0) ? (
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                  {Array.isArray(product.specifications)
+                    ? product.specifications.map((spec: any, idx: number) => (
+                        <div key={idx} className="grid grid-cols-3 p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <span className="font-bold text-slate-600 dark:text-slate-400 capitalize">{spec.name || `Specification ${idx + 1}`}</span>
+                          <span className="col-span-2 text-slate-900 dark:text-white font-semibold">{String(spec.value || '')}</span>
+                        </div>
+                      ))
+                    : Object.entries(product.specifications).map(([key, val]) => (
+                        <div key={key} className="grid grid-cols-3 p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <span className="font-bold text-slate-600 dark:text-slate-400 capitalize">{key}</span>
+                          <span className="col-span-2 text-slate-900 dark:text-white font-semibold">{typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val)}</span>
+                        </div>
+                      ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">Standard manufacturer specifications are included in the boxed documentation.</p>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: WHAT'S IN THE BOX */}
+          {activeTab === 'box' && (
+            <div className="max-w-3xl space-y-4">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Package Contents</h3>
+              <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-600/10 text-emerald-600 flex items-center justify-center">
+                    <Package className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{product.name}</h4>
+                    <p className="text-[11px] text-slate-500">Official Retail Sealed Box</p>
+                  </div>
+                </div>
+
+                <ul className="space-y-2.5 pt-2 text-xs text-slate-700 dark:text-slate-300">
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>1x {product.name}</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Standard Charging Cable & Accessories (where applicable)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>User Quick Start Manual (English)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>NovaMart Ghana Warranty & Authenticity Certificate</span>
+                  </li>
                 </ul>
               </div>
             </div>
           )}
 
-          {activeTab === 'specs' && (
-            <div className="max-w-3xl">
-              {product.specifications && (Array.isArray(product.specifications) ? product.specifications.length > 0 : Object.keys(product.specifications).length > 0) ? (
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                  {Array.isArray(product.specifications)
-                    ? product.specifications.map((spec: any, idx: number) => (
-                        <div key={idx} className="grid grid-cols-3 p-3.5 bg-white dark:bg-slate-900">
-                          <span className="font-bold text-slate-600 dark:text-slate-400 capitalize">{spec.name || `Spec ${idx + 1}`}</span>
-                          <span className="col-span-2 text-slate-900 dark:text-white font-medium">{String(spec.value || '')}</span>
-                        </div>
-                      ))
-                    : Object.entries(product.specifications).map(([key, val]) => (
-                        <div key={key} className="grid grid-cols-3 p-3.5 bg-white dark:bg-slate-900">
-                          <span className="font-bold text-slate-600 dark:text-slate-400 capitalize">{key}</span>
-                          <span className="col-span-2 text-slate-900 dark:text-white font-medium">{typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val)}</span>
-                        </div>
-                      ))}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500">Detailed specifications available upon request from manufacturer catalog.</p>
-              )}
+          {/* TAB 4: FAQS */}
+          {activeTab === 'faq' && (
+            <div className="max-w-3xl space-y-4">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h3>
+              <div className="space-y-3">
+                {productFaqs.map((faq, index) => (
+                  <div
+                    key={index}
+                    className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900"
+                  >
+                    <button
+                      onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                      className="w-full p-4 text-left font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center justify-between gap-4 cursor-pointer"
+                    >
+                      <span>{faq.q}</span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-400 transition-transform ${
+                          openFaqIndex === index ? 'rotate-180 text-emerald-600' : ''
+                        }`}
+                      />
+                    </button>
+                    {openFaqIndex === index && (
+                      <div className="p-4 pt-0 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
+          {/* TAB 5: SHIPPING & RETURNS */}
           {activeTab === 'shipping' && (
-            <div className="max-w-3xl space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              <h4 className="font-bold text-sm text-slate-900 dark:text-white">Delivery Options in Ghana</h4>
-              <ul className="list-disc pl-5 text-xs space-y-2">
-                <li>
-                  <strong>Accra & Tema Express:</strong> Delivered within 24 hours. Free delivery on orders over GH₵ 500.
-                </li>
-                <li>
-                  <strong>Kumasi, Takoradi, Cape Coast, Tamale:</strong> 1-3 business days via verified courier service.
-                </li>
-                <li>
-                  <strong>Self-Pickup:</strong> Pick up directly from our Airport City, Accra fulfilment hub at no shipping cost.
-                </li>
-              </ul>
+            <div className="max-w-3xl space-y-6 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+              <div className="space-y-3">
+                <h4 className="font-bold text-base text-slate-900 dark:text-white">Delivery Options in Ghana</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <p className="font-bold text-slate-900 dark:text-white">Accra & Tema Metro</p>
+                    <p className="text-xs text-slate-500">Same-Day / 24-Hour Dispatch. Free on orders over GH₵ 500.</p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <p className="font-bold text-slate-900 dark:text-white">Nationwide Regions</p>
+                    <p className="text-xs text-slate-500">1 to 3 Business Days (Kumasi, Takoradi, Sunyani, Tamale, etc.).</p>
+                  </div>
+                </div>
+              </div>
 
-              <h4 className="font-bold text-sm text-slate-900 dark:text-white pt-2">7-Day Free Returns</h4>
-              <p className="text-xs">
-                If the product arrives damaged, defective, or incorrect, you can request an instant return or exchange within 7 calendar days of delivery.
-              </p>
+              <div className="space-y-3 pt-2">
+                <h4 className="font-bold text-base text-slate-900 dark:text-white">7-Day Free Returns Policy</h4>
+                <p className="text-xs">
+                  We guarantee satisfaction. If your item arrives damaged, missing parts, or not as described, request a replacement or full refund within 7 calendar days of delivery.
+                </p>
+              </div>
             </div>
           )}
 
+          {/* TAB 6: REVIEWS */}
           {activeTab === 'reviews' && (
-            <div className="space-y-8">
+            <div className="space-y-8 max-w-4xl">
               {/* Review summary & write review CTA */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800">
                 <div className="flex items-center gap-4">
@@ -569,62 +773,59 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                         />
                       ))}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1">Based on {reviewsList.length} reviews</p>
+                    <p className="text-[10px] text-slate-500 mt-1">Based on {reviewsList.length || product.reviewCount} reviews</p>
                   </div>
 
                   <div className="h-12 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
 
                   <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1 hidden sm:block">
                     <p>⭐ 98% of customers recommend this item</p>
-                    <p>🛡️ All reviews from verified buyers</p>
+                    <p>🛡️ All reviews from verified buyers across Ghana</p>
                   </div>
                 </div>
 
                 <button
-                  id="btn-open-review-modal"
+                  id="btn-write-review"
                   onClick={() => setIsReviewModalOpen(true)}
-                  className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all"
+                  className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <MessageSquarePlus className="w-4 h-4" />
-                  <span>Write a Customer Review</span>
+                  <span>Write a Product Review</span>
                 </button>
               </div>
 
               {/* Reviews List */}
               <div className="space-y-4">
                 {reviewsList.length === 0 ? (
-                  <p className="text-xs text-slate-500 text-center py-6">Be the first to review this product!</p>
+                  <div className="text-center py-10 text-slate-500 space-y-2">
+                    <p className="text-xs">No reviews submitted yet for this product.</p>
+                    <p className="text-[11px]">Be the first buyer to review!</p>
+                  </div>
                 ) : (
-                  reviewsList.map((review) => (
+                  reviewsList.map((rev) => (
                     <div
-                      key={review.id}
-                      className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2"
+                      key={rev.id}
+                      className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs"
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-slate-900 dark:text-white">{review.userName}</span>
-                          {review.isVerifiedPurchase && (
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
-                              Verified Purchase
-                            </span>
-                          )}
+                        <div>
+                          <h4 className="font-bold text-xs text-slate-900 dark:text-white">{rev.userName}</h4>
+                          <div className="flex items-center gap-1 text-amber-400 mt-0.5">
+                            {[...Array(5)].map((_, j) => (
+                              <Star
+                                key={j}
+                                className={`w-3 h-3 ${j < rev.rating ? 'fill-current' : 'text-slate-200 dark:text-slate-700'}`}
+                              />
+                            ))}
+                          </div>
                         </div>
                         <span className="text-[10px] text-slate-400">
-                          {new Date(review.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {new Date(rev.createdAt).toLocaleDateString('en-GB')}
                         </span>
                       </div>
-
-                      <div className="flex items-center text-amber-400">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3.5 h-3.5 ${i < review.rating ? 'fill-current' : 'text-slate-200 dark:text-slate-800'}`}
-                          />
-                        ))}
-                      </div>
-
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">{review.title}</h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{review.comment}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {rev.comment}
+                      </p>
                     </div>
                   ))
                 )}
@@ -636,26 +837,30 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
       {/* 4. RELATED PRODUCTS */}
       {relatedProducts.length > 0 && (
-        <div className="pt-10 border-t border-slate-200 dark:border-slate-800 space-y-6">
-          <div className="flex items-center justify-between">
+        <div className="pt-12 border-t border-slate-200 dark:border-slate-800 space-y-6">
+          <div className="flex items-end justify-between">
             <div>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white">Related Products</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Customers who viewed this item also bought</p>
+              <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1">
+                More in {product.categoryName}
+              </p>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                Recommended For You
+              </h2>
             </div>
             <button
               onClick={() => onNavigate('shop', { category: product.categoryId })}
-              className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1"
+              className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
             >
-              <span>Explore More</span>
+              <span>Explore Department</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            {relatedProducts.map((p) => (
+            {relatedProducts.map((rel) => (
               <ProductCard
-                key={p.id}
-                product={p}
+                key={rel.id}
+                product={rel}
                 onOpenQuickView={onOpenQuickView}
                 onNavigateToDetail={(id) => onNavigate('product-detail', { productId: id })}
               />
@@ -664,13 +869,86 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         </div>
       )}
 
-      {/* Write Review Modal */}
-      <ReviewModal
-        product={product}
-        isOpen={isReviewModalOpen}
-        onClose={() => setIsReviewModalOpen(false)}
-        onReviewSubmitted={fetchReviews}
-      />
+      {/* 5. FULLSCREEN LIGHTBOX ZOOM MODAL */}
+      <AnimatePresence>
+        {isLightboxOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center"
+            >
+              {/* Close Lightbox */}
+              <button
+                onClick={() => setIsLightboxOpen(false)}
+                className="absolute -top-12 right-0 p-2.5 rounded-full bg-white/20 hover:bg-white text-white hover:text-slate-900 transition-colors z-20 cursor-pointer"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              {/* Main Lightbox Photo */}
+              <div className="relative w-full max-h-[75vh] flex items-center justify-center rounded-3xl overflow-hidden bg-black/40">
+                <img
+                  src={currentImage}
+                  alt={`${product.name} - Full Resolution`}
+                  className="max-h-[75vh] max-w-full object-contain rounded-2xl"
+                />
+
+                {/* Prev / Next in Lightbox */}
+                {imagesList.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-4 p-3 rounded-full bg-slate-900/80 hover:bg-emerald-600 text-white shadow-xl backdrop-blur-md transition-all cursor-pointer"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-4 p-3 rounded-full bg-slate-900/80 hover:bg-emerald-600 text-white shadow-xl backdrop-blur-md transition-all cursor-pointer"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Lightbox Thumbnails */}
+              {imagesList.length > 1 && (
+                <div className="flex items-center gap-3 mt-4 overflow-x-auto p-2">
+                  {imagesList.map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedImageIndex(i)}
+                      className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                        selectedImageIndex === i
+                          ? 'border-emerald-500 scale-110 shadow-lg'
+                          : 'border-white/30 opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={img} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Review Modal */}
+      {isReviewModalOpen && (
+        <ReviewModal
+          productId={product.id}
+          productName={product.name}
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          onSuccess={() => {
+            api.getProductReviews(product.id).then((res) => setReviewsList(res || []));
+          }}
+        />
+      )}
     </div>
   );
 };
