@@ -138,7 +138,8 @@ const MainApp: React.FC = () => {
           <ShopView
             initialCategory={viewParams.category}
             initialSearch={viewParams.search}
-            initialFlashDealOnly={viewParams.isFlashDeal}
+            initialDealsOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
+            initialFlashDealOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
             onNavigate={handleNavigate}
             onOpenQuickView={handleOpenQuickView}
           />

@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ArrowRight, Flame, Zap, Star, ShoppingBag, ShieldCheck, Truck, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import { Product, Category, Banner } from '../types/index';
 import { ProductCard } from '../components/common/ProductCard';
+import { FlashSalesSection } from '../components/common/FlashSalesSection';
 import { useSettings } from '../context/SettingsContext';
 import { api } from '../services/api';
 
@@ -210,49 +211,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 3. FLASH DEALS */}
+      {/* 3. FLASH SALES LIVE TIMER & DEALS */}
       {deals.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl overflow-hidden text-white shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-rose-950 via-rose-900 to-slate-950" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(244,63,94,0.2)_0%,transparent_60%)]" />
-            <div className="relative p-6 sm:p-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-6 border-b border-rose-800/40">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center shadow-lg shadow-rose-700/40 animate-pulse">
-                    <Flame className="w-8 h-8 fill-white text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Flash Deals</h2>
-                    <p className="text-xs text-rose-200/80 mt-0.5">Limited quantities — best prices in Ghana</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-black text-rose-200 uppercase tracking-widest">Ends in</span>
-                  <div className="flex items-center gap-1.5">
-                    {[{ val: timeLeft.hours, label: 'HRS' }, { val: timeLeft.minutes, label: 'MIN' }, { val: timeLeft.seconds, label: 'SEC' }].map(({ val, label }, i) => (
-                      <React.Fragment key={label}>
-                        <div className="flex flex-col items-center">
-                          <div className="bg-rose-600/90 text-white px-3 py-2 rounded-xl font-black text-xl w-14 text-center tabular-nums shadow-lg">
-                            {String(val).padStart(2, '0')}
-                          </div>
-                          <span className="text-[9px] font-bold text-rose-300/70 mt-1 tracking-widest">{label}</span>
-                        </div>
-                        {i < 2 && <span className="text-rose-400 font-black text-xl mb-3">:</span>}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-                {deals.slice(0, 4).map((product) => (
-                  <ProductCard key={product.id} product={product} onOpenQuickView={onOpenQuickView}
-                    onNavigateToDetail={(id) => onNavigate('product-detail', { productId: id })} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
+        <FlashSalesSection
+          deals={deals}
+          onNavigate={onNavigate}
+          onOpenQuickView={onOpenQuickView}
+        />
       )}
 
       {/* 4. FEATURED PRODUCTS */}
