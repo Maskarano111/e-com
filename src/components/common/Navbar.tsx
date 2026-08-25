@@ -19,12 +19,15 @@ import {
   SlidersHorizontal,
   Flame,
   Gift,
-  Sparkles
+  Sparkles,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useSettings } from '../../context/SettingsContext';
+import { useTheme } from '../../context/ThemeContext';
 import { DemoSwitcher } from './DemoSwitcher';
 import { Product, Category } from '../../types/index';
 import { api } from '../../services/api';
@@ -41,6 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
   const { itemCount, subtotal, setIsCartDrawerOpen } = useCart();
   const { wishlistCount } = useWishlist();
   const { settings, currency, setCurrency, formatPrice } = useSettings();
+  const { theme, resolvedTheme, toggleTheme } = useTheme();
 
   const [categories, setCategories] = useState<Category[]>(propsCategories || []);
   const [searchQuery, setSearchQuery] = useState('');
@@ -280,6 +284,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
                 <span>Admin Panel</span>
               </button>
             )}
+
+            {/* Theme Toggle Button (Light/Dark Mode) */}
+            <button
+              id="btn-theme-toggle"
+              onClick={toggleTheme}
+              className="p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+              title={resolvedTheme === 'dark' ? 'Switch to Light Mode (Clean White)' : 'Switch to Dark Mode (Midnight Emerald)'}
+            >
+              {resolvedTheme === 'dark' ? (
+                <Sun className="w-5 h-5 text-amber-400 hover:rotate-45 transition-transform" />
+              ) : (
+                <Moon className="w-5 h-5 text-slate-700 dark:text-slate-300 hover:-rotate-12 transition-transform" />
+              )}
+            </button>
 
             {/* Wishlist Icon */}
             <button
@@ -635,6 +653,27 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
               >
                 Track Order
               </button>
+
+              {/* Mobile Theme Switcher */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between px-2 py-1">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Store Theme</span>
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
+                >
+                  {resolvedTheme === 'dark' ? (
+                    <>
+                      <Sun className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Light Mode</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="w-3.5 h-3.5 text-slate-600" />
+                      <span>Dark Mode</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 <p className="text-xs font-bold text-slate-400 px-2 mb-2 uppercase tracking-wider">Categories</p>

@@ -21,11 +21,6 @@ import {
 
 const API_BASE = '/api';
 
-// ==========================================
-// CLIENT-SIDE LOCAL STORAGE FALLBACK ENGINE
-// (Ensures the store runs 100% smoothly on free static hosts like Vercel, Netlify, GitHub Pages, Render, etc.)
-// ==========================================
-
 const STORAGE_KEYS = {
   PRODUCTS: 'novamart_products',
   CATEGORIES: 'novamart_categories',
@@ -58,7 +53,6 @@ const setLocal = <T>(key: string, val: T) => {
   } catch {}
 };
 
-// Safe fetch helper that gracefully falls back to local data if the backend API is unreachable or returns 404
 async function safeFetch<T>(
   url: string,
   options?: RequestInit,
@@ -71,7 +65,6 @@ async function safeFetch<T>(
       if (contentType.includes('application/json')) {
         return (await res.json()) as T;
       }
-      // If it returned HTML (e.g. static host 404 SPA fallback), fallback to local
       const text = await res.text();
       try {
         return JSON.parse(text) as T;
@@ -107,7 +100,7 @@ export const api = {
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
-          phone: data.phone || '',
+          phone: data.phone || '+233 24 555 0199',
           role: 'customer',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -179,6 +172,7 @@ export const api = {
           firstName: 'Kwame',
           lastName: 'Mensah',
           email: 'admin@novamart.com.gh',
+          phone: '+233 24 555 0199',
           role: 'super_admin',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -202,7 +196,7 @@ export const api = {
           firstName: data.firstName || 'Kwame',
           lastName: data.lastName || 'Mensah',
           email: 'admin@novamart.com.gh',
-          phone: data.phone,
+          phone: data.phone || '+233 24 555 0199',
           profileImage: data.profileImage,
           role: 'customer',
           createdAt: new Date().toISOString(),
@@ -366,14 +360,12 @@ export const api = {
           productId,
           userId: 'usr-guest',
           userName: data.userName || 'Verified Buyer',
-          userEmail: data.userEmail || '',
           rating: Number(data.rating) || 5,
           title: data.title || '',
           comment: data.comment,
           verifiedPurchase: true,
           status: 'approved',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          createdAt: new Date().toISOString()
         };
         reviews.unshift(newRev);
         setLocal(STORAGE_KEYS.REVIEWS, reviews);
@@ -657,6 +649,7 @@ export const api = {
       },
       () => {
         const orders = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
+        const total = Number(data.totalAmount || data.total || 0);
         const newOrder: Order = {
           id: `ord-${Date.now()}`,
           orderNumber: `NM-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -665,22 +658,38 @@ export const api = {
           customerEmail: data.customerEmail || 'customer@example.com',
           customerPhone: data.customerPhone || '+233 24 555 0199',
           items: data.items || [],
-          subtotal: data.subtotal || 0,
-          deliveryFee: data.deliveryFee || 0,
-          discountAmount: data.discountAmount || 0,
-          taxAmount: data.taxAmount || 0,
-          totalAmount: data.totalAmount || 0,
+          subtotal: Number(data.subtotal || 0),
+          discount: Number(data.discountAmount || data.discount || 0),
+          couponCode: data.couponCode,
+          deliveryFee: Number(data.deliveryFee || 0),
+          deliveryMethod: data.deliveryType === 'express' ? 'express' : 'standard',
+          tax: Number(data.taxAmount || data.tax || 0),
+          total,
           deliveryAddress: data.deliveryAddress || {
-            name: 'Home',
+            name: 'Customer',
             phone: '+233 24 555 0199',
+            country: 'Ghana',
             city: 'Accra',
             region: 'Greater Accra',
             address: 'Airport Residential, Accra'
           },
-          deliveryType: data.deliveryType || 'standard',
-          paymentMethod: data.paymentMethod || 'momo',
-          paymentStatus: 'paid',
-          orderStatus: 'confirmed',
+          paymentMethod: data.paymentMethod || 'mtn_momo',
+          paymentStatus: 'successful',
+          orderStatus: 'Payment Confirmed',
+          estimatedDeliveryDate: '2-3 Business Days',
+          trackingNumber: `TRK-GH-${Date.now()}`,
+          timeline: [
+            {
+              status: 'Order Placed',
+              time: new Date().toISOString(),
+              note: 'Order successfully registered'
+            },
+            {
+              status: 'Payment Confirmed',
+              time: new Date().toISOString(),
+              note: 'Mobile Money payment verified'
+            }
+          ],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
@@ -774,14 +783,12 @@ export const api = {
           productId: data.productId || 'prod-portable-blender',
           userId: data.userId || 'usr-guest',
           userName: data.userName || 'Verified Buyer',
-          userEmail: data.userEmail || '',
           rating: Number(data.rating) || 5,
           title: data.title || '',
           comment: data.comment || '',
           verifiedPurchase: true,
           status: 'approved',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          createdAt: new Date().toISOString()
         };
         reviews.unshift(newRev);
         setLocal(STORAGE_KEYS.REVIEWS, reviews);
@@ -909,6 +916,7 @@ export const api = {
             userId,
             name: 'Kwame Mensah',
             phone: '+233 24 555 0199',
+            country: 'Ghana',
             city: 'Accra',
             region: 'Greater Accra',
             address: 'Airport Residential Area, Accra',
@@ -984,6 +992,7 @@ export const api = {
         {
           id: 'notif-1',
           userId: params.userId || 'usr-1',
+          target: (params.target || 'customer') as any,
           title: 'Welcome to NovaMart Superstore!',
           message: 'Enjoy up to 50% discount on electronics and kitchen appliances.',
           type: 'promo',
@@ -1044,7 +1053,7 @@ export const api = {
         body: JSON.stringify(data)
       },
       () => {
-        const settings = getLocal<StoreSettings>(STORAGE_KEYS.SETTINGS, {
+        const settings: StoreSettings = getLocal<StoreSettings>(STORAGE_KEYS.SETTINGS, {
           storeName: 'NovaMart Ghana',
           tagline: "Ghana's Premier Online Superstore & Marketplace",
           logo: '',
@@ -1061,9 +1070,15 @@ export const api = {
           enableCOD: true,
           enableMoMo: true,
           enableCard: true,
-          enablePaystack: true
+          enablePaystack: true,
+          socialLinks: {
+            facebook: 'https://facebook.com/novamartgh',
+            instagram: 'https://instagram.com/novamartgh',
+            twitter: 'https://twitter.com/novamartgh',
+            whatsapp: '+233245550199'
+          }
         });
-        const updated = { ...settings, ...data };
+        const updated: StoreSettings = { ...settings, ...data };
         setLocal(STORAGE_KEYS.SETTINGS, updated);
         return updated;
       }
@@ -1079,7 +1094,7 @@ export const api = {
         const prods = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
         const orders = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
         return {
-          totalRevenue: orders.reduce((sum, o) => sum + (o.totalAmount || 0), 125400),
+          totalRevenue: orders.reduce((sum, o) => sum + (o.total || 0), 125400),
           totalOrders: orders.length + 342,
           totalProducts: prods.length,
           totalCustomers: 1280

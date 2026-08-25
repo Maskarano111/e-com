@@ -242,18 +242,22 @@ const MainApp: React.FC = () => {
   );
 };
 
+import { ThemeProvider } from './context/ThemeContext';
+
 export default function App() {
   return (
-    <ToastProvider>
-      <SettingsProvider>
-        <AuthProvider>
-          <WishlistProvider>
-            <CartProvider>
-              <MainApp />
-            </CartProvider>
-          </WishlistProvider>
-        </AuthProvider>
-      </SettingsProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <SettingsProvider>
+          <AuthProvider>
+            <WishlistProvider>
+              <CartProvider>
+                <MainApp />
+              </CartProvider>
+            </WishlistProvider>
+          </AuthProvider>
+        </SettingsProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
