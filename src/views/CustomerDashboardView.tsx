@@ -113,7 +113,7 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
         </div>
         <h2 className="text-2xl font-black text-slate-900 dark:text-white">VIP Membership Portal</h2>
         <p className="text-xs text-slate-500 max-w-md mx-auto">
-          Please sign in to access your Nova Privé rewards, active dispatch trackers, and fragrance vault.
+          Please sign in to access your NovaMart rewards, active dispatch trackers, and order history.
         </p>
         <button
           onClick={() => onNavigate('login')}
@@ -254,12 +254,12 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
         <div className="lg:col-span-3 space-y-2">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-3 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1 text-xs font-semibold">
             {[
-              { id: 'overview', label: 'VIP Overview', icon: LayoutDashboard },
-              { id: 'orders', label: 'Orders & Deliveries', icon: Package, count: orders.length },
-              { id: 'wishlist', label: 'Saved Scents', icon: Heart, count: wishlist.length },
+              { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+              { id: 'orders', label: 'My Orders', icon: Package, count: orders.length },
+              { id: 'wishlist', label: 'Saved Items', icon: Heart, count: wishlist.length },
               { id: 'addresses', label: 'Delivery Locations', icon: MapPin, count: addresses.length },
-              { id: 'notifications', label: 'Concierge Alerts', icon: Bell, count: notifications.filter((n) => !n.read).length },
-              { id: 'profile', label: 'Scent & Profile Info', icon: User },
+              { id: 'notifications', label: 'Alerts', icon: Bell, count: notifications.filter((n) => !n.read).length },
+              { id: 'profile', label: 'Profile & Account Info', icon: User },
               { id: 'security', label: 'Security & Access', icon: KeyRound }
             ].map((tab) => {
               const Icon = tab.icon;
@@ -318,7 +318,7 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                     <Package className="w-5 h-5" />
                   </div>
                   <h4 className="text-2xl font-black text-slate-900 dark:text-white">{orders.length}</h4>
-                  <p className="text-xs text-slate-500">Luxury Fragrance Orders</p>
+                  <p className="text-xs text-slate-500">Superstore Orders Placed</p>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
@@ -326,7 +326,7 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                     <Heart className="w-5 h-5" />
                   </div>
                   <h4 className="text-2xl font-black text-slate-900 dark:text-white">{wishlist.length}</h4>
-                  <p className="text-xs text-slate-500">Saved in Scent Wishlist</p>
+                  <p className="text-xs text-slate-500">Saved in Wishlist</p>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
@@ -334,35 +334,34 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                     <Gift className="w-5 h-5" />
                   </div>
                   <h4 className="text-2xl font-black text-slate-900 dark:text-white">{points} pts</h4>
-                  <p className="text-xs text-slate-500">Privé Redeemable Credit</p>
+                  <p className="text-xs text-slate-500">NovaMart VIP Reward Points</p>
                 </div>
               </div>
 
-              {/* Scent DNA & Olfactory Family Card */}
+              {/* VIP Membership & Buyer Perks Card */}
               <div className="relative overflow-hidden bg-gradient-to-br from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-800/40 rounded-3xl p-6 sm:p-7 shadow-lg text-white space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-emerald-400" />
-                    <h3 className="font-black text-base tracking-tight">Your Signature Scent Persona</h3>
+                    <h3 className="font-black text-base tracking-tight">NovaMart VIP Shopper Tier</h3>
                   </div>
                   <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-500/30">
-                    Bespoke Profile
+                    Gold Member
                   </span>
                 </div>
 
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Based on your fragrance purchases and preferences, your signature profile belongs to the{' '}
-                  <strong className="text-emerald-400">Amber Woody & French Gourmand</strong> family.
+                  Enjoy free express shipping on orders over GH₵ 500, early access to Flash Sales, and 1% cashback reward points on all electronics, appliances & fashion purchases.
                 </p>
 
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {['Royal Cambodian Oud', 'Madagascar Vanilla', 'Calabrian Bergamot', 'Ambergris', 'Damask Rose'].map((note) => (
+                  {['Free Express Delivery', 'Flash Sale Priority', 'VIP Support Concierge', 'Cashback Points', 'Extended 14-Day Returns'].map((perk) => (
                     <span
-                      key={note}
+                      key={perk}
                       className="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold text-slate-200 flex items-center gap-1.5"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      {note}
+                      {perk}
                     </span>
                   ))}
                 </div>
@@ -398,8 +397,8 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                     <div className="grid grid-cols-5 gap-2 text-center text-[10px] font-bold">
                       {[
                         { label: 'Confirmed', desc: 'Payment Verified', active: true },
-                        { label: 'Inspected', desc: 'Perfumer Check', active: true },
-                        { label: 'Velvet Packed', desc: 'Sealed & Boxed', active: true },
+                        { label: 'Inspected', desc: 'Quality Check', active: true },
+                        { label: 'Secure Packed', desc: 'Transit Boxed', active: true },
                         { label: 'Out for Delivery', desc: 'With Courier', active: true, pulse: true },
                         { label: 'Delivered', desc: 'Handed to You', active: false }
                       ].map((step, i) => (
@@ -445,9 +444,9 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                     {orders.slice(0, 3).map((o) => (
                       <div key={o.id} className="py-3.5 flex items-center justify-between gap-4 text-xs">
                         <div>
-                          <p className="font-bold text-slate-900 dark:text-white">#{o.orderNumber}</p>
+                          <p className="font-bold text-slate-900 dark:white">#{o.orderNumber}</p>
                           <p className="text-[11px] text-slate-500">
-                            {new Date(o.createdAt).toLocaleDateString('en-GB')} • {o.items?.length || 1} bottles
+                            {new Date(o.createdAt).toLocaleDateString('en-GB')} • {o.items?.length || 1} items
                           </p>
                         </div>
                         <div className="text-right">
@@ -484,7 +483,7 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                     onClick={() => onNavigate('shop')}
                     className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-md"
                   >
-                    Explore Boutique Catalog
+                    Explore Superstore Catalog
                   </button>
                 </div>
               ) : (
@@ -551,18 +550,19 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
           {activeTab === 'wishlist' && (
             <div className="bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
               <h3 className="font-black text-base text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
-                My Saved Fragrance Wishlist ({wishlist.length})
+                My Saved Wishlist ({wishlist.length})
               </h3>
+              <p className="text-xs text-slate-400 mt-0.5">Quickly move your favorite products to your shopping bag</p>
 
               {wishlist.length === 0 ? (
                 <div className="text-center py-12 space-y-3">
                   <Heart className="w-10 h-10 text-slate-400 mx-auto" />
-                  <p className="text-xs text-slate-500">Your fragrance wishlist is currently empty.</p>
+                  <p className="text-xs text-slate-500">Your wishlist is currently empty.</p>
                   <button
                     onClick={() => onNavigate('shop')}
                     className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-md"
                   >
-                    Discover Luxury Scents
+                    Explore Superstore Catalog
                   </button>
                 </div>
               ) : (

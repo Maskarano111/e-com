@@ -197,7 +197,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="space-y-3">
             <h4 className="text-white font-bold text-xs uppercase tracking-wider">Stay In The Loop</h4>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Subscribe for exclusive fragrance releases, private VIP discounts, and new lifestyle arrivals in Ghana.
+              Subscribe for weekly superstore flash sales, tech discounts, fashion alerts, and new arrivals across Ghana.
             </p>
             {isSubscribed ? (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs">

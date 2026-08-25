@@ -189,24 +189,24 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
               </div>
               <span className="text-2xl font-black tracking-tight">Nova<span className="text-emerald-400">Mart</span></span>
             </div>
-            <p className="text-xs text-emerald-300/80 font-semibold tracking-widest uppercase mt-1">Luxury Fragrances & Arabian Oud</p>
+            <p className="text-xs text-emerald-300/80 font-semibold tracking-widest uppercase mt-1">Online Superstore & Marketplace</p>
           </div>
 
           <div className="space-y-5 max-w-md">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> 100% Authentic Designer Scents
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> 100% Genuine Products Guaranteed
             </span>
             <h2 className="text-4xl font-black leading-tight text-white">
-              Signature Luxury,<br />
+              Everything You Need,<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300">
                 Delivered Across Ghana
               </span>
             </h2>
             <p className="text-sm text-slate-300/80 leading-relaxed">
-              Sign in to manage your orders, track real-time dispatch, redeem loyalty coupon codes, and customize your Discovery Box decants.
+              Sign in to manage orders, track real-time dispatch, redeem loyalty points, and checkout faster with MTN MoMo, Telecel & Cards.
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
-              {['Baccarat Rouge 540', 'Creed Aventus', 'Lattafa Khamrah', 'Arabian Oud', 'Diptyque'].map((b) => (
+              {['Apple', 'Samsung', 'Sony', 'Nike', 'NovaKitchen', 'MedCheck'].map((b) => (
                 <span key={b} className="px-3 py-1 rounded-xl bg-white/10 border border-white/15 text-[11px] font-bold text-slate-200 backdrop-blur-md">
                   {b}
                 </span>
@@ -276,7 +276,7 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
                 {currentMode === 'login'
                   ? 'Access your saved cart, orders, and wishlist'
                   : currentMode === 'register'
-                  ? 'Join our perfume club for instant order tracking & perks'
+                  ? 'Create an account for instant order tracking, discounts & perks'
                   : 'Enter your account email to receive a password reset link'}
               </p>
             </div>

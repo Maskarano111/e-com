@@ -179,7 +179,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
                 Nova<span className="text-emerald-600">Mart</span>
               </span>
               <span className="hidden sm:block text-[10px] uppercase font-bold tracking-widest text-slate-600">
-                Perfumes & Luxury Boutique
+                Online Superstore & Marketplace
               </span>
             </div>
           </div>
@@ -195,7 +195,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
                 onFocus={() => {
                   if (searchResults.length > 0) setIsSearchOpen(true);
                 }}
-                placeholder="Search designer perfumes, Arabian oud, scented candles, luxury accessories..."
+                placeholder="Search phones, electronics, blenders, fashion, health, perfumes, supermarket..."
                 className="w-full pl-11 pr-24 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 text-sm border-2 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-all outline-hidden shadow-inner"
               />
               <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -511,27 +511,35 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
               onClick={() => onNavigate('shop')}
               className={`hover:text-emerald-600 transition-colors ${currentView === 'shop' ? 'text-emerald-600 font-bold' : ''}`}
             >
-              All Fragrances & Lifestyle
+              All Products
             </button>
             <button
-              id="nav-link-scent-quiz"
-              onClick={() => onNavigate('scent-quiz')}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold hover:bg-amber-500/20 transition-all cursor-pointer"
+              id="nav-link-phones"
+              onClick={() => onNavigate('shop', { category: 'cat-phones' })}
+              className="hover:text-emerald-600 transition-colors"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Scent Quiz</span>
+              Phones & Tablets
             </button>
             <button
-              id="nav-link-discovery-box"
-              onClick={() => onNavigate('discovery-box')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                currentView === 'discovery-box'
-                  ? 'bg-emerald-600 text-white font-bold'
-                  : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold hover:bg-emerald-500/20'
-              }`}
+              id="nav-link-electronics"
+              onClick={() => onNavigate('shop', { category: 'cat-electronics' })}
+              className="hover:text-emerald-600 transition-colors"
             >
-              <Gift className="w-3.5 h-3.5" />
-              <span>Build Discovery Box</span>
+              Electronics
+            </button>
+            <button
+              id="nav-link-appliances"
+              onClick={() => onNavigate('shop', { category: 'cat-appliances' })}
+              className="hover:text-emerald-600 transition-colors"
+            >
+              Home & Appliances
+            </button>
+            <button
+              id="nav-link-fashion"
+              onClick={() => onNavigate('shop', { category: 'cat-fashion' })}
+              className="hover:text-emerald-600 transition-colors"
+            >
+              Fashion
             </button>
             <button
               id="nav-link-deals"
@@ -539,24 +547,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
               className="flex items-center gap-1 text-rose-600 hover:text-rose-700 font-bold transition-colors"
             >
               <Flame className="w-3.5 h-3.5" />
-              <span>Hot Deals</span>
+              <span>Flash Sales</span>
             </button>
             <button
               id="nav-link-about"
               onClick={() => onNavigate('about')}
               className="hover:text-emerald-600 transition-colors"
             >
-              About Boutique
+              About Us
             </button>
           </div>
 
           <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
             <button
-              onClick={() => onNavigate('scent-quiz')}
-              className="hidden lg:flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:underline cursor-pointer"
+              onClick={() => onNavigate('shop', { dealsOnly: true })}
+              className="hidden lg:flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:underline cursor-pointer"
             >
-              <Sparkles className="w-3 h-3" />
-              <span>Find Your Signature Scent →</span>
+              <Zap className="w-3 h-3" />
+              <span>Explore Live Deals →</span>
             </button>
           </div>
         </div>

@@ -38,27 +38,27 @@ export interface DatabaseSchema {
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
-  storeName: "Nova Perfumes & Luxury Lifestyle",
-  tagline: "Ghana's Premier Boutique for 100% Authentic Luxury Fragrances, Arabian Oud & Lifestyle Accents",
-  logo: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=150&auto=format&fit=crop&q=80",
-  storeEmail: "concierge@novaperfumes.gh",
+  storeName: "NovaMart Ghana",
+  tagline: "Ghana's Premier Online Superstore & Marketplace — Electronics, Fashion, Home & More",
+  logo: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=150&auto=format&fit=crop&q=80",
+  storeEmail: "support@novamart.com.gh",
   storePhone: "+233 24 555 0199",
-  businessAddress: "Suite 4B, The Galleria Mall, Airport Residential Area, Accra, Ghana",
+  businessAddress: "Independence Avenue, Airport City, Accra, Ghana",
   currency: "GHS",
   currencySymbol: "GH₵",
   exchangeRateToUSD: 0.065,
   standardDeliveryFee: 35,
-  expressDeliveryFee: 65,
-  freeDeliveryThreshold: 600,
+  expressDeliveryFee: 70,
+  freeDeliveryThreshold: 500,
   taxRate: 0.035, // 3.5% VAT / NHIL
   enableCOD: true,
   enableMoMo: true,
   enableCard: true,
   enablePaystack: true,
   socialLinks: {
-    facebook: "https://facebook.com/novaperfumesgh",
-    instagram: "https://instagram.com/novaperfumesgh",
-    twitter: "https://twitter.com/novaperfumesgh",
+    facebook: "https://facebook.com/novamartgh",
+    instagram: "https://instagram.com/novamartgh",
+    twitter: "https://twitter.com/novamartgh",
     whatsapp: "+233245550199"
   }
 };
@@ -169,42 +169,42 @@ const DEFAULT_ADDRESSES: DeliveryAddress[] = [
 const DEFAULT_REVIEWS: Review[] = [
   {
     id: "rev-1",
-    productId: "prod-baccarat-rouge-540",
-    productName: "Maison Francis Kurkdjian Baccarat Rouge 540 Extrait",
+    productId: "prod-portable-blender",
+    productName: "Portable USB Rechargeable Fruit Juice Blender (380ml)",
     userId: "usr-cust-1",
     userName: "Abena Osei",
     userAvatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
     rating: 5,
-    title: "100% Genuine French Masterpiece & Phenomenal Sillage!",
-    comment: "I was skeptical about ordering niche perfumes online in Ghana, but Nova Perfumes is the real deal! The ambergris and saffron notes last 24+ hours on my linen blazer. Arrived in Accra next morning with luxury gift wrapping!",
+    title: "Blends fresh fruit smoothies in seconds!",
+    comment: "This rechargeable blender is a lifesaver for office mornings in Accra. Powerful blades, easy to clean, and charges quickly with USB-C!",
     status: "approved",
     verifiedPurchase: true,
     createdAt: "2026-08-10T14:20:00.000Z"
   },
   {
     id: "rev-2",
-    productId: "prod-lattafa-khamrah",
-    productName: "Lattafa Khamrah Eau de Parfum (100ml)",
+    productId: "prod-bp-monitor",
+    productName: "Automatic Digital Upper Arm Blood Pressure Monitor",
     userId: "usr-cust-2",
     userName: "Kofi Appiah",
     userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
     rating: 5,
-    title: "Best Boozy Vanilla Oud in Ghana!",
-    comment: "Rich cinnamon, sweet dates, and smooth praline oud. Everyone in the office asks what I am wearing. Exceptional value for money!",
+    title: "Clear display and very accurate readings",
+    comment: "Got this for my parents in Kumasi. The voice readout makes it so easy for them to monitor their pressure daily without assistance.",
     status: "approved",
     verifiedPurchase: true,
     createdAt: "2026-08-05T09:15:00.000Z"
   },
   {
     id: "rev-3",
-    productId: "prod-diptyque-baies-candle",
-    productName: "Diptyque Paris Baies Luxury Scented Candle",
+    productId: "prod-iphone-15-pro",
+    productName: "Apple iPhone 15 Pro Max (256GB Natural Titanium)",
     userId: "usr-cust-1",
     userName: "Abena Osei",
     userAvatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
     rating: 5,
-    title: "Transforms the entire living room atmosphere",
-    comment: "The fresh blackcurrant leaves and Bulgarian rose aroma fills my home within 10 minutes of lighting. Truly unmatched French luxury.",
+    title: "100% Genuine, sealed Apple box with warranty!",
+    comment: "Received next-day delivery in East Legon. Checked serial number on Apple official site — 100% genuine with full 1 year warranty.",
     status: "approved",
     verifiedPurchase: true,
     createdAt: "2026-07-29T18:40:00.000Z"
@@ -214,7 +214,7 @@ const DEFAULT_REVIEWS: Review[] = [
 const DEFAULT_ORDERS: Order[] = [
   {
     id: "ord-1001",
-    orderNumber: "NV-GH-94821",
+    orderNumber: "NM-GH-94821",
     userId: "usr-cust-1",
     customerName: "Abena Osei",
     customerEmail: "maskarano111@gmail.com",
@@ -222,37 +222,35 @@ const DEFAULT_ORDERS: Order[] = [
     items: [
       {
         id: "item-1",
-        productId: "prod-baccarat-rouge-540",
-        variationId: "var-br540-70ml",
-        variationName: "70ml Extrait Bottle",
-        productName: "Maison Francis Kurkdjian Baccarat Rouge 540",
-        productImage: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400&auto=format&fit=crop&q=80",
-        sku: "MFK-BR540-70ML",
-        unitPrice: 6200,
-        quantity: 1,
-        total: 6200
+        productId: "prod-portable-blender",
+        productName: "Portable USB Rechargeable Fruit Juice Blender (380ml)",
+        productImage: "https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=400&auto=format&fit=crop&q=80",
+        sku: "NK-BLND-USB380",
+        unitPrice: 64,
+        quantity: 2,
+        total: 128
       },
       {
         id: "item-2",
-        productId: "prod-diptyque-baies-candle",
-        productName: "Diptyque Paris Baies Luxury Scented Candle",
-        productImage: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400&auto=format&fit=crop&q=80",
-        sku: "DIP-BAIES-190G",
-        unitPrice: 1190,
+        productId: "prod-bp-monitor",
+        productName: "Automatic Digital Upper Arm Blood Pressure Monitor",
+        productImage: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&auto=format&fit=crop&q=80",
+        sku: "MC-BPM-ARM99",
+        unitPrice: 98,
         quantity: 1,
-        total: 1190
+        total: 98
       }
     ],
-    subtotal: 7390,
-    discount: 50,
-    couponCode: "LUXURY50",
-    deliveryFee: 0,
-    deliveryMethod: "express",
-    tax: 256.90,
-    total: 7596.90,
-    paymentMethod: "paystack",
+    subtotal: 226,
+    discount: 10,
+    couponCode: "WELCOME10",
+    deliveryFee: 35,
+    deliveryMethod: "standard",
+    tax: 7.91,
+    total: 258.91,
+    paymentMethod: "mtn_momo",
     paymentStatus: "successful",
-    paymentReference: "PSTK-PERF-88492019",
+    paymentReference: "MOMO-NM-88492019",
     orderStatus: "Delivered",
     deliveryAddress: {
       name: "Abena Osei",
@@ -265,14 +263,14 @@ const DEFAULT_ORDERS: Order[] = [
       landmark: "Near American House Roundabout"
     },
     estimatedDeliveryDate: "2026-08-11",
-    trackingNumber: "TRK-NV-94821-GH",
+    trackingNumber: "TRK-NM-94821-GH",
     timeline: [
       { status: "Order Placed", time: "2026-08-09T09:30:00.000Z", note: "Customer submitted order online" },
-      { status: "Payment Confirmed", time: "2026-08-09T09:32:15.000Z", note: "Paystack Ghana payment verified" },
-      { status: "Processing", time: "2026-08-09T11:00:00.000Z", note: "Concierge allocated authenticated batch" },
-      { status: "Packed", time: "2026-08-09T15:45:00.000Z", note: "Luxury velvet ribbon & sealed box applied" },
-      { status: "Shipped", time: "2026-08-10T08:00:00.000Z", note: "Dispatched with Nova Courier rider" },
-      { status: "Out for Delivery", time: "2026-08-10T10:15:00.000Z", note: "Rider Samuel is en route" },
+      { status: "Payment Confirmed", time: "2026-08-09T09:32:15.000Z", note: "MTN Mobile Money payment verified" },
+      { status: "Processing", time: "2026-08-09T11:00:00.000Z", note: "Warehouse allocated inspected items" },
+      { status: "Packed", time: "2026-08-09T15:45:00.000Z", note: "Sealed in protective transit packaging" },
+      { status: "Shipped", time: "2026-08-10T08:00:00.000Z", note: "Dispatched with NovaMart courier" },
+      { status: "Out for Delivery", time: "2026-08-10T10:15:00.000Z", note: "Rider is en route to delivery address" },
       { status: "Delivered", time: "2026-08-10T13:40:00.000Z", note: "Delivered in person to customer" }
     ],
     createdAt: "2026-08-09T09:30:00.000Z",
@@ -284,14 +282,14 @@ const DEFAULT_PAYMENTS: PaymentTransaction[] = [
   {
     id: "pay-101",
     orderId: "ord-1001",
-    orderNumber: "NV-GH-94821",
-    transactionReference: "PSTK-PERF-88492019",
+    orderNumber: "NM-GH-94821",
+    transactionReference: "MOMO-NM-88492019",
     customerName: "Abena Osei",
     customerEmail: "maskarano111@gmail.com",
-    amount: 7596.90,
+    amount: 258.91,
     currency: "GHS",
-    paymentMethod: "paystack",
-    provider: "Paystack (Visa/Mastercard)",
+    paymentMethod: "mtn_momo",
+    provider: "MTN Mobile Money",
     status: "successful",
     createdAt: "2026-08-09T09:32:15.000Z"
   }
@@ -302,8 +300,8 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
     id: "notif-1",
     userId: "usr-cust-1",
     target: "customer",
-    title: "Fragrance Order Delivered! ✨",
-    message: "Your luxury fragrance order NV-GH-94821 was successfully delivered to East Legon.",
+    title: "Order Delivered! 📦",
+    message: "Your NovaMart order NM-GH-94821 was successfully delivered to East Legon, Accra.",
     type: "order",
     read: false,
     link: "/account/orders",
@@ -312,8 +310,8 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "notif-2",
     target: "admin",
-    title: "New High Value Order #NV-GH-94821",
-    message: "Abena Osei ordered MFK Baccarat Rouge 540 & Diptyque Candle (GH₵ 7,596.90).",
+    title: "New Superstore Order #NM-GH-94821",
+    message: "Abena Osei ordered Portable Blender & BP Monitor (GH₵ 258.91).",
     type: "order",
     read: true,
     link: "/admin/orders",
@@ -336,19 +334,15 @@ class Database {
       if (fs.existsSync(DATA_FILE)) {
         const raw = fs.readFileSync(DATA_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
-        // If loaded data has older tech categories, refresh with perfume catalog
-        if (parsed.categories && parsed.categories[0]?.id === 'cat-phones') {
-          console.log('🔄 Upgrading catalog to Luxury Perfumes & Lifestyle Boutique...');
-          parsed.categories = initialCategories;
-          parsed.products = initialProducts;
-          parsed.banners = initialBanners;
-          parsed.coupons = initialCoupons;
-          parsed.settings = DEFAULT_SETTINGS;
-          parsed.orders = DEFAULT_ORDERS;
-          parsed.reviews = DEFAULT_REVIEWS;
-          this.saveData(parsed);
-          return parsed;
-        }
+        // Force refresh categories, products, banners, and settings to general superstore
+        parsed.categories = initialCategories;
+        parsed.products = initialProducts;
+        parsed.banners = initialBanners;
+        parsed.coupons = initialCoupons;
+        parsed.settings = DEFAULT_SETTINGS;
+        if (!parsed.orders || parsed.orders.length === 0) parsed.orders = DEFAULT_ORDERS;
+        if (!parsed.reviews || parsed.reviews.length === 0) parsed.reviews = DEFAULT_REVIEWS;
+        this.saveData(parsed);
         return parsed;
       }
     } catch (e) {
