@@ -19,6 +19,8 @@ import { ProductCard } from '../components/common/ProductCard';
 import { useSettings } from '../context/SettingsContext';
 import { api } from '../services/api';
 
+import { initialCategories, initialProducts } from '../data/initialData';
+
 interface ShopViewProps {
   initialCategory?: string;
   initialSearch?: string;
@@ -46,9 +48,9 @@ export const ShopView: React.FC<ShopViewProps> = ({
 }) => {
   const { formatPrice } = useSettings();
 
-  const [categories, setCategories] = useState<Category[]>(propCategories || []);
-  const [products, setProducts] = useState<Product[]>(propProducts || []);
-  const [isLoading, setIsLoading] = useState(!propProducts || propProducts.length === 0);
+  const [categories, setCategories] = useState<Category[]>(propCategories || initialCategories);
+  const [products, setProducts] = useState<Product[]>(propProducts || initialProducts);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Sync props if provided
   useEffect(() => {

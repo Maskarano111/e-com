@@ -27,6 +27,8 @@ import { FlashSalesSection } from '../components/common/FlashSalesSection';
 import { useSettings } from '../context/SettingsContext';
 import { api } from '../services/api';
 
+import { initialCategories, initialProducts, initialBanners } from '../data/initialData';
+
 interface HomeViewProps {
   banners?: Banner[];
   categories?: Category[];
@@ -50,13 +52,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
 }) => {
   const { formatPrice } = useSettings();
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-  const [banners, setBanners] = useState<Banner[]>(propBanners || []);
-  const [categories, setCategories] = useState<Category[]>(propCategories || []);
-  const [products, setProducts] = useState<Product[]>(propProducts || []);
-  const [deals, setDeals] = useState<Product[]>(propDeals || []);
-  const [newArrivals, setNewArrivals] = useState<Product[]>(propNewArrivals || []);
-  const [bestSellers, setBestSellers] = useState<Product[]>(propBestSellers || []);
-  const [isLoading, setIsLoading] = useState(!propProducts || propProducts.length === 0);
+  const [banners, setBanners] = useState<Banner[]>(propBanners || initialBanners);
+  const [categories, setCategories] = useState<Category[]>(propCategories || initialCategories);
+  const [products, setProducts] = useState<Product[]>(propProducts || initialProducts);
+  const [deals, setDeals] = useState<Product[]>(propDeals || initialProducts.filter((p) => p.discountPrice && p.discountPrice < p.price));
+  const [newArrivals, setNewArrivals] = useState<Product[]>(propNewArrivals || initialProducts.filter((p) => p.isNewArrival));
+  const [bestSellers, setBestSellers] = useState<Product[]>(propBestSellers || initialProducts.filter((p) => p.isBestSeller));
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (propBanners) setBanners(propBanners);
