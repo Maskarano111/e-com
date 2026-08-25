@@ -147,9 +147,8 @@ const MainApp: React.FC = () => {
 
         {currentView === 'product-detail' && (
           <ProductDetailView
-            productId={viewParams.productId || 'prod-1'}
+            productId={viewParams.productId || 'prod-portable-blender'}
             onNavigate={handleNavigate}
-            onOpenReview={handleOpenReview}
             onOpenQuickView={handleOpenQuickView}
           />
         )}

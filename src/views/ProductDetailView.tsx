@@ -44,7 +44,7 @@ interface ProductDetailViewProps {
 
 export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   productId,
-  allProducts = [],
+  allProducts,
   onNavigate,
   onOpenQuickView
 }) => {
@@ -66,30 +66,37 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
-  // Load product data
+  // Load product data (stable, no infinite loop)
   useEffect(() => {
+    let isMounted = true;
+    const targetId = productId || 'prod-portable-blender';
+
     const loadProductData = async () => {
       setIsLoadingProduct(true);
       setSelectedImageIndex(0);
+
+      // Check if product is already present in allProducts array
       if (allProducts && allProducts.length > 0) {
-        const found = allProducts.find((p) => p.id === productId);
+        const found = allProducts.find((p) => p.id === targetId || p.slug === targetId);
         if (found) {
-          setProduct(found);
-          if (found.variations && found.variations.length > 0) {
-            setSelectedVariation(found.variations[0]);
-          } else {
-            setSelectedVariation(undefined);
+          if (isMounted) {
+            setProduct(found);
+            if (found.variations && found.variations.length > 0) {
+              setSelectedVariation(found.variations[0]);
+            } else {
+              setSelectedVariation(undefined);
+            }
+            setQuantity(1);
+            setIsLoadingProduct(false);
           }
-          setQuantity(1);
-          setIsLoadingProduct(false);
           return;
         }
       }
 
       // Fetch from API directly
       try {
-        const res = await api.getProduct(productId);
-        if (res && res.product) {
+        const res = await api.getProduct(targetId);
+        if (isMounted && res && res.product) {
           setProduct(res.product);
           if (res.product.variations && res.product.variations.length > 0) {
             setSelectedVariation(res.product.variations[0]);
@@ -101,32 +108,46 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
       } catch (err) {
         console.error('Failed to load product detail:', err);
       } finally {
-        setIsLoadingProduct(false);
+        if (isMounted) {
+          setIsLoadingProduct(false);
+        }
       }
     };
 
-    if (productId) {
-      loadProductData();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [productId, allProducts]);
+    loadProductData();
+    window.scrollTo(0, 0);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [productId]);
 
   // Load reviews
   useEffect(() => {
-    if (productId) {
-      const fetchReviews = async () => {
-        setIsLoadingReviews(true);
-        try {
-          const res = await api.getProductReviews(productId);
+    let isMounted = true;
+    const targetId = productId || 'prod-portable-blender';
+    
+    const fetchReviews = async () => {
+      setIsLoadingReviews(true);
+      try {
+        const res = await api.getProductReviews(targetId);
+        if (isMounted) {
           setReviewsList(res || []);
-        } catch (err) {
-          console.error('Failed to load reviews:', err);
-        } finally {
+        }
+      } catch (err) {
+        console.error('Failed to load reviews:', err);
+      } finally {
+        if (isMounted) {
           setIsLoadingReviews(false);
         }
-      };
-      fetchReviews();
-    }
+      }
+    };
+
+    fetchReviews();
+
+    return () => {
+      isMounted = false;
+    };
   }, [productId]);
 
   if (isLoadingProduct) {
@@ -145,7 +166,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         <p className="text-xs text-slate-500">The product you are looking for might have been retired or moved.</p>
         <button
           onClick={() => onNavigate('shop')}
-          className="px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
+          className="px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer"
         >
           Return to Superstore Catalog
         </button>
@@ -234,17 +255,17 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
       {/* 1. BREADCRUMB */}
       <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 flex-wrap">
-        <button onClick={() => onNavigate('home')} className="hover:text-emerald-600 transition-colors">
+        <button onClick={() => onNavigate('home')} className="hover:text-emerald-600 transition-colors cursor-pointer">
           Home
         </button>
         <ChevronRight className="w-3.5 h-3.5" />
-        <button onClick={() => onNavigate('shop')} className="hover:text-emerald-600 transition-colors">
+        <button onClick={() => onNavigate('shop')} className="hover:text-emerald-600 transition-colors cursor-pointer">
           Shop
         </button>
         <ChevronRight className="w-3.5 h-3.5" />
         <button
           onClick={() => onNavigate('shop', { category: product.categoryId })}
-          className="hover:text-emerald-600 transition-colors font-medium text-emerald-600 dark:text-emerald-400"
+          className="hover:text-emerald-600 transition-colors font-medium text-emerald-600 dark:text-emerald-400 cursor-pointer"
         >
           {product.categoryName}
         </button>
@@ -279,13 +300,13 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               <button
                 onClick={() => setIsLightboxOpen(true)}
                 title="Click to zoom in high resolution"
-                className="p-2.5 rounded-2xl bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 hover:text-emerald-600 backdrop-blur-md shadow-md transition-all hover:scale-105"
+                className="p-2.5 rounded-2xl bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 hover:text-emerald-600 backdrop-blur-md shadow-md transition-all hover:scale-105 cursor-pointer"
               >
                 <Maximize2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => toggleWishlist(product)}
-                className={`p-2.5 rounded-2xl backdrop-blur-md shadow-md transition-all hover:scale-105 ${
+                className={`p-2.5 rounded-2xl backdrop-blur-md shadow-md transition-all hover:scale-105 cursor-pointer ${
                   isLiked
                     ? 'bg-rose-500 text-white'
                     : 'bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 hover:text-rose-500'
@@ -295,34 +316,28 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               </button>
             </div>
 
-            {/* Main Image with Smooth Fade */}
-            <AnimatePresence mode="wait">
-              <motion.img
-                key={currentImage}
-                src={currentImage}
-                alt={`${product.name} - View ${selectedImageIndex + 1}`}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                onClick={() => setIsLightboxOpen(true)}
-                className="w-full h-full object-cover cursor-zoom-in"
-              />
-            </AnimatePresence>
+            {/* Main Image (Stable, smooth transition, no jitter) */}
+            <img
+              key={currentImage}
+              src={currentImage}
+              alt={`${product.name} - View ${selectedImageIndex + 1}`}
+              onClick={() => setIsLightboxOpen(true)}
+              className="w-full h-full object-cover cursor-zoom-in transition-opacity duration-300"
+            />
 
             {/* Previous / Next Arrows Overlay */}
             {imagesList.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-white shadow-lg hover:bg-emerald-600 hover:text-white transition-all backdrop-blur-sm opacity-90 hover:opacity-100 hover:scale-110 z-10"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-white shadow-lg hover:bg-emerald-600 hover:text-white transition-all backdrop-blur-sm opacity-90 hover:opacity-100 hover:scale-110 z-10 cursor-pointer"
                   aria-label="Previous image"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-white shadow-lg hover:bg-emerald-600 hover:text-white transition-all backdrop-blur-sm opacity-90 hover:opacity-100 hover:scale-110 z-10"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-white shadow-lg hover:bg-emerald-600 hover:text-white transition-all backdrop-blur-sm opacity-90 hover:opacity-100 hover:scale-110 z-10 cursor-pointer"
                   aria-label="Next image"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -849,7 +864,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             </div>
             <button
               onClick={() => onNavigate('shop', { category: product.categoryId })}
-              className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer"
             >
               <span>Explore Department</span>
               <ArrowRight className="w-3.5 h-3.5" />
