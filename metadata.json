@@ -1,0 +1,6 @@
+{
+  "name": "NovaMart E-Commerce & Admin",
+  "description": "Ghana's premier luxury perfume boutique & lifestyle store featuring authentic designer fragrances, Arabian oud, scented candles, cosmetics, and luxury accessories.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

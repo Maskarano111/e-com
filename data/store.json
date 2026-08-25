@@ -1,0 +1,1057 @@
+{
+  "users": [
+    {
+      "id": "usr-super-admin",
+      "firstName": "Kwame",
+      "lastName": "Mensah",
+      "email": "admin@novamart.com.gh",
+      "phone": "+233 24 555 0199",
+      "role": "super_admin",
+      "profileImage": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "passwordHash": "admin123",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "usr-admin-alias",
+      "firstName": "Kwame",
+      "lastName": "Mensah",
+      "email": "admin@novamart.com",
+      "phone": "+233 24 555 0199",
+      "role": "super_admin",
+      "profileImage": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "passwordHash": "admin123",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "usr-admin-gh-alias",
+      "firstName": "Kwame",
+      "lastName": "Mensah",
+      "email": "admin@novamart.gh",
+      "phone": "+233 24 555 0199",
+      "role": "super_admin",
+      "profileImage": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "passwordHash": "admin123",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "usr-store-manager",
+      "firstName": "Ama",
+      "lastName": "Boakye",
+      "email": "manager@novamart.com.gh",
+      "phone": "+233 20 444 0122",
+      "role": "store_manager",
+      "profileImage": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      "passwordHash": "manager123",
+      "createdAt": "2026-02-15T00:00:00.000Z",
+      "updatedAt": "2026-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "usr-cust-1",
+      "firstName": "Abena",
+      "lastName": "Osei",
+      "email": "maskarano111@gmail.com",
+      "phone": "+233 50 987 6543",
+      "role": "customer",
+      "profileImage": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+      "passwordHash": "customer123",
+      "createdAt": "2026-03-10T00:00:00.000Z",
+      "updatedAt": "2026-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "usr-cust-alias",
+      "firstName": "Abena",
+      "lastName": "Osei",
+      "email": "customer@novamart.com",
+      "phone": "+233 50 987 6543",
+      "role": "customer",
+      "profileImage": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+      "passwordHash": "customer123",
+      "createdAt": "2026-03-10T00:00:00.000Z",
+      "updatedAt": "2026-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "usr-cust-gh-alias",
+      "firstName": "Abena",
+      "lastName": "Osei",
+      "email": "customer@novamart.gh",
+      "phone": "+233 50 987 6543",
+      "role": "customer",
+      "profileImage": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+      "passwordHash": "customer123",
+      "createdAt": "2026-03-10T00:00:00.000Z",
+      "updatedAt": "2026-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "usr-cust-mt1nlvtr-51pm",
+      "firstName": "Kofi",
+      "lastName": "Asante",
+      "email": "kofi.asante@novamart.gh",
+      "phone": "+233 24 999 8877",
+      "role": "customer",
+      "profileImage": "https://api.dicebear.com/7.x/initials/svg?seed=Kofi%20Asante",
+      "passwordHash": "password123",
+      "createdAt": "2026-08-20T15:06:56.223Z",
+      "updatedAt": "2026-08-20T15:06:56.223Z"
+    },
+    {
+      "id": "usr-cust-mt1pahzu-n70e",
+      "firstName": "Kofi",
+      "lastName": "Asante",
+      "email": "kofi.asante.test@novamart.gh",
+      "phone": "+233245550199",
+      "role": "customer",
+      "profileImage": "https://api.dicebear.com/7.x/initials/svg?seed=Kofi%20Asante",
+      "passwordHash": "customer123",
+      "createdAt": "2026-08-20T15:54:04.315Z",
+      "updatedAt": "2026-08-20T15:54:04.316Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-baccarat-rouge-540",
+      "name": "Maison Francis Kurkdjian Baccarat Rouge 540 (Extrait de Parfum 70ml)",
+      "slug": "maison-francis-kurkdjian-baccarat-rouge-540-extrait-70ml",
+      "description": "An iconic, luminous and intense fragrance with amber, floral, and woody notes. Blending Grandiflorum jasmine from Egypt, saffron, bitter almond from Morocco, and cedarwood with a signature ambergris accord for unmatched longevity and sillage.",
+      "shortDescription": "Iconic luxury fragrance with Egyptian Jasmine, Ambergris, Saffron and Moroccan Bitter Almond.",
+      "categoryId": "cat-perfumes",
+      "categoryName": "Designer & Niche Perfumes",
+      "brand": "Maison Francis Kurkdjian",
+      "sku": "MFK-BR540-EXT70",
+      "price": 6850,
+      "discountPrice": 6200,
+      "stockQuantity": 9,
+      "status": "active",
+      "featured": true,
+      "rating": 5,
+      "reviewCount": 74,
+      "images": [
+        "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
+      "variations": [
+        {
+          "id": "var-br540-70ml",
+          "name": "70ml Extrait Bottle",
+          "sku": "MFK-BR540-70ML",
+          "price": 6200,
+          "stockQuantity": 6,
+          "attributes": {
+            "Size": "70ml",
+            "Concentration": "Extrait de Parfum"
+          }
+        },
+        {
+          "id": "var-br540-200ml",
+          "name": "200ml Grand Decant Bottle",
+          "sku": "MFK-BR540-200ML",
+          "price": 11500,
+          "stockQuantity": 3,
+          "attributes": {
+            "Size": "200ml",
+            "Concentration": "Extrait de Parfum"
+          }
+        }
+      ],
+      "specifications": [
+        {
+          "name": "Concentration",
+          "value": "Extrait de Parfum"
+        },
+        {
+          "name": "Scent Profile",
+          "value": "Amber Woody Floral"
+        },
+        {
+          "name": "Top Notes",
+          "value": "Bitter Almond, Saffron"
+        },
+        {
+          "name": "Heart Notes",
+          "value": "Egyptian Jasmine, Cedarwood"
+        },
+        {
+          "name": "Base Notes",
+          "value": "Ambergris, Woody Musks"
+        },
+        {
+          "name": "Longevity",
+          "value": "16+ Hours (Extreme Long Lasting)"
+        },
+        {
+          "name": "Origin",
+          "value": "Made in France (100% Authentic Guaranteed)"
+        }
+      ],
+      "tags": [
+        "luxury",
+        "niche",
+        "baccarat-rouge",
+        "bestseller",
+        "unisex"
+      ],
+      "isNewArrival": false,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.142Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-tom-ford-oud-wood",
+      "name": "Tom Ford Private Blend Oud Wood (Eau de Parfum 100ml)",
+      "slug": "tom-ford-private-blend-oud-wood-edp-100ml",
+      "description": "Rare, exotic, and distinctive. One of the most rare, precious, and expensive ingredients in a perfumer’s arsenal, oud wood is often burned in incense-filled temples of Bhutan. Exotic rosewood and cardamom give way to a smoky blend of rare oud wood, sandalwood, and vetiver.",
+      "shortDescription": "Exotic smoky blend of rare Oud wood, Rosewood, Cardamom, Sandalwood and Amber.",
+      "categoryId": "cat-perfumes",
+      "categoryName": "Designer & Niche Perfumes",
+      "brand": "Tom Ford",
+      "sku": "TF-OUD-WOOD-100",
+      "price": 4950,
+      "discountPrice": 4490,
+      "stockQuantity": 14,
+      "status": "active",
+      "featured": true,
+      "rating": 4.9,
+      "reviewCount": 56,
+      "images": [
+        "https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=800&auto=format&fit=crop&q=80",
+      "variations": [
+        {
+          "id": "var-tf-oud-50ml",
+          "name": "50ml Eau de Parfum",
+          "sku": "TF-OUD-WOOD-50",
+          "price": 3100,
+          "stockQuantity": 8,
+          "attributes": {
+            "Size": "50ml",
+            "Concentration": "Eau de Parfum"
+          }
+        },
+        {
+          "id": "var-tf-oud-100ml",
+          "name": "100ml Eau de Parfum",
+          "sku": "TF-OUD-WOOD-100",
+          "price": 4490,
+          "stockQuantity": 6,
+          "attributes": {
+            "Size": "100ml",
+            "Concentration": "Eau de Parfum"
+          }
+        }
+      ],
+      "specifications": [
+        {
+          "name": "Concentration",
+          "value": "Eau de Parfum"
+        },
+        {
+          "name": "Scent Family",
+          "value": "Warm & Spicy Woods"
+        },
+        {
+          "name": "Key Notes",
+          "value": "Rare Oud, Sandalwood, Cardamom, Tonka Bean"
+        },
+        {
+          "name": "Longevity",
+          "value": "12+ Hours on Skin & Clothes"
+        },
+        {
+          "name": "Origin",
+          "value": "Made in USA / Switzerland"
+        }
+      ],
+      "tags": [
+        "tom-ford",
+        "oud",
+        "woody",
+        "designer",
+        "gentleman"
+      ],
+      "isNewArrival": false,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-creed-aventus",
+      "name": "Creed Aventus Eau de Parfum (100ml Millésime)",
+      "slug": "creed-aventus-eau-de-parfum-100ml",
+      "description": "The exceptional Aventus was inspired by the dramatic life of a historic emperor, celebrating strength, power and success. Sensual, audacious, and contemporary, this rich fragrance combines fruity top notes of apple, blackcurrant, and pineapple with a smoky birch and oakmoss heart.",
+      "shortDescription": "Signature powerhouse fragrance featuring Bergamot, Pineapple, Birch, Oakmoss and Ambergris.",
+      "categoryId": "cat-perfumes",
+      "categoryName": "Designer & Niche Perfumes",
+      "brand": "House of Creed",
+      "sku": "CRD-AVNT-100ML",
+      "price": 5900,
+      "discountPrice": 5350,
+      "stockQuantity": 8,
+      "status": "active",
+      "featured": true,
+      "rating": 4.9,
+      "reviewCount": 92,
+      "images": [
+        "https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Concentration",
+          "value": "Eau de Parfum Millésime"
+        },
+        {
+          "name": "Top Notes",
+          "value": "Lemon, Pink Pepper, Apple, Bergamot, Blackcurrant"
+        },
+        {
+          "name": "Heart Notes",
+          "value": "Pineapple, Jasmine, Indonesian Patchouli"
+        },
+        {
+          "name": "Base Notes",
+          "value": "Birch, Ambergris, Cedarwood, Oakmoss, Musk"
+        },
+        {
+          "name": "Origin",
+          "value": "Made in France (Batch Inspected)"
+        }
+      ],
+      "tags": [
+        "creed",
+        "aventus",
+        "power-scent",
+        "signature"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-dior-sauvage-elixir",
+      "name": "Dior Sauvage Elixir (Concentrated Extrait 100ml)",
+      "slug": "dior-sauvage-elixir-100ml",
+      "description": "Sauvage Elixir is an extraordinarily concentrated fragrance steeped in the iconic Sauvage freshness with an intoxicating heart of spices, a \"tailor-made\" lavender essence, and a rich, ambery woods blend.",
+      "shortDescription": "Concentrated spicy woods, bespoke Lavender, Nutmeg, Cinnamon and Amber.",
+      "categoryId": "cat-perfumes",
+      "categoryName": "Designer & Niche Perfumes",
+      "brand": "Dior",
+      "sku": "DIR-SVG-ELX100",
+      "price": 3350,
+      "discountPrice": 2950,
+      "stockQuantity": 19,
+      "status": "active",
+      "featured": true,
+      "rating": 4.9,
+      "reviewCount": 110,
+      "images": [
+        "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Concentration",
+          "value": "Extrait de Parfum / Elixir"
+        },
+        {
+          "name": "Top Notes",
+          "value": "Cinnamon, Nutmeg, Cardamom, Grapefruit"
+        },
+        {
+          "name": "Heart Notes",
+          "value": "Nyons Lavender Essence"
+        },
+        {
+          "name": "Base Notes",
+          "value": "Licorice, Sandalwood, Amber, Patchouli, Haitian Vetiver"
+        },
+        {
+          "name": "Projection",
+          "value": "Immense Beast-Mode Sillage"
+        }
+      ],
+      "tags": [
+        "dior",
+        "sauvage",
+        "beastmode",
+        "men"
+      ],
+      "isNewArrival": false,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-lattafa-khamrah",
+      "name": "Lattafa Khamrah Eau de Parfum (100ml Unisex Gourmand Oud)",
+      "slug": "lattafa-khamrah-eau-de-parfum-100ml",
+      "description": "A luxurious Arabian oriental spicy gourmand perfume combining precious spices, the warmth of woody notes, and the softness of sweet vanilla and dates. Presented in a breathtaking heavy crystal bottle.",
+      "shortDescription": "Sweet Boozy Vanilla, Cinnamon, Dates, Praline, Amber and Smoky Oud.",
+      "categoryId": "cat-oud",
+      "categoryName": "Arabian Oud & Bakhoor",
+      "brand": "Lattafa Perfumes Dubai",
+      "sku": "LAT-KHMRH-100",
+      "price": 850,
+      "discountPrice": 690,
+      "stockQuantity": 28,
+      "status": "active",
+      "featured": true,
+      "rating": 4.8,
+      "reviewCount": 165,
+      "images": [
+        "https://images.unsplash.com/photo-1583445013765-46c20c4a6772?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1583445013765-46c20c4a6772?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Origin",
+          "value": "Dubai, United Arab Emirates"
+        },
+        {
+          "name": "Top Notes",
+          "value": "Cinnamon, Nutmeg, Bergamot"
+        },
+        {
+          "name": "Heart Notes",
+          "value": "Dates, Praline, Tuberose, Mahonial"
+        },
+        {
+          "name": "Base Notes",
+          "value": "Vanilla, Tonka Bean, Benzoin, Myrrh, Amberwood, Akigalawood"
+        }
+      ],
+      "tags": [
+        "arabian",
+        "dubai",
+        "gourmand",
+        "vanilla",
+        "khamrah"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-swiss-arabian-shaghaf-oud",
+      "name": "Swiss Arabian Shaghaf Oud Eau de Parfum (75ml Gold Edition)",
+      "slug": "swiss-arabian-shaghaf-oud-edp-75ml",
+      "description": "An opulent oriental oud fragrance that wraps your heart in the passionate beauty of golden oud. Saffron and rose melt into rich praline, vanilla, and pure agarwood.",
+      "shortDescription": "Opulent Golden Oud with Saffron, French Rose, Praline and Sweet Agarwood.",
+      "categoryId": "cat-oud",
+      "categoryName": "Arabian Oud & Bakhoor",
+      "brand": "Swiss Arabian",
+      "sku": "SWA-SHGF-75ML",
+      "price": 950,
+      "discountPrice": 780,
+      "stockQuantity": 22,
+      "status": "active",
+      "featured": true,
+      "rating": 4.9,
+      "reviewCount": 88,
+      "images": [
+        "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Fragrance Family",
+          "value": "Oriental Gourmand Oud"
+        },
+        {
+          "name": "Top Notes",
+          "value": "Saffron, Rose"
+        },
+        {
+          "name": "Heart Notes",
+          "value": "Rose, Praline, Oud"
+        },
+        {
+          "name": "Base Notes",
+          "value": "Oud, Vanilla"
+        }
+      ],
+      "tags": [
+        "swiss-arabian",
+        "oud",
+        "dubai",
+        "gold"
+      ],
+      "isNewArrival": false,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-diptyque-baies-candle",
+      "name": "Diptyque Paris Baies Luxury Scented Candle (190g Soy Wax)",
+      "slug": "diptyque-baies-luxury-scented-candle-190g",
+      "description": "Diptyque’s most celebrated candle. The irresistible freshness of a bouquet of roses sweetened with blackcurrant leaves. Handcrafted in Paris with high-grade paraffin and vegetable wax.",
+      "shortDescription": "Bouquet of fresh Bulgarian roses sweetened with wild blackcurrant berries.",
+      "categoryId": "cat-home-fragrance",
+      "categoryName": "Scented Candles & Diffusers",
+      "brand": "Diptyque Paris",
+      "sku": "DIP-BAIES-190G",
+      "price": 1350,
+      "discountPrice": 1190,
+      "stockQuantity": 15,
+      "status": "active",
+      "featured": true,
+      "rating": 5,
+      "reviewCount": 42,
+      "images": [
+        "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Burn Time",
+          "value": "60+ Hours clean burn"
+        },
+        {
+          "name": "Wax Type",
+          "value": "Natural Soy & Mineral wax blend"
+        },
+        {
+          "name": "Scent Notes",
+          "value": "Blackcurrant leaves, Blackcurrant buds, Bulgarian Roses, Ambergris"
+        },
+        {
+          "name": "Origin",
+          "value": "Handmade in France"
+        }
+      ],
+      "tags": [
+        "candle",
+        "diptyque",
+        "home-fragrance",
+        "luxury-living"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-sol-de-janeiro-68",
+      "name": "Sol de Janeiro Beija Flor Cheirosa 68 Perfume Mist (240ml)",
+      "slug": "sol-de-janeiro-cheirosa-68-perfume-mist-240ml",
+      "description": "Immerse yourself in vibrant notes of Brazilian Jasmine, pink dragonfruit, and sheer vanilla. Ocean air and sun-drenched floral garden vibes that linger beautifully on hair and body all day.",
+      "shortDescription": "Brazilian Jasmine, Pink Dragonfruit, Ocean Air, and Sheer Vanilla.",
+      "categoryId": "cat-mists",
+      "categoryName": "Body Mists & Sprays",
+      "brand": "Sol de Janeiro",
+      "sku": "SDJ-CHR-68-240",
+      "price": 620,
+      "discountPrice": 520,
+      "stockQuantity": 34,
+      "status": "active",
+      "featured": true,
+      "rating": 4.8,
+      "reviewCount": 95,
+      "images": [
+        "https://images.unsplash.com/photo-1615397349754-cfa2066a298e?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1615397349754-cfa2066a298e?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Application",
+          "value": "Hair, Body & Linen Mist"
+        },
+        {
+          "name": "Key Notes",
+          "value": "Pink Dragonfruit, Lychee, Brazilian Jasmine, Ocean Air, Vanilla"
+        },
+        {
+          "name": "Volume",
+          "value": "240ml Full Size Flacon"
+        }
+      ],
+      "tags": [
+        "body-mist",
+        "sol-de-janeiro",
+        "summer",
+        "floral"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-fenty-skin-body-oil",
+      "name": "Fenty Skin Butta Drop Whipped Oil Body Cream with Gold Shimmer (300ml)",
+      "slug": "fenty-skin-butta-drop-whipped-body-cream-gold-shimmer",
+      "description": "Decadent whipped oil body butter loaded with tropical oils, shea butter, and mango butter that deeply hydrates and leaves skin with a sensual golden glow and warm vanilla orchid scent.",
+      "shortDescription": "Ultra-hydrating 7-oil blend body butter with Kalahari Melon, Baobab and golden glow.",
+      "categoryId": "cat-beauty",
+      "categoryName": "Luxury Skincare & Cosmetics",
+      "brand": "Fenty Beauty by Rihanna",
+      "sku": "FNT-BTR-GLD300",
+      "price": 780,
+      "discountPrice": 650,
+      "stockQuantity": 20,
+      "status": "active",
+      "featured": true,
+      "rating": 4.9,
+      "reviewCount": 63,
+      "images": [
+        "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Key Ingredients",
+          "value": "Kalahari Melon, Baobab, Sunflower, Shea & Mango Butters, Hyaluronic Acid"
+        },
+        {
+          "name": "Benefits",
+          "value": "24-hour hydration, radiant skin finish, non-greasy glow"
+        },
+        {
+          "name": "Scent",
+          "value": "Warm Vanilla Orchid"
+        }
+      ],
+      "tags": [
+        "skincare",
+        "fenty",
+        "body-butter",
+        "glow"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": false,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-tissot-prx-gold",
+      "name": "Tissot PRX Powermatic 80 Gold-PVD Automatic Watch (40mm)",
+      "slug": "tissot-prx-powermatic-80-gold-automatic-watch",
+      "description": "Sleek, timeless, and retro 1970s luxury. Features a 316L stainless steel case with yellow gold PVD coating, waffle tapisserie dial, sapphire crystal with anti-reflective coating, and an 80-hour power reserve automatic movement.",
+      "shortDescription": "Swiss Automatic Watch with 80-hour power reserve, Gold PVD and Sapphire Crystal.",
+      "categoryId": "cat-lifestyle",
+      "categoryName": "Watches & Luxury Accessories",
+      "brand": "Tissot Swiss",
+      "sku": "TST-PRX-GLD80",
+      "price": 9800,
+      "discountPrice": 8950,
+      "stockQuantity": 5,
+      "status": "active",
+      "featured": true,
+      "rating": 5,
+      "reviewCount": 28,
+      "images": [
+        "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Movement",
+          "value": "Swiss Automatic Powermatic 80 (Nivachron Balance Spring)"
+        },
+        {
+          "name": "Case Material",
+          "value": "316L Stainless Steel with 1N14 Yellow Gold PVD"
+        },
+        {
+          "name": "Water Resistance",
+          "value": "100m / 10 Bar (Swim-proof)"
+        },
+        {
+          "name": "Warranty",
+          "value": "2-Year Official International Swiss Warranty"
+        }
+      ],
+      "tags": [
+        "watch",
+        "tissot",
+        "swiss-made",
+        "gold",
+        "accessories"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    },
+    {
+      "id": "prod-niche-discovery-set",
+      "name": "NovaMart Royal Fragrance Discovery Box (5 x 10ml Niche Extrait Decants)",
+      "slug": "novamart-royal-fragrance-discovery-box-5x10ml",
+      "description": "The ultimate luxury gift experience. Hand-selected atomizer discovery box containing 10ml deluxe glass sprays of Baccarat Rouge 540, Tom Ford Oud Wood, Creed Aventus, Dior Sauvage Elixir, and Lattafa Khamrah in a custom velvet keepsake box.",
+      "shortDescription": "5 Deluxe 10ml travel sprays of our highest rated luxury perfumes in a velvet gift box.",
+      "categoryId": "cat-gift-sets",
+      "categoryName": "Curated Gift Sets & Discovery Boxes",
+      "brand": "NovaMart Exclusive",
+      "sku": "NVM-ROYAL-BOX5",
+      "price": 1850,
+      "discountPrice": 1490,
+      "stockQuantity": 18,
+      "status": "active",
+      "featured": true,
+      "rating": 5,
+      "reviewCount": 51,
+      "images": [
+        "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Contents",
+          "value": "5 x 10ml refillable aluminum-encased glass atomizers"
+        },
+        {
+          "name": "Included Scents",
+          "value": "Baccarat Rouge 540, TF Oud Wood, Creed Aventus, Sauvage Elixir, Khamrah"
+        },
+        {
+          "name": "Packaging",
+          "value": "Magnetic velvet gift box with personalized greeting card"
+        }
+      ],
+      "tags": [
+        "gift-set",
+        "discovery-box",
+        "perfume-samples",
+        "luxury-gift"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": true,
+      "createdAt": "2026-08-19T16:53:29.166Z",
+      "updatedAt": "2026-08-19T16:53:29.166Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-perfumes",
+      "name": "Designer & Niche Perfumes",
+      "slug": "designer-niche-perfumes",
+      "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&auto=format&fit=crop&q=80",
+      "description": "100% Authentic Eau de Parfum, Extrait de Parfum from Paris, London & New York",
+      "productCount": 24,
+      "featured": true
+    },
+    {
+      "id": "cat-oud",
+      "name": "Arabian Oud & Bakhoor",
+      "slug": "arabian-oud-bakhoor",
+      "image": "https://images.unsplash.com/photo-1583445013765-46c20c4a6772?w=600&auto=format&fit=crop&q=80",
+      "description": "Pure Dehn El Oud oils, long-lasting Arabian musk, rich Amber and exotic Bakhoor incense",
+      "productCount": 16,
+      "featured": true
+    },
+    {
+      "id": "cat-mists",
+      "name": "Body Mists & Sprays",
+      "slug": "body-mists-sprays",
+      "image": "https://images.unsplash.com/photo-1615397349754-cfa2066a298e?w=600&auto=format&fit=crop&q=80",
+      "description": "Refreshing everyday body mists, perfumed deodorants, and pocket travel atomizers",
+      "productCount": 12,
+      "featured": true
+    },
+    {
+      "id": "cat-home-fragrance",
+      "name": "Scented Candles & Diffusers",
+      "slug": "scented-candles-diffusers",
+      "image": "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=600&auto=format&fit=crop&q=80",
+      "description": "Luxury soy-wax candles, aromatherapy reed diffusers, and room ambiance sprays",
+      "productCount": 9,
+      "featured": true
+    },
+    {
+      "id": "cat-beauty",
+      "name": "Luxury Skincare & Cosmetics",
+      "slug": "luxury-skincare-cosmetics",
+      "image": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&auto=format&fit=crop&q=80",
+      "description": "Nourishing shimmer body oils, whipped body butters, hydrating serums and lip oils",
+      "productCount": 15,
+      "featured": true
+    },
+    {
+      "id": "cat-lifestyle",
+      "name": "Watches & Luxury Accessories",
+      "slug": "watches-luxury-accessories",
+      "image": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600&auto=format&fit=crop&q=80",
+      "description": "Premium timepieces, 18k gold-plated jewelry, designer sunglasses and leather accessories",
+      "productCount": 11,
+      "featured": true
+    },
+    {
+      "id": "cat-gift-sets",
+      "name": "Curated Gift Sets & Discovery Boxes",
+      "slug": "curated-gift-sets",
+      "image": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&auto=format&fit=crop&q=80",
+      "description": "Elegantly packaged fragrance discovery sets, couple duos, and custom gift hampers",
+      "productCount": 8,
+      "featured": true
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord-1001",
+      "orderNumber": "NV-GH-94821",
+      "userId": "usr-cust-1",
+      "customerName": "Abena Osei",
+      "customerEmail": "maskarano111@gmail.com",
+      "customerPhone": "+233 50 987 6543",
+      "items": [
+        {
+          "id": "item-1",
+          "productId": "prod-baccarat-rouge-540",
+          "variationId": "var-br540-70ml",
+          "variationName": "70ml Extrait Bottle",
+          "productName": "Maison Francis Kurkdjian Baccarat Rouge 540",
+          "productImage": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400&auto=format&fit=crop&q=80",
+          "sku": "MFK-BR540-70ML",
+          "unitPrice": 6200,
+          "quantity": 1,
+          "total": 6200
+        },
+        {
+          "id": "item-2",
+          "productId": "prod-diptyque-baies-candle",
+          "productName": "Diptyque Paris Baies Luxury Scented Candle",
+          "productImage": "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400&auto=format&fit=crop&q=80",
+          "sku": "DIP-BAIES-190G",
+          "unitPrice": 1190,
+          "quantity": 1,
+          "total": 1190
+        }
+      ],
+      "subtotal": 7390,
+      "discount": 50,
+      "couponCode": "LUXURY50",
+      "deliveryFee": 0,
+      "deliveryMethod": "express",
+      "tax": 256.9,
+      "total": 7596.9,
+      "paymentMethod": "paystack",
+      "paymentStatus": "successful",
+      "paymentReference": "PSTK-PERF-88492019",
+      "orderStatus": "Delivered",
+      "deliveryAddress": {
+        "name": "Abena Osei",
+        "phone": "+233 50 987 6543",
+        "email": "maskarano111@gmail.com",
+        "country": "Ghana",
+        "region": "Greater Accra",
+        "city": "East Legon, Accra",
+        "address": "House 24, Lagos Avenue",
+        "landmark": "Near American House Roundabout"
+      },
+      "estimatedDeliveryDate": "2026-08-11",
+      "trackingNumber": "TRK-NV-94821-GH",
+      "timeline": [
+        {
+          "status": "Order Placed",
+          "time": "2026-08-09T09:30:00.000Z",
+          "note": "Customer submitted order online"
+        },
+        {
+          "status": "Payment Confirmed",
+          "time": "2026-08-09T09:32:15.000Z",
+          "note": "Paystack Ghana payment verified"
+        },
+        {
+          "status": "Processing",
+          "time": "2026-08-09T11:00:00.000Z",
+          "note": "Concierge allocated authenticated batch"
+        },
+        {
+          "status": "Packed",
+          "time": "2026-08-09T15:45:00.000Z",
+          "note": "Luxury velvet ribbon & sealed box applied"
+        },
+        {
+          "status": "Shipped",
+          "time": "2026-08-10T08:00:00.000Z",
+          "note": "Dispatched with Nova Courier rider"
+        },
+        {
+          "status": "Out for Delivery",
+          "time": "2026-08-10T10:15:00.000Z",
+          "note": "Rider Samuel is en route"
+        },
+        {
+          "status": "Delivered",
+          "time": "2026-08-10T13:40:00.000Z",
+          "note": "Delivered in person to customer"
+        }
+      ],
+      "createdAt": "2026-08-09T09:30:00.000Z",
+      "updatedAt": "2026-08-10T13:40:00.000Z"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay-101",
+      "orderId": "ord-1001",
+      "orderNumber": "NV-GH-94821",
+      "transactionReference": "PSTK-PERF-88492019",
+      "customerName": "Abena Osei",
+      "customerEmail": "maskarano111@gmail.com",
+      "amount": 7596.9,
+      "currency": "GHS",
+      "paymentMethod": "paystack",
+      "provider": "Paystack (Visa/Mastercard)",
+      "status": "successful",
+      "createdAt": "2026-08-09T09:32:15.000Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "rev-1",
+      "productId": "prod-baccarat-rouge-540",
+      "productName": "Maison Francis Kurkdjian Baccarat Rouge 540 Extrait",
+      "userId": "usr-cust-1",
+      "userName": "Abena Osei",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
+      "rating": 5,
+      "title": "100% Genuine French Masterpiece & Phenomenal Sillage!",
+      "comment": "I was skeptical about ordering niche perfumes online in Ghana, but Nova Perfumes is the real deal! The ambergris and saffron notes last 24+ hours on my linen blazer. Arrived in Accra next morning with luxury gift wrapping!",
+      "status": "approved",
+      "verifiedPurchase": true,
+      "createdAt": "2026-08-10T14:20:00.000Z"
+    },
+    {
+      "id": "rev-2",
+      "productId": "prod-lattafa-khamrah",
+      "productName": "Lattafa Khamrah Eau de Parfum (100ml)",
+      "userId": "usr-cust-2",
+      "userName": "Kofi Appiah",
+      "userAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      "rating": 5,
+      "title": "Best Boozy Vanilla Oud in Ghana!",
+      "comment": "Rich cinnamon, sweet dates, and smooth praline oud. Everyone in the office asks what I am wearing. Exceptional value for money!",
+      "status": "approved",
+      "verifiedPurchase": true,
+      "createdAt": "2026-08-05T09:15:00.000Z"
+    },
+    {
+      "id": "rev-3",
+      "productId": "prod-diptyque-baies-candle",
+      "productName": "Diptyque Paris Baies Luxury Scented Candle",
+      "userId": "usr-cust-1",
+      "userName": "Abena Osei",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
+      "rating": 5,
+      "title": "Transforms the entire living room atmosphere",
+      "comment": "The fresh blackcurrant leaves and Bulgarian rose aroma fills my home within 10 minutes of lighting. Truly unmatched French luxury.",
+      "status": "approved",
+      "verifiedPurchase": true,
+      "createdAt": "2026-07-29T18:40:00.000Z"
+    }
+  ],
+  "coupons": [
+    {
+      "id": "cp-welcome",
+      "code": "SCENT10",
+      "discountType": "percentage",
+      "value": 10,
+      "minimumPurchase": 300,
+      "usageLimit": 500,
+      "usageCount": 42,
+      "startDate": "2025-01-01",
+      "expiryDate": "2026-12-31",
+      "status": "active"
+    },
+    {
+      "id": "cp-lux50",
+      "code": "LUXURY50",
+      "discountType": "fixed",
+      "value": 50,
+      "minimumPurchase": 500,
+      "usageLimit": 200,
+      "usageCount": 18,
+      "startDate": "2025-01-01",
+      "expiryDate": "2026-12-31",
+      "status": "active"
+    }
+  ],
+  "banners": [
+    {
+      "id": "ban-1",
+      "title": "The Art of Signature Scents & Arabian Oud",
+      "subtitle": "100% Authentic Designer Perfumes, Niche Extraits, Scented Candles & Luxury Lifestyle Accents",
+      "highlight": "NEW LUXURY COLLECTION 2026",
+      "message": "Complimentary luxury gift wrapping & nationwide courier delivery across Ghana",
+      "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1600&auto=format&fit=crop&q=80",
+      "buttonText": "Explore Perfumes & Oud",
+      "destinationUrl": "shop",
+      "position": "hero",
+      "status": "active",
+      "order": 1
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-1",
+      "userId": "usr-cust-1",
+      "target": "customer",
+      "title": "Fragrance Order Delivered! ✨",
+      "message": "Your luxury fragrance order NV-GH-94821 was successfully delivered to East Legon.",
+      "type": "order",
+      "read": false,
+      "link": "/account/orders",
+      "createdAt": "2026-08-19T08:00:00.000Z"
+    },
+    {
+      "id": "notif-2",
+      "target": "admin",
+      "title": "New High Value Order #NV-GH-94821",
+      "message": "Abena Osei ordered MFK Baccarat Rouge 540 & Diptyque Candle (GH₵ 7,596.90).",
+      "type": "order",
+      "read": true,
+      "link": "/admin/orders",
+      "createdAt": "2026-08-18T14:10:00.000Z"
+    }
+  ],
+  "addresses": [
+    {
+      "id": "addr-1",
+      "userId": "usr-cust-1",
+      "name": "Abena Osei",
+      "phone": "+233 50 987 6543",
+      "email": "maskarano111@gmail.com",
+      "country": "Ghana",
+      "region": "Greater Accra",
+      "city": "East Legon, Accra",
+      "address": "House 24, Lagos Avenue",
+      "landmark": "Near American House Roundabout",
+      "isDefault": true
+    }
+  ],
+  "settings": {
+    "storeName": "Nova Perfumes & Luxury Lifestyle",
+    "tagline": "Ghana's Premier Boutique for 100% Authentic Luxury Fragrances, Arabian Oud & Lifestyle Accents",
+    "logo": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=150&auto=format&fit=crop&q=80",
+    "storeEmail": "concierge@novaperfumes.gh",
+    "storePhone": "+233 24 555 0199",
+    "businessAddress": "Suite 4B, The Galleria Mall, Airport Residential Area, Accra, Ghana",
+    "currency": "GHS",
+    "currencySymbol": "GH₵",
+    "exchangeRateToUSD": 0.065,
+    "standardDeliveryFee": 35,
+    "expressDeliveryFee": 65,
+    "freeDeliveryThreshold": 600,
+    "taxRate": 0.035,
+    "enableCOD": true,
+    "enableMoMo": true,
+    "enableCard": true,
+    "enablePaystack": true,
+    "socialLinks": {
+      "facebook": "https://facebook.com/novaperfumesgh",
+      "instagram": "https://instagram.com/novaperfumesgh",
+      "twitter": "https://twitter.com/novaperfumesgh",
+      "whatsapp": "+233245550199"
+    }
+  }
+}

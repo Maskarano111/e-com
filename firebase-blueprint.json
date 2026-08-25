@@ -1,0 +1,183 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "An e-commerce item available for purchase in NovaMart.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique product ID" },
+        "name": { "type": "string", "description": "Name of the product", "maxLength": 200 },
+        "slug": { "type": "string", "description": "URL slug of the product" },
+        "sku": { "type": "string", "description": "Stock Keeping Unit" },
+        "description": { "type": "string", "description": "Detailed markdown description" },
+        "shortDescription": { "type": "string", "description": "Short summary description" },
+        "price": { "type": "number", "description": "Base price in GHS" },
+        "discountPrice": { "type": "number", "description": "Optional discounted price in GHS" },
+        "stockQuantity": { "type": "integer", "description": "Remaining stock count" },
+        "lowStockThreshold": { "type": "integer", "description": "Warning stock threshold" },
+        "categoryId": { "type": "string", "description": "Category ID reference" },
+        "categoryName": { "type": "string", "description": "Category human name" },
+        "brand": { "type": "string", "description": "Brand manufacturer name" },
+        "featuredImage": { "type": "string", "description": "Main product image URL" },
+        "images": { "type": "array", "description": "Gallery images" },
+        "featured": { "type": "boolean", "description": "Is featured on homepage" },
+        "isFlashDeal": { "type": "boolean", "description": "Is in flash deals" },
+        "isNewArrival": { "type": "boolean", "description": "Is flagged as new arrival" },
+        "isBestSeller": { "type": "boolean", "description": "Is flagged as best seller" },
+        "rating": { "type": "number", "description": "Average review rating" },
+        "reviewCount": { "type": "integer", "description": "Total number of reviews" },
+        "tags": { "type": "array", "description": "Search and filter tags" },
+        "status": { "type": "string", "enum": ["active", "draft", "out_of_stock"], "description": "Catalog status" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "name", "price", "stockQuantity", "categoryId"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product department category.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique category ID" },
+        "name": { "type": "string", "description": "Category title" },
+        "slug": { "type": "string", "description": "URL slug" },
+        "description": { "type": "string", "description": "Category description" },
+        "image": { "type": "string", "description": "Category image URL" },
+        "icon": { "type": "string", "description": "Lucide icon name" },
+        "featured": { "type": "boolean", "description": "Show on homepage" },
+        "order": { "type": "integer", "description": "Sort order" }
+      },
+      "required": ["id", "name", "slug"]
+    },
+    "Banner": {
+      "title": "Banner",
+      "description": "Hero and promotional advertising banner.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Banner ID" },
+        "title": { "type": "string", "description": "Heading" },
+        "subtitle": { "type": "string", "description": "Subheading" },
+        "highlight": { "type": "string", "description": "Badge highlight" },
+        "message": { "type": "string", "description": "Body message" },
+        "image": { "type": "string", "description": "Banner background image URL" },
+        "buttonText": { "type": "string", "description": "CTA button label" },
+        "destinationUrl": { "type": "string", "description": "Destination link" },
+        "position": { "type": "string", "enum": ["hero", "middle_promo", "sidebar"], "description": "Display slot" },
+        "status": { "type": "string", "enum": ["active", "inactive"], "description": "Status" }
+      },
+      "required": ["id", "title", "position", "status"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase transaction and shipment details.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique order ID" },
+        "orderNumber": { "type": "string", "description": "Human-readable order tracking reference (e.g. NVM-1082)" },
+        "userId": { "type": "string", "description": "Customer user ID" },
+        "customerName": { "type": "string", "description": "Customer full name" },
+        "customerEmail": { "type": "string", "description": "Customer email" },
+        "customerPhone": { "type": "string", "description": "Customer phone (MoMo number)" },
+        "items": { "type": "array", "description": "Purchased items with quantity and price" },
+        "subtotal": { "type": "number", "description": "Cart items subtotal" },
+        "discount": { "type": "number", "description": "Applied discount" },
+        "deliveryFee": { "type": "number", "description": "Delivery charge" },
+        "tax": { "type": "number", "description": "GRA VAT/NHIL amount" },
+        "total": { "type": "number", "description": "Total amount charged in GHS" },
+        "paymentMethod": { "type": "string", "enum": ["momo_mtn", "momo_telecel", "momo_at", "card_paystack", "cod"], "description": "Selected payment method" },
+        "paymentStatus": { "type": "string", "enum": ["pending", "paid", "failed", "refunded"], "description": "Payment gateway status" },
+        "paymentReference": { "type": "string", "description": "Paystack / MoMo transaction reference" },
+        "deliveryAddress": { "type": "object", "description": "Delivery location and region in Ghana" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "processing", "dispatched", "delivered", "cancelled"], "description": "Order fulfillment status" },
+        "trackingNumber": { "type": "string", "description": "Courier waybill tracking number" },
+        "courierName": { "type": "string", "description": "Dispatch courier name" },
+        "courierPhone": { "type": "string", "description": "Dispatch courier phone" },
+        "timeline": { "type": "array", "description": "Historical status events" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "orderNumber", "customerName", "customerPhone", "items", "total", "status"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Promotional discount voucher.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Coupon ID" },
+        "code": { "type": "string", "description": "Voucher code (e.g. AKWAABA10)" },
+        "type": { "type": "string", "enum": ["percentage", "fixed"], "description": "Discount type" },
+        "value": { "type": "number", "description": "Percentage or GHS fixed amount" },
+        "minOrderAmount": { "type": "number", "description": "Minimum subtotal required" },
+        "maxDiscount": { "type": "number", "description": "Cap on discount amount" },
+        "usageLimit": { "type": "integer", "description": "Total available redemptions" },
+        "usedCount": { "type": "integer", "description": "Times redeemed" },
+        "status": { "type": "string", "enum": ["active", "expired", "disabled"], "description": "Coupon status" }
+      },
+      "required": ["id", "code", "type", "value", "status"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Customer product review and rating.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Review ID" },
+        "productId": { "type": "string", "description": "Product ID" },
+        "userId": { "type": "string", "description": "Author user ID" },
+        "userName": { "type": "string", "description": "Author display name" },
+        "rating": { "type": "integer", "description": "1 to 5 star rating" },
+        "title": { "type": "string", "description": "Review headline" },
+        "comment": { "type": "string", "description": "Review text content" },
+        "verifiedPurchase": { "type": "boolean", "description": "Did author buy product" },
+        "status": { "type": "string", "enum": ["approved", "pending", "rejected"], "description": "Moderation status" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "productId", "userName", "rating", "comment"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Administrative system action and security audit trail.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Log ID" },
+        "adminId": { "type": "string", "description": "Admin ID who performed action" },
+        "adminName": { "type": "string", "description": "Admin name" },
+        "action": { "type": "string", "description": "Action name (e.g. ORDER_STATUS_UPDATE, LOW_STOCK_RESTOCK)" },
+        "targetType": { "type": "string", "description": "Target entity type" },
+        "targetId": { "type": "string", "description": "Target entity ID" },
+        "details": { "type": "string", "description": "Action summary details" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "action", "details", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Public catalog products with pricing, variations and stock counts."
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Department categories catalog."
+    },
+    "/banners/{bannerId}": {
+      "schema": "Banner",
+      "description": "Homepage hero and promotional banners."
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer purchase orders and tracking milestones."
+    },
+    "/coupons/{couponId}": {
+      "schema": "Coupon",
+      "description": "Discount voucher codes."
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Product ratings and reviews."
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "System administrative audit logs."
+    }
+  }
+}

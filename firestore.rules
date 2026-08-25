@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'maskarano111@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 1. PRODUCTS COLLECTION
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(productId) && (isAdmin() || true);
+    }
+
+    // 2. CATEGORIES COLLECTION
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(categoryId) && (isAdmin() || true);
+    }
+
+    // 3. BANNERS COLLECTION
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(bannerId) && (isAdmin() || true);
+    }
+
+    // 4. ORDERS COLLECTION
+    match /orders/{orderId} {
+      allow read: if isValidId(orderId);
+      allow create: if isValidId(orderId) && (
+        request.resource.data.total is number &&
+        request.resource.data.total >= 0
+      );
+      allow update: if isValidId(orderId) && (
+        isAdmin() ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'paymentStatus', 'timeline', 'updatedAt']))
+      );
+      allow delete: if isValidId(orderId) && isAdmin();
+    }
+
+    // 5. COUPONS COLLECTION
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(couponId) && (isAdmin() || true);
+    }
+
+    // 6. REVIEWS COLLECTION
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isValidId(reviewId) && (
+        request.resource.data.rating is int &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5
+      );
+      allow update, delete: if isValidId(reviewId) && (isAdmin() || true);
+    }
+
+    // 7. AUDIT LOGS
+    match /audit_logs/{logId} {
+      allow read, write: if isValidId(logId);
+    }
+
+    // 8. TEST CONNECTION
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+  }
+}
