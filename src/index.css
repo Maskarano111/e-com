@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* ── Dark Mode: class-based strategy (Tailwind v4) ── */
+/* The ThemeContext adds/removes `.dark` on <html>.    */
+/* This tells Tailwind v4 to use the .dark class       */
+/* instead of the OS prefers-color-scheme media query. */
+@variant dark (&:where(.dark, .dark *));
+
 /* ═══════════════════════════════════════════════
    NOVAMART LUXURY DESIGN SYSTEM
    Premium Perfumes & Fragrances Boutique — Ghana
@@ -252,4 +258,44 @@
 ::selection {
   background: rgba(16, 185, 129, 0.25);
   color: inherit;
+}
+
+/* ── Mobile Touch & Accessibility Utilities ── */
+
+/* Smooth touch scrolling for carousels and overflow rows */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+}
+.touch-scroll > * {
+  scroll-snap-align: start;
+}
+
+/* Hide scrollbar visually but keep scroll functionality */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area insets for notched phones (iPhone X+, Android cutouts) */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Better tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Minimum touch target size for accessibility */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
 }

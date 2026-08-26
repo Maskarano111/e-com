@@ -243,21 +243,24 @@ const MainApp: React.FC = () => {
 };
 
 import { ThemeProvider } from './context/ThemeContext';
+import { FontSizeProvider } from './context/FontSizeContext';
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <SettingsProvider>
-          <AuthProvider>
-            <WishlistProvider>
-              <CartProvider>
-                <MainApp />
-              </CartProvider>
-            </WishlistProvider>
-          </AuthProvider>
-        </SettingsProvider>
-      </ToastProvider>
-    </ThemeProvider>
+    <FontSizeProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <SettingsProvider>
+            <AuthProvider>
+              <WishlistProvider>
+                <CartProvider>
+                  <MainApp />
+                </CartProvider>
+              </WishlistProvider>
+            </AuthProvider>
+          </SettingsProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </FontSizeProvider>
   );
 }

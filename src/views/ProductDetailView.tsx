@@ -504,13 +504,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
           {/* Quantity & CTA Buttons */}
           <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-3">
+            {/* Stepper + Add to Cart row — wraps to 2 lines on very small screens */}
+            <div className="flex flex-wrap items-center gap-3">
               {/* Stepper */}
               <div className="flex items-center rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1">
                 <button
                   id="btn-detail-qty-minus"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold cursor-pointer"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold cursor-pointer"
                 >
                   -
                 </button>
@@ -521,34 +522,34 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   id="btn-detail-qty-plus"
                   onClick={() => setQuantity((q) => Math.min(availableStock, q + 1))}
                   disabled={quantity >= availableStock}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold disabled:opacity-30 cursor-pointer"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold disabled:opacity-30 cursor-pointer"
                 >
                   +
                 </button>
               </div>
 
-              {/* Add to Cart */}
+              {/* Add to Cart — takes remaining width */}
               <button
                 id="btn-detail-add-to-cart"
                 onClick={handleAddToCart}
                 disabled={isOutOfStock}
-                className="flex-1 py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-slate-100 hover:bg-emerald-600 dark:hover:bg-emerald-500 text-white dark:text-slate-900 dark:hover:text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="flex-1 min-w-[140px] py-3.5 px-4 rounded-2xl bg-slate-900 dark:bg-slate-100 hover:bg-emerald-600 dark:hover:bg-emerald-500 text-white dark:text-slate-900 dark:hover:text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>Add to Shopping Bag</span>
               </button>
-
-              {/* Buy Now (Express) */}
-              <button
-                id="btn-detail-buy-now"
-                onClick={handleBuyNow}
-                disabled={isOutOfStock}
-                className="flex-1 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all disabled:opacity-40 cursor-pointer"
-              >
-                <Zap className="w-4 h-4" />
-                <span>Buy Now</span>
-              </button>
             </div>
+
+            {/* Buy Now — always full width below stepper row */}
+            <button
+              id="btn-detail-buy-now"
+              onClick={handleBuyNow}
+              disabled={isOutOfStock}
+              className="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all disabled:opacity-40 cursor-pointer"
+            >
+              <Zap className="w-4 h-4" />
+              <span>Buy Now — Express Checkout</span>
+            </button>
 
             {/* Quick Order via WhatsApp */}
             <a
@@ -587,13 +588,13 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
       {/* 3. EXTENDED DETAIL TABS: DESCRIPTION, SPECS, WHAT'S IN THE BOX, FAQS, SHIPPING, REVIEWS */}
       <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-px scrollbar-none">
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-none pb-px -mx-4 px-4 sm:mx-0 sm:px-0">
           {[
-            { id: 'description', label: 'Detailed Overview', icon: Info },
-            { id: 'specs', label: 'Technical Specifications', icon: Sparkles },
-            { id: 'box', label: "What's in the Box", icon: Package },
-            { id: 'faq', label: 'FAQs & Guide', icon: HelpCircle },
-            { id: 'shipping', label: 'Delivery & Returns', icon: Truck },
+            { id: 'description', label: 'Overview', icon: Info },
+            { id: 'specs', label: 'Specs', icon: Sparkles },
+            { id: 'box', label: "In The Box", icon: Package },
+            { id: 'faq', label: 'FAQs', icon: HelpCircle },
+            { id: 'shipping', label: 'Delivery', icon: Truck },
             { id: 'reviews', label: `Reviews (${reviewsList.length || product.reviewCount})`, icon: Star }
           ].map((tab) => {
             const Icon = tab.icon;

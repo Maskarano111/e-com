@@ -129,7 +129,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div className="absolute top-10 right-16 w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
           <div className="absolute bottom-10 right-32 w-48 h-48 rounded-full bg-rose-500/10 blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 max-w-2xl p-8 sm:p-12 lg:p-16 space-y-6">
+          <div className="relative z-10 max-w-2xl p-5 sm:p-12 lg:p-16 space-y-5 sm:space-y-6">
             {activeBanner.highlight && (
               <motion.span
                 initial={{ opacity: 0, y: -8 }}
@@ -217,7 +217,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* 2. TRUST BADGES BAR */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Scrollable on mobile, grid on md+ */}
+        <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
           {[
             { icon: Truck, color: 'emerald', label: 'Express Delivery', sub: 'Same-day in Accra & Tema' },
             { icon: ShieldCheck, color: 'indigo', label: '100% Genuine Goods', sub: 'Verified & Brand Warrantied' },
@@ -226,7 +227,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           ].map(({ icon: Icon, color, label, sub }) => (
             <div
               key={label}
-              className="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow"
+              className="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow shrink-0 min-w-[220px] md:min-w-0"
             >
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-${color}-50 dark:bg-${color}-950/40`}>
                 <Icon className={`w-5 h-5 text-${color}-600`} />
@@ -242,7 +243,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* 3. SHOP BY DEPARTMENT (8 CATEGORIES) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex flex-wrap items-end justify-between gap-3 mb-8">
           <div>
             <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1">
               Explore All Departments

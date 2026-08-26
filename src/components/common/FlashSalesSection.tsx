@@ -142,7 +142,7 @@ export const FlashSalesSection: React.FC<FlashSalesSectionProps> = ({
         {/* 2. HORIZONTAL SCROLLABLE DEALS CAROUSEL / ROW */}
         <div
           ref={scrollContainerRef}
-          className="flex items-stretch gap-4 p-4 sm:p-6 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scroll-smooth snap-x"
+          className="flex items-stretch gap-4 p-4 sm:p-6 overflow-x-auto scrollbar-none scroll-smooth snap-x touch-scroll"
         >
           {deals.map((product) => {
             const isLiked = isInWishlist(product.id);

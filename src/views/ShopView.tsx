@@ -417,16 +417,16 @@ export const ShopView: React.FC<ShopViewProps> = ({
         </div>
 
         {/* Top Controls: Search, Sort, View layout */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Search input in shop */}
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+          {/* Search input in shop - full width on mobile */}
+          <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
             <input
               id="input-shop-search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search catalog..."
-              className="pl-9 pr-8 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 border border-transparent focus:border-emerald-500 outline-hidden w-44 sm:w-56"
+              className="pl-9 pr-8 py-2.5 sm:py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 border border-transparent focus:border-emerald-500 outline-hidden w-full"
             />
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             {searchQuery && (
@@ -439,32 +439,34 @@ export const ShopView: React.FC<ShopViewProps> = ({
             )}
           </div>
 
-          {/* Sort Dropdown */}
-          <div className="relative">
-            <select
-              id="select-shop-sort"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-hidden cursor-pointer"
-            >
-              <option value="popular">Most Popular</option>
-              <option value="newest">Newest Arrivals</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="rating">Highest Rated</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Sort Dropdown */}
+            <div className="relative flex-1 sm:flex-none">
+              <select
+                id="select-shop-sort"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="appearance-none pl-3 pr-8 py-2.5 sm:py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-hidden cursor-pointer w-full"
+              >
+                <option value="popular">Most Popular</option>
+                <option value="newest">Newest Arrivals</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rating">Highest Rated</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
 
-          {/* Mobile Filter Trigger Button */}
-          <button
-            id="btn-mobile-filter-open"
-            onClick={() => setIsMobileFilterOpen(true)}
-            className="lg:hidden flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-xs"
-          >
-            <Filter className="w-3.5 h-3.5" />
-            <span>Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}</span>
-          </button>
+            {/* Mobile Filter Trigger Button */}
+            <button
+              id="btn-mobile-filter-open"
+              onClick={() => setIsMobileFilterOpen(true)}
+              className="lg:hidden flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-xs shrink-0"
+            >
+              <Filter className="w-3.5 h-3.5" />
+              <span>Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}</span>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -167,17 +167,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             id={`btn-add-cart-${product.id}`}
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold shadow-xs transition-all ${
               isOutOfStock
                 ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
                 : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white'
             }`}
             title={product.variations?.length ? 'Choose options' : 'Add to cart'}
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">
-              {product.variations && product.variations.length > 0 ? 'Select' : 'Add'}
-            </span>
+            <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+            <span>{product.variations && product.variations.length > 0 ? 'Select' : 'Add'}</span>
           </button>
         </div>
       </div>

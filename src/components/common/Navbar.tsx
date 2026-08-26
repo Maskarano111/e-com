@@ -28,6 +28,7 @@ import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontSize } from '../../context/FontSizeContext';
 import { DemoSwitcher } from './DemoSwitcher';
 import { Product, Category } from '../../types/index';
 import { api } from '../../services/api';
@@ -45,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
   const { wishlistCount } = useWishlist();
   const { settings, currency, setCurrency, formatPrice } = useSettings();
   const { theme, resolvedTheme, toggleTheme } = useTheme();
+  const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
 
   const [categories, setCategories] = useState<Category[]>(propsCategories || []);
   const [searchQuery, setSearchQuery] = useState('');
@@ -284,6 +286,40 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
                 <span>Admin Panel</span>
               </button>
             )}
+
+            {/* Font Size Accessibility Controls */}
+            <div className="hidden sm:flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-xl px-1 py-1" title="Adjust text size for accessibility">
+              <button
+                id="btn-font-decrease"
+                onClick={decreaseFontSize}
+                disabled={fontSize === 'normal'}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold text-xs"
+                title="Decrease text size"
+                aria-label="Decrease font size"
+              >
+                <span style={{ fontSize: '11px', fontWeight: 800 }}>A</span>
+              </button>
+              <div className="flex gap-0.5 px-0.5">
+                {(['normal', 'large', 'xl'] as const).map(level => (
+                  <span
+                    key={level}
+                    className={`w-1 h-1 rounded-full transition-all ${
+                      fontSize === level ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                    }`}
+                  />
+                ))}
+              </div>
+              <button
+                id="btn-font-increase"
+                onClick={increaseFontSize}
+                disabled={fontSize === 'xl'}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                title="Increase text size"
+                aria-label="Increase font size"
+              >
+                <span style={{ fontSize: '15px', fontWeight: 800 }}>A</span>
+              </button>
+            </div>
 
             {/* Theme Toggle Button (Light/Dark Mode) */}
             <button
@@ -673,6 +709,30 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
                     </>
                   )}
                 </button>
+              </div>
+
+              {/* Mobile Font Size Control */}
+              <div className="flex items-center justify-between px-2 py-2 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Text Size</span>
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl px-2 py-1">
+                  <button
+                    onClick={decreaseFontSize}
+                    disabled={fontSize === 'normal'}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-black text-slate-700 dark:text-slate-200"
+                    aria-label="Smaller text"
+                  >
+                    <span style={{ fontSize: '11px', fontWeight: 800 }}>A−</span>
+                  </button>
+                  <span className="text-[10px] font-bold text-emerald-600 w-10 text-center capitalize">{fontSize}</span>
+                  <button
+                    onClick={increaseFontSize}
+                    disabled={fontSize === 'xl'}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-black text-slate-700 dark:text-slate-200"
+                    aria-label="Larger text"
+                  >
+                    <span style={{ fontSize: '15px', fontWeight: 800 }}>A+</span>
+                  </button>
+                </div>
               </div>
 
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
