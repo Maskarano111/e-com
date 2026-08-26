@@ -21,7 +21,8 @@ import {
   Gift,
   Sparkles,
   Sun,
-  Moon
+  Moon,
+  Store
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -41,7 +42,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categories: propsCategories, onOpenCart }) => {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isVendor, logout } = useAuth();
   const { itemCount, subtotal, setIsCartDrawerOpen } = useCart();
   const { wishlistCount } = useWishlist();
   const { settings, currency, setCurrency, formatPrice } = useSettings();
@@ -166,6 +167,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
             {/* Quick Demo Switcher */}
             <DemoSwitcher
               onNavigateToAdmin={() => onNavigate('admin')}
+              onNavigateToVendor={() => onNavigate('vendor')}
               onNavigateToCustomer={() => onNavigate('account')}
             />
           </div>
@@ -430,7 +432,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
                             className="w-full flex items-center gap-2.5 p-2 rounded-xl text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors font-semibold"
                           >
                             <ShieldCheck className="w-4 h-4" />
-                            <span>Admin Dashboard</span>
+                            <span>Admin HQ Dashboard</span>
+                          </button>
+                        )}
+
+                        {(isVendor || isAdmin) && (
+                          <button
+                            id="btn-user-vendor"
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              onNavigate('vendor');
+                            }}
+                            className="w-full flex items-center gap-2.5 p-2 rounded-xl text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors font-semibold"
+                          >
+                            <Store className="w-4 h-4" />
+                            <span>Seller / Vendor Hub</span>
                           </button>
                         )}
 

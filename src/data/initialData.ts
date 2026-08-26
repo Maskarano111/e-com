@@ -1,4 +1,4 @@
-import { Product, Category, Banner, Coupon } from '../types/index';
+import { Product, Category, Banner, Coupon, Vendor } from '../types/index';
 
 export const initialCategories: Category[] = [
   {
@@ -670,3 +670,69 @@ export const initialCoupons: Coupon[] = [
     status: 'active'
   }
 ];
+
+export const initialVendors: Vendor[] = [
+  {
+    id: 'vend-kofi',
+    userId: 'usr-kofi-seller',
+    storeName: 'Kofi Tech & Audio Hub',
+    slug: 'kofi-tech-audio',
+    ownerName: 'Kofi Boateng',
+    email: 'kofi.seller@novamart.com.gh',
+    phone: '+233 24 888 1234',
+    category: 'Electronics & Phones',
+    description: 'Premier distributor of certified audio gear, flagship smartphones, gaming accessories, and smart devices in Ghana.',
+    logo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
+    banner: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80',
+    address: 'Plot 14, Oxford Street, Osu',
+    city: 'Accra',
+    status: 'active',
+    commissionRate: 10,
+    payoutDetails: {
+      method: 'mtn_momo',
+      accountName: 'Kofi Boateng',
+      accountNumber: '0248881234'
+    },
+    rating: 4.8,
+    reviewCount: 64,
+    totalProducts: 12,
+    totalSales: 48,
+    totalRevenue: 18450.00,
+    balance: 3450.00,
+    pendingBalance: 1200.00,
+    createdAt: '2026-01-10T10:00:00Z',
+    updatedAt: '2026-02-15T14:30:00Z'
+  },
+  {
+    id: 'vend-akosua',
+    userId: 'usr-akosua-seller',
+    storeName: 'Akosua Luxury & Scents',
+    slug: 'akosua-luxury-scents',
+    ownerName: 'Akosua Mensah',
+    email: 'akosua.seller@novamart.com.gh',
+    phone: '+233 55 999 5678',
+    category: 'Beauty & Perfumes',
+    description: 'Curated collection of authentic designer fragrances, Arabian oud oils, luxury skincare, and bespoke fashion accessories.',
+    logo: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200&auto=format&fit=crop&q=80',
+    banner: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+    address: 'Shop 12, Accra Mall, Tetteh Quarshie',
+    city: 'Accra',
+    status: 'active',
+    commissionRate: 12,
+    payoutDetails: {
+      method: 'mtn_momo',
+      accountName: 'Akosua Mensah',
+      accountNumber: '0559995678'
+    },
+    rating: 4.9,
+    reviewCount: 82,
+    totalProducts: 9,
+    totalSales: 76,
+    totalRevenue: 24800.00,
+    balance: 5280.00,
+    pendingBalance: 850.00,
+    createdAt: '2026-01-12T11:00:00Z',
+    updatedAt: '2026-02-20T09:15:00Z'
+  }
+];
+

@@ -8,14 +8,16 @@ interface AuthContextType {
   token: string | null;
   isAdmin: boolean;
   isStoreManager: boolean;
+  isVendor: boolean;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<boolean>;
   adminLogin: (email: string, pass: string) => Promise<boolean>;
+  vendorLogin: (email: string, pass: string) => Promise<boolean>;
   register: (data: { firstName: string; lastName: string; email: string; phone?: string; password: string }) => Promise<boolean>;
   logout: () => void;
   updateProfile: (data: { firstName?: string; lastName?: string; phone?: string; profileImage?: string }) => Promise<boolean>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
-  switchDemoRole: (role: 'admin' | 'customer') => Promise<void>;
+  switchDemoRole: (role: 'admin' | 'vendor' | 'customer') => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,6 +80,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const vendorLogin = async (email: string, pass: string): Promise<boolean> => {
+    try {
+      const vendors = await api.getVendors();
+      const vendor = vendors.find(
+        (v) => v.email.toLowerCase() === email.toLowerCase() || v.ownerName.toLowerCase().includes(email.toLowerCase())
+      );
+
+      const vendorUser: User = {
+        id: vendor?.userId || 'usr-kofi-seller',
+        firstName: vendor ? vendor.ownerName.split(' ')[0] : 'Kofi',
+        lastName: vendor ? vendor.ownerName.split(' ')[1] || 'Seller' : 'Boateng',
+        email: email,
+        phone: vendor?.phone || '+233 24 888 1234',
+        role: 'vendor',
+        vendorId: vendor?.id || 'vend-kofi',
+        vendorStoreName: vendor?.storeName || 'Kofi Tech & Audio Hub',
+        profileImage: vendor?.logo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      setUser(vendorUser);
+      const token = `mock-vendor-token-${vendorUser.id}`;
+      setToken(token);
+      localStorage.setItem('novamart_auth_token', token);
+      showToast('success', 'Vendor Portal Access', `Welcome back, ${vendorUser.firstName} (${vendorUser.vendorStoreName})!`);
+      return true;
+    } catch (err: any) {
+      showToast('error', 'Vendor Login Failed', err.message || 'Access denied');
+      return false;
+    }
+  };
+
   const register = async (data: { firstName: string; lastName: string; email: string; phone?: string; password: string }): Promise<boolean> => {
     try {
       const res = await api.register(data);
@@ -125,9 +160,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Demo Switcher for fast live review
-  const switchDemoRole = async (role: 'admin' | 'customer') => {
+  const switchDemoRole = async (role: 'admin' | 'vendor' | 'customer') => {
     if (role === 'admin') {
       await adminLogin('admin@novamart.com.gh', 'admin123');
+    } else if (role === 'vendor') {
+      await vendorLogin('kofi.seller@novamart.com.gh', 'seller123');
     } else {
       await login('maskarano111@gmail.com', 'customer123');
     }
@@ -135,6 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
   const isStoreManager = isAdmin || user?.role === 'store_manager';
+  const isVendor = user?.role === 'vendor';
 
   return (
     <AuthContext.Provider
@@ -143,9 +181,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         isAdmin,
         isStoreManager,
+        isVendor,
         isLoading,
         login,
         adminLogin,
+        vendorLogin,
         register,
         logout,
         updateProfile,

@@ -117,10 +117,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Card Body */}
       <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3">
         <div>
-          {/* Category & Brand */}
+          {/* Category & Brand / Vendor */}
           <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
             <span className="truncate">{product.categoryName || 'General'}</span>
-            <span className="text-slate-600 dark:text-slate-400 font-bold">{product.brand}</span>
+            <span className="text-slate-600 dark:text-slate-400 font-bold truncate max-w-[130px]">
+              {product.vendorName ? `By ${product.vendorName}` : product.brand}
+            </span>
           </div>
 
           {/* Product Name */}

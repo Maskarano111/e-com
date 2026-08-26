@@ -149,6 +149,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
+                <button onClick={() => onNavigate('become-seller')} className="hover:text-emerald-400 font-bold text-amber-400 transition-colors">
+                  Sell on NovaMart (Open Store)
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('vendor')} className="hover:text-emerald-400 transition-colors">
+                  Seller Dashboard Hub
+                </button>
+              </li>
+              <li>
                 <button onClick={() => onNavigate('track-order')} className="hover:text-emerald-400 transition-colors">
                   Track Your Order
                 </button>

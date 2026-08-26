@@ -44,6 +44,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
   const NAV_ITEMS = [
     { id: 'overview', label: 'Dashboard & Analytics', icon: LayoutDashboard, badge: 'Live' },
+    { id: 'vendors', label: 'Vendors & Merchants', icon: Store, badge: 'New' },
     { id: 'products', label: 'Products & Inventory', icon: Package, badge: undefined },
     { id: 'orders', label: 'Orders & Dispatch', icon: ShoppingBag, badge: '3 New' },
     { id: 'categories', label: 'Departments & Tags', icon: Layers, badge: undefined },

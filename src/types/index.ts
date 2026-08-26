@@ -1,4 +1,4 @@
-export type UserRole = 'super_admin' | 'admin' | 'store_manager' | 'customer';
+export type UserRole = 'super_admin' | 'admin' | 'store_manager' | 'vendor' | 'customer';
 
 export interface User {
   id: string;
@@ -7,6 +7,8 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
+  vendorId?: string; // Links to Vendor profile if role is 'vendor'
+  vendorStoreName?: string;
   profileImage?: string;
   createdAt: string;
   updatedAt: string;
@@ -38,6 +40,8 @@ export interface Product {
   categoryName?: string;
   subCategory?: string;
   brand: string;
+  vendorId?: string;
+  vendorName?: string;
   sku: string;
   price: number;
   discountPrice?: number;
@@ -75,6 +79,8 @@ export interface Category {
 export interface CartItem {
   id: string; // unique item key e.g. `${productId}-${variationId || 'default'}`
   productId: string;
+  vendorId?: string;
+  vendorName?: string;
   variationId?: string;
   variationName?: string;
   name: string;
@@ -110,6 +116,8 @@ export type PaymentMethod =
 export interface OrderItem {
   id: string;
   productId: string;
+  vendorId?: string;
+  vendorName?: string;
   variationId?: string;
   variationName?: string;
   productName: string;
@@ -268,6 +276,7 @@ export interface ProductFilters {
   category?: string;
   subCategory?: string;
   brand?: string;
+  vendorId?: string;
   minPrice?: number;
   maxPrice?: number;
   rating?: number;
@@ -276,3 +285,53 @@ export interface ProductFilters {
   featured?: boolean;
   dealsOnly?: boolean;
 }
+
+export interface VendorPayoutDetails {
+  method: 'mtn_momo' | 'telecel_cash' | 'airteltigo' | 'bank_transfer';
+  accountName: string;
+  accountNumber: string;
+  bankName?: string;
+  branch?: string;
+}
+
+export interface Vendor {
+  id: string;
+  userId: string; // ID of the User associated with this vendor
+  storeName: string;
+  slug: string;
+  ownerName: string;
+  email: string;
+  phone: string;
+  category: string;
+  description: string;
+  logo: string;
+  banner?: string;
+  address: string;
+  city: string;
+  status: 'active' | 'pending' | 'suspended';
+  commissionRate: number; // e.g. 10 for 10%
+  payoutDetails: VendorPayoutDetails;
+  rating: number;
+  reviewCount: number;
+  totalProducts?: number;
+  totalSales?: number;
+  totalRevenue?: number;
+  balance?: number; // Available payout balance
+  pendingBalance?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VendorPayoutRequest {
+  id: string;
+  vendorId: string;
+  vendorName: string;
+  amount: number;
+  status: 'pending' | 'processing' | 'completed' | 'rejected';
+  payoutDetails: VendorPayoutDetails;
+  notes?: string;
+  transactionRef?: string;
+  createdAt: string;
+  processedAt?: string;
+}
+

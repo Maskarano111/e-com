@@ -26,13 +26,22 @@ import { StaticPages } from './views/StaticPages';
 // Admin Views
 import { AdminLayout } from './views/admin/AdminLayout';
 import { AdminOverviewView } from './views/admin/AdminOverviewView';
+import { AdminVendorsView } from './views/admin/AdminVendorsView';
 import { AdminProductsView } from './views/admin/AdminProductsView';
 import { AdminOrdersView } from './views/admin/AdminOrdersView';
 import { AdminCategoriesView } from './views/admin/AdminCategoriesView';
 import { AdminCouponsView } from './views/admin/AdminCouponsView';
 import { AdminCustomersView } from './views/admin/AdminCustomersView';
-import { AdminReviewsView } from './views/admin/AdminReviewsView';
-import { AdminSettingsView } from './views/admin/AdminSettingsView';
+// Vendor / Seller Views
+import { VendorLayout } from './views/vendor/VendorLayout';
+import { VendorOverviewView } from './views/vendor/VendorOverviewView';
+import { VendorProductsView } from './views/vendor/VendorProductsView';
+import { VendorOrdersView } from './views/vendor/VendorOrdersView';
+import { VendorPayoutsView } from './views/vendor/VendorPayoutsView';
+import { VendorProfileView } from './views/vendor/VendorProfileView';
+import { VendorReviewsView } from './views/vendor/VendorReviewsView';
+import { BecomeSellerView } from './views/BecomeSellerView';
+import { VendorStoreView } from './views/VendorStoreView';
 
 import { ScentQuizModal } from './components/common/ScentQuizModal';
 import { DiscoveryBoxView } from './views/DiscoveryBoxView';
@@ -50,6 +59,10 @@ const MainApp: React.FC = () => {
 
   // Admin Tab State
   const [adminTab, setAdminTab] = useState<string>('overview');
+
+  // Vendor Tab State
+  const [vendorTab, setVendorTab] = useState<string>('overview');
+  const [isVendorAddOpen, setIsVendorAddOpen] = useState(false);
 
   // Modals & Quizzes
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -104,6 +117,7 @@ const MainApp: React.FC = () => {
         onNavigateToStore={() => handleNavigate('home')}
       >
         {adminTab === 'overview' && <AdminOverviewView onNavigateTab={(tab) => setAdminTab(tab)} />}
+        {adminTab === 'vendors' && <AdminVendorsView />}
         {adminTab === 'products' && <AdminProductsView />}
         {adminTab === 'orders' && <AdminOrdersView />}
         {adminTab === 'categories' && <AdminCategoriesView />}
@@ -112,6 +126,41 @@ const MainApp: React.FC = () => {
         {adminTab === 'reviews' && <AdminReviewsView />}
         {adminTab === 'settings' && <AdminSettingsView />}
       </AdminLayout>
+    );
+  }
+
+  // Render Vendor / Seller Dashboard Portal
+  if (currentView === 'vendor') {
+    return (
+      <VendorLayout
+        currentTab={vendorTab}
+        onTabChange={(tab) => {
+          setVendorTab(tab);
+          setIsVendorAddOpen(false);
+        }}
+        onNavigateToStore={() => handleNavigate('home')}
+        onOpenAddProduct={() => {
+          setVendorTab('products');
+          setIsVendorAddOpen(true);
+        }}
+      >
+        {vendorTab === 'overview' && (
+          <VendorOverviewView
+            onNavigateTab={(tab) => setVendorTab(tab)}
+            onOpenAddProduct={() => {
+              setVendorTab('products');
+              setIsVendorAddOpen(true);
+            }}
+          />
+        )}
+        {vendorTab === 'products' && (
+          <VendorProductsView initialOpenAdd={isVendorAddOpen} />
+        )}
+        {vendorTab === 'orders' && <VendorOrdersView />}
+        {vendorTab === 'payouts' && <VendorPayoutsView />}
+        {vendorTab === 'profile' && <VendorProfileView />}
+        {vendorTab === 'reviews' && <VendorReviewsView />}
+      </VendorLayout>
     );
   }
 
@@ -192,6 +241,18 @@ const MainApp: React.FC = () => {
 
         {currentView === 'discovery-box' && (
           <DiscoveryBoxView onNavigate={handleNavigate} />
+        )}
+
+        {currentView === 'become-seller' && (
+          <BecomeSellerView onNavigate={handleNavigate} />
+        )}
+
+        {currentView === 'vendor-store' && (
+          <VendorStoreView
+            vendorId={viewParams.vendorId || 'vend-kofi'}
+            onNavigate={handleNavigate}
+            onOpenQuickView={handleOpenQuickView}
+          />
         )}
 
         {['about', 'contact', 'faq', 'terms', 'privacy', 'returns'].includes(currentView) && (

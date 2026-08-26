@@ -23,7 +23,8 @@ import {
   HelpCircle,
   ChevronDown,
   Info,
-  CheckCircle2
+  CheckCircle2,
+  Store
 } from 'lucide-react';
 import { Product, ProductVariation, Review } from '../types/index';
 import { useCart } from '../context/CartContext';
@@ -432,7 +433,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                Inclusive of VAT & Ghana customs duties. Free returns within 7 days.
+                Inclusive of VAT &amp; Ghana customs duties. Free returns within 7 days.
               </p>
             </div>
 
@@ -447,6 +448,34 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   Out of Stock
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* Verified Seller / Vendor Card */}
+          <div
+            onClick={() => {
+              if (product.vendorId) {
+                onNavigate('vendor-store', { vendorId: product.vendorId });
+              }
+            }}
+            className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex items-center justify-between gap-3 text-xs cursor-pointer hover:border-amber-400 transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs group-hover:scale-105 transition-transform">
+                <Store className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Sold &amp; Fulfilled By</p>
+                <p className="font-bold text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors">
+                  {product.vendorName || 'NovaMart Official Flagship'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[10px] font-black uppercase tracking-wider border border-amber-300 dark:border-amber-800">
+                Verified Merchant
+              </span>
+              <ChevronRight className="w-4 h-4 text-amber-600 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </div>
 
