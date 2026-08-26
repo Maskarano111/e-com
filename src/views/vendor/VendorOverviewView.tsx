@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Store
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
