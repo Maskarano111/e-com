@@ -402,7 +402,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   ))}
                 </div>
                 <span className="text-xs font-bold text-slate-900 dark:text-white">
-                  {product.rating.toFixed(1)}
+                  {(product.rating ?? 5).toFixed(1)}
                 </span>
                 <span className="text-xs text-slate-500">
                   ({reviewsList.length || product.reviewCount} verified buyer reviews)
@@ -808,7 +808,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 <div className="flex items-center gap-4">
                   <div className="text-center">
                     <span className="text-4xl font-black text-slate-900 dark:text-white">
-                      {product.rating.toFixed(1)}
+                      {(product.rating ?? 5).toFixed(1)}
                     </span>
                     <div className="flex items-center text-amber-400 justify-center mt-1">
                       {[...Array(5)].map((_, i) => (

@@ -203,9 +203,9 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
                     ))}
                   </div>
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    {product.rating.toFixed(1)}
+                    {(product.rating ?? 5).toFixed(1)}
                   </span>
-                  <span className="text-xs text-slate-500">({product.reviewCount} reviews)</span>
+                  <span className="text-xs text-slate-500">({product.reviewCount || 0} reviews)</span>
                 </div>
 
                 {/* Pricing */}

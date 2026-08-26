@@ -354,7 +354,7 @@ export const AdminVendorsView: React.FC<AdminVendorsViewProps> = () => {
                             <span>{vendor.storeName}</span>
                             <span className="flex items-center gap-0.5 text-amber-500 text-[11px]">
                               <Star className="w-3 h-3 fill-current" />
-                              {vendor.rating.toFixed(1)}
+                              {(vendor.rating ?? 5).toFixed(1)}
                             </span>
                           </p>
                           <p className="text-[11px] text-slate-500">Owner: {vendor.ownerName}</p>
