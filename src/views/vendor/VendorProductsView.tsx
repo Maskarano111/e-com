@@ -15,7 +15,8 @@ import {
   Layers,
   Upload,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  Star
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { Product, Category, Vendor } from '../../types/index';
