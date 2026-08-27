@@ -1640,20 +1640,25 @@ router.post('/ai/chat', async (req: Request, res: Response) => {
   if (apiKey && apiKey !== 'MY_GEMINI_API_KEY') {
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const catalogSummary = products.slice(0, 25).map(p => 
-        `[${p.id}] ${p.name} | Category: ${p.categoryName} | Price: GH₵ ${p.discountPrice || p.price} | Brand: ${p.brand}`
+      const catalogSummary = products.slice(0, 30).map(p => 
+        `[${p.id}] ${p.name} | Category: ${p.categoryName} | Price: GH₵ ${p.discountPrice || p.price} | Brand: ${p.brand} | Origin: ${p.originCity || 'Accra, Ghana'}`
       ).join('\n');
 
-      const systemPrompt = `You are NovaAI, the expert shopping assistant for NovaMart Ghana.
-Store catalog summary:
+      const systemPrompt = `You are NovaAI, the friendly and knowledgeable shopping assistant exclusively for NovaMart West Africa (Ghana 🇬🇭 and Nigeria 🇳🇬).
+
+Guidelines:
+1. GREETINGS: If the user says "hi", "hello", "hey", or greets you, greet them warmly: "Hello there! 👋 Welcome to NovaMart. How can I assist you with your shopping today? I can help you find products, check discounts, track an order, or answer questions about delivery and payment."
+2. SYSTEM BOUNDARY: Only answer questions related to NovaMart e-commerce, products, orders, delivery, and payment. If asked about unrelated topics, politely redirect back to shopping on NovaMart.
+3. STORE KNOWLEDGE:
+- Ghana Delivery: GH₵ 35 standard (24-48h), free over GH₵ 500. Payment via MTN MoMo, Telecel Cash, Cards.
+- Nigeria Delivery: ₦2,500 standard (1-2 days in Lagos/Abuja), free over ₦50,000. Payment via Bank Transfer, OPay, Cards.
+- 10% Welcome Coupon: WELCOME10
+- 7-day hassle-free returns on genuine items.
+
+Catalog snapshot:
 ${catalogSummary}
 
-Store Info:
-- Fast Delivery: GH₵ 35 (24-48h), GH₵ 70 express (same-day in Accra), Free over GH₵ 500.
-- Payment Methods: MTN Mobile Money, Telecel Cash, Visa/Mastercard (Paystack), Cash On Delivery (COD).
-- 7-day return guarantee. 100% authentic products.
-
-Recommend up to 3 relevant products. Be friendly, helpful, concise, and format answers in markdown.`;
+Format responses nicely in markdown with bullet points and emojis where appropriate.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -1681,6 +1686,16 @@ Recommend up to 3 relevant products. Be friendly, helpful, concise, and format a
 
   // Fallback to local semantic response
   const q = message.toLowerCase().trim();
+
+  // Greetings check
+  if (['hi', 'hello', 'hey', 'hey there', 'good morning', 'good afternoon', 'good evening', 'how are you', 'whats up'].includes(q)) {
+    return res.json({
+      success: true,
+      source: 'local-smart',
+      text: `Hello there! 👋 Welcome to **NovaMart**. How can I help you today?\n\nI can assist you with:\n• 🔍 Finding top-rated products & deals\n• 🛒 Adding items directly to your bag\n• 📦 Tracking your active orders in real-time\n• 🏷️ Providing active discount codes (like \`WELCOME10\`)\n• 🚚 Delivery & payment options across Ghana & Nigeria\n\nWhat would you like to explore?`
+    });
+  }
+
   const matched = products.filter(p => {
     const text = `${p.name} ${p.categoryName} ${p.brand} ${(p.tags || []).join(' ')}`.toLowerCase();
     return q.split(' ').some(w => w.length > 2 && text.includes(w));
@@ -1690,9 +1705,9 @@ Recommend up to 3 relevant products. Be friendly, helpful, concise, and format a
     success: true,
     source: 'local-smart',
     text: matched.length > 0
-      ? `Here are top product recommendations from our active catalog for you: 🌟`
-      : `I'm here to help you shop! You can ask for products, shipping options, MoMo payments, or gift recommendations.`,
-    products: matched.length > 0 ? matched : products.slice(0, 2)
+      ? `Here are top recommendations from our active store catalog for you: 🌟`
+      : `I am your **NovaMart Shopping Assistant** and can help with anything in our store! 🛍️\n\nYou can ask me to find products, add items to cart, track orders, or explain delivery & payment options. What are you looking for today?`,
+    products: matched.length > 0 ? matched : undefined
   });
 });
 

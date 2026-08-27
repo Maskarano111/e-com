@@ -224,14 +224,39 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
     let orderInfo: Order | undefined = undefined;
     let couponCode: string | undefined = undefined;
     let actionLinks: { label: string; view: string; params?: any }[] = [];
+    // ==========================================
+    // CONVERSATIONAL INTENTS (GREETINGS, THANKS, IDENTITY)
+    // ==========================================
+    const isGreeting = ['hi', 'hello', 'hey', 'hey there', 'good morning', 'good afternoon', 'good evening', 'how are you', 'whats up', 'yo', 'hello nova', 'hi nova'].includes(q);
+    const isThanks = ['thanks', 'thank you', 'thank you so much', 'great', 'awesome', 'cool', 'ok', 'okay', 'nice', 'perfect'].includes(q);
+    const isGoodbye = ['bye', 'goodbye', 'see you', 'have a good day', 'good night'].includes(q);
+    const isIdentity = q.includes('who are you') || q.includes('what can you do') || q.includes('what is your name') || q.includes('how do you work') || q.includes('help me');
 
+    if (isGreeting) {
+      replyText = `Hello there! 👋 Welcome to **NovaMart ${countryConfig.name}**.\n\nI'm your personal shopping assistant. How can I help you with our store today?\n\nI can:\n• 🔍 Find products & flash deals\n• 🛒 Add items directly to your shopping bag\n• 📦 Track your orders in real-time\n• 🏷️ Apply the **\`WELCOME10\`** discount coupon\n• 🚚 Answer questions about delivery & payment options\n\nWhat are you looking for today?`;
+      actionLinks = [
+        { label: '🔥 Today\'s Flash Deals', view: 'shop', params: { dealsOnly: true } },
+        { label: '🏷️ Get 10% Discount Code', view: 'shop' },
+        { label: '📦 Track My Order', view: 'track-order' }
+      ];
+    } else if (isThanks) {
+      replyText = `You're very welcome! 😊 It's my pleasure to assist you.\n\nIs there anything else you need from our store? I'm always here to help! 🌟`;
+      actionLinks = [
+        { label: '🛍️ Browse Catalog', view: 'shop' },
+        { label: '💳 View My Bag', view: 'cart' }
+      ];
+    } else if (isGoodbye) {
+      replyText = `Thank you for visiting **NovaMart**! Have a wonderful day, and happy shopping! ✨👋`;
+    } else if (isIdentity) {
+      replyText = `I'm **NovaAI**, your intelligent shopping companion built exclusively for NovaMart ${countryConfig.name}! 🤖🛍️\n\nI specialize in helping you with everything in our store:\n1. **Shopping & Recommendations**: Ask me for phones, blenders, health monitors, fashion, and perfumes.\n2. **Direct Actions**: Tell me *"Add the blender to my cart"* to add items in 1 second.\n3. **Order Status**: Ask *"Where is my order?"* to see live courier progress.\n4. **Discounts**: Ask for vouchers to get instant savings.\n\nHow can I assist you right now?`;
+      actionLinks = [
+        { label: 'Shop All Categories', view: 'shop' }
+      ];
+    }
     // ==========================================
     // ACTION 1: DIRECT ADD TO CART EXECUTION
     // ==========================================
-    const isAddIntent = (q.includes('add') || q.includes('buy') || q.includes('put in bag') || q.includes('purchase')) &&
-      !q.includes('how to add') && !q.includes('address');
-
-    if (isAddIntent) {
+    else if (q.includes('add') || q.includes('buy') || q.includes('put in bag') || q.includes('purchase')) {
       // Find the best matched product from catalog
       const keywords = q.replace(/(add|to|my|cart|bag|please|buy|the|order|purchase)/g, '').trim().split(' ').filter(w => w.length > 2);
       const matched = catalogProducts.find(p => {
