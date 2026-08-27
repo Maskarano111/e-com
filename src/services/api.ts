@@ -1708,6 +1708,24 @@ export const api = {
         ]);
       }
     );
+  },
+
+  async chatWithAI(message: string) {
+    return safeFetch<{ success: boolean; source: string; text: string; products?: Product[] }>(
+      `${API_BASE}/ai/chat`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      },
+      () => {
+        return {
+          success: true,
+          source: 'local-fallback',
+          text: `I'm here to help you shop! You can ask for products, shipping options, MoMo payments, or gift recommendations.`
+        };
+      }
+    );
   }
 };
 

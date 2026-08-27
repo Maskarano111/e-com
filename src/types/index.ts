@@ -109,6 +109,11 @@ export type PaymentMethod =
   | 'telecel_cash'
   | 'airteltigo'
   | 'card'
+  | 'verve_card'
+  | 'bank_transfer'
+  | 'opay'
+  | 'palmpay'
+  | 'ussd'
   | 'paystack'
   | 'flutterwave'
   | 'cash_on_delivery';

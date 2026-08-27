@@ -24,11 +24,14 @@ import {
   ChevronDown,
   Info,
   CheckCircle2,
-  Store
+  Store,
+  Scale
 } from 'lucide-react';
 import { Product, ProductVariation, Review } from '../types/index';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useCompare } from '../context/CompareContext';
+import { useRecentlyViewed } from '../context/RecentlyViewedContext';
 import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
 import { ReviewModal } from '../components/common/ReviewModal';
@@ -51,6 +54,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 }) => {
   const { addToCart, setIsCartDrawerOpen } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { isInCompare, addToCompare } = useCompare();
+  const { addRecentlyViewed } = useRecentlyViewed();
   const { formatPrice, settings } = useSettings();
   const { showToast } = useToast();
 
@@ -82,6 +87,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         if (found) {
           if (isMounted) {
             setProduct(found);
+            addRecentlyViewed(found);
             if (found.variations && found.variations.length > 0) {
               setSelectedVariation(found.variations[0]);
             } else {
@@ -99,6 +105,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         const res = await api.getProduct(targetId);
         if (isMounted && res && res.product) {
           setProduct(res.product);
+          addRecentlyViewed(res.product);
           if (res.product.variations && res.product.variations.length > 0) {
             setSelectedVariation(res.product.variations[0]);
           } else {
@@ -409,13 +416,41 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 </span>
               </div>
 
-              <button
-                onClick={handleShare}
-                className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-emerald-600 transition-colors cursor-pointer"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Share</span>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  id="btn-detail-compare"
+                  onClick={() => product && addToCompare(product)}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                    product && isInCompare(product.id)
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  <Scale className="w-4 h-4" />
+                  <span>{product && isInCompare(product.id) ? 'Comparing' : 'Compare'}</span>
+                </button>
+
+                <button
+                  id="btn-detail-wishlist"
+                  onClick={() => product && toggleWishlist(product)}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                    product && isInWishlist(product.id)
+                      ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 ${product && isInWishlist(product.id) ? 'fill-current' : ''}`} />
+                  <span>{product && isInWishlist(product.id) ? 'Saved' : 'Wishlist'}</span>
+                </button>
+
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-emerald-600 transition-colors cursor-pointer px-2 py-1"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Share</span>
+                </button>
+              </div>
             </div>
           </div>
 

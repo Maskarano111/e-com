@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { GoogleGenAI } from '@google/genai';
 import { db } from './db';
 import {
   Product,
@@ -1622,6 +1623,77 @@ router.post('/admin/products/bulk-import', (req: Request, res: Response) => {
 
   db.set('products', products);
   res.json({ success: true, importedCount });
+});
+
+// ----------------------------------------------------
+// 17. GEMINI AI SHOPPING ASSISTANT & STYLIST
+// ----------------------------------------------------
+router.post('/ai/chat', async (req: Request, res: Response) => {
+  const { message } = req.body;
+  if (!message || typeof message !== 'string') {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
+  const products = db.get('products').filter(p => p.status === 'active');
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+
+  if (apiKey && apiKey !== 'MY_GEMINI_API_KEY') {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const catalogSummary = products.slice(0, 25).map(p => 
+        `[${p.id}] ${p.name} | Category: ${p.categoryName} | Price: GH₵ ${p.discountPrice || p.price} | Brand: ${p.brand}`
+      ).join('\n');
+
+      const systemPrompt = `You are NovaAI, the expert shopping assistant for NovaMart Ghana.
+Store catalog summary:
+${catalogSummary}
+
+Store Info:
+- Fast Delivery: GH₵ 35 (24-48h), GH₵ 70 express (same-day in Accra), Free over GH₵ 500.
+- Payment Methods: MTN Mobile Money, Telecel Cash, Visa/Mastercard (Paystack), Cash On Delivery (COD).
+- 7-day return guarantee. 100% authentic products.
+
+Recommend up to 3 relevant products. Be friendly, helpful, concise, and format answers in markdown.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          { role: 'user', parts: [{ text: `${systemPrompt}\n\nUser Question: ${message}` }] }
+        ]
+      });
+
+      const replyText = response.text || '';
+      const matchedProducts = products.filter(p => 
+        replyText.toLowerCase().includes(p.name.toLowerCase().slice(0, 15)) ||
+        replyText.includes(p.id)
+      ).slice(0, 3);
+
+      return res.json({
+        success: true,
+        source: 'gemini',
+        text: replyText,
+        products: matchedProducts.length > 0 ? matchedProducts : undefined
+      });
+    } catch (err: any) {
+      console.warn('Gemini API call failed, falling back to local engine:', err?.message || err);
+    }
+  }
+
+  // Fallback to local semantic response
+  const q = message.toLowerCase().trim();
+  const matched = products.filter(p => {
+    const text = `${p.name} ${p.categoryName} ${p.brand} ${(p.tags || []).join(' ')}`.toLowerCase();
+    return q.split(' ').some(w => w.length > 2 && text.includes(w));
+  }).slice(0, 3);
+
+  return res.json({
+    success: true,
+    source: 'local-smart',
+    text: matched.length > 0
+      ? `Here are top product recommendations from our active catalog for you: 🌟`
+      : `I'm here to help you shop! You can ask for products, shipping options, MoMo payments, or gift recommendations.`,
+    products: matched.length > 0 ? matched : products.slice(0, 2)
+  });
 });
 
 export default router;

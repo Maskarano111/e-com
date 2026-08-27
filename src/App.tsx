@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { CompareProvider } from './context/CompareContext';
+import { RecentlyViewedProvider } from './context/RecentlyViewedContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { ToastProvider, useToast } from './context/ToastContext';
 
@@ -11,6 +13,9 @@ import { CartDrawer } from './components/common/CartDrawer';
 import { QuickViewModal } from './components/common/QuickViewModal';
 import { ReviewModal } from './components/common/ReviewModal';
 import { DemoSwitcher } from './components/common/DemoSwitcher';
+import { CommandPaletteModal } from './components/common/CommandPaletteModal';
+import { ProductCompareModal } from './components/common/ProductCompareModal';
+import { NovaAICopilot } from './components/common/NovaAICopilot';
 
 import { HomeView } from './views/HomeView';
 import { ShopView } from './views/ShopView';
@@ -32,6 +37,8 @@ import { AdminOrdersView } from './views/admin/AdminOrdersView';
 import { AdminCategoriesView } from './views/admin/AdminCategoriesView';
 import { AdminCouponsView } from './views/admin/AdminCouponsView';
 import { AdminCustomersView } from './views/admin/AdminCustomersView';
+import { AdminReviewsView } from './views/admin/AdminReviewsView';
+import { AdminSettingsView } from './views/admin/AdminSettingsView';
 // Vendor / Seller Views
 import { VendorLayout } from './views/vendor/VendorLayout';
 import { VendorOverviewView } from './views/vendor/VendorOverviewView';
@@ -67,9 +74,22 @@ const MainApp: React.FC = () => {
   // Modals & Quizzes
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isScentQuizOpen, setIsScentQuizOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+
+  // Global Ctrl+K / Cmd+K listener for Command Palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Load products for global scent quiz
   useEffect(() => {
@@ -172,6 +192,7 @@ const MainApp: React.FC = () => {
         currentView={currentView}
         onNavigate={handleNavigate}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
       />
 
       {/* Main Dynamic View */}
@@ -299,6 +320,25 @@ const MainApp: React.FC = () => {
           handleNavigate('discovery-box');
         }}
       />
+
+      {/* Global Command Palette (Ctrl+K & Voice Search) */}
+      <CommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={handleNavigate}
+        onOpenCart={() => setIsCartOpen(true)}
+      />
+
+      {/* Product Comparison Floating Dock & Matrix Modal */}
+      <ProductCompareModal
+        onNavigateToProduct={(productId) => handleNavigate('product-detail', { productId })}
+      />
+
+      {/* NovaAI Intelligent Shopping Copilot & Stylist */}
+      <NovaAICopilot
+        onNavigate={handleNavigate}
+        onOpenQuickView={handleOpenQuickView}
+      />
     </div>
   );
 };
@@ -313,11 +353,15 @@ export default function App() {
         <ToastProvider>
           <SettingsProvider>
             <AuthProvider>
-              <WishlistProvider>
-                <CartProvider>
-                  <MainApp />
-                </CartProvider>
-              </WishlistProvider>
+              <RecentlyViewedProvider>
+                <WishlistProvider>
+                  <CompareProvider>
+                    <CartProvider>
+                      <MainApp />
+                    </CartProvider>
+                  </CompareProvider>
+                </WishlistProvider>
+              </RecentlyViewedProvider>
             </AuthProvider>
           </SettingsProvider>
         </ToastProvider>

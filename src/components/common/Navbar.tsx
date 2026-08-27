@@ -22,12 +22,15 @@ import {
   Sparkles,
   Sun,
   Moon,
-  Store
+  Store,
+  Scale,
+  Command
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
-import { useSettings } from '../../context/SettingsContext';
+import { useCompare } from '../../context/CompareContext';
+import { useSettings, CURRENCY_MAP, COUNTRY_MAP, SupportedCurrency, SupportedCountry } from '../../context/SettingsContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useFontSize } from '../../context/FontSizeContext';
 import { DemoSwitcher } from './DemoSwitcher';
@@ -39,13 +42,21 @@ interface NavbarProps {
   onNavigate: (view: string, param?: any) => void;
   categories?: Category[];
   onOpenCart?: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categories: propsCategories, onOpenCart }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  currentView,
+  onNavigate,
+  categories: propsCategories,
+  onOpenCart,
+  onOpenCommandPalette
+}) => {
   const { user, isAdmin, isVendor, logout } = useAuth();
   const { itemCount, subtotal, setIsCartDrawerOpen } = useCart();
   const { wishlistCount } = useWishlist();
-  const { settings, currency, setCurrency, formatPrice } = useSettings();
+  const { compareCount, setIsCompareModalOpen } = useCompare();
+  const { settings, currency, setCurrency, country, setCountry, countryConfig, formatPrice } = useSettings();
   const { theme, resolvedTheme, toggleTheme } = useTheme();
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
 
@@ -122,38 +133,56 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
       <div className="bg-slate-950 text-slate-300 text-xs py-2 px-4 border-b border-slate-800">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-4 text-[11px] font-medium">
+            {/* Country Market Switcher */}
+            <div className="flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-700">
+              {(['GH', 'NG'] as const).map((cCode) => {
+                const c = COUNTRY_MAP[cCode];
+                return (
+                  <button
+                    key={cCode}
+                    id={`btn-market-${cCode.toLowerCase()}`}
+                    type="button"
+                    onClick={() => setCountry(cCode)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all flex items-center gap-1 ${
+                      country === cCode
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <span>{c.flag}</span>
+                    <span>{c.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <span className="flex items-center gap-1.5 text-emerald-400">
               <Truck className="w-3.5 h-3.5" />
-              <span>Free Delivery in Accra on orders over GH₵ 500</span>
+              <span>{countryConfig.deliveryPromo}</span>
             </span>
-            <span className="hidden md:inline-block text-slate-600">|</span>
-            <span className="hidden md:flex items-center gap-1">
+            <span className="hidden lg:inline-block text-slate-600">|</span>
+            <span className="hidden lg:flex items-center gap-1">
               <Phone className="w-3 h-3 text-slate-400" />
-              <span>Order Hotline: {settings.storePhone}</span>
+              <span>Hotline: {countryConfig.supportPhone}</span>
             </span>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Currency selector */}
-            <div className="flex items-center bg-slate-800/80 rounded-lg p-0.5 border border-slate-700">
-              <button
-                id="btn-currency-ghs"
-                onClick={() => setCurrency('GHS')}
-                className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
-                  currency === 'GHS' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-slate-200'
-                }`}
+            {/* Expanded Currency selector */}
+            <div className="relative flex items-center">
+              <select
+                id="select-currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as SupportedCurrency)}
+                className="bg-slate-800/90 text-slate-200 text-[11px] font-bold py-1 px-2.5 rounded-lg border border-slate-700 outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer appearance-none pr-6"
               >
-                GH₵ (GHS)
-              </button>
-              <button
-                id="btn-currency-usd"
-                onClick={() => setCurrency('USD')}
-                className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
-                  currency === 'USD' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                $ (USD)
-              </button>
+                {Object.values(CURRENCY_MAP).map((c) => (
+                  <option key={c.code} value={c.code} className="bg-slate-900 text-white">
+                    {c.flag} {c.code} ({c.symbol})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3 h-3 text-slate-400 absolute right-1.5 pointer-events-none" />
             </div>
 
             <button
@@ -207,6 +236,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
                 className="w-full pl-11 pr-24 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 text-sm border-2 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-all outline-hidden shadow-inner"
               />
               <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <div className="absolute right-20 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={onOpenCommandPalette}
+                  className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-mono hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center gap-0.5"
+                  title="Open Spotlight Command Palette (Ctrl+K)"
+                >
+                  <Command className="w-2.5 h-2.5" /> K
+                </button>
+              </div>
               <button
                 id="btn-submit-search"
                 type="submit"
@@ -337,6 +376,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
               )}
             </button>
 
+            {/* Compare Products Button */}
+            <button
+              id="btn-compare-nav"
+              onClick={() => setIsCompareModalOpen(true)}
+              className="relative p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Compare Products Matrix"
+            >
+              <Scale className="w-5 h-5" />
+              {compareCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
+                  {compareCount}
+                </span>
+              )}
+            </button>
+
             {/* Wishlist Icon */}
             <button
               id="btn-wishlist-nav"
@@ -356,10 +410,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
             <button
               id="btn-cart-nav"
               onClick={() => {
+                setIsCartDrawerOpen(true);
                 if (onOpenCart) onOpenCart();
-                else setIsCartDrawerOpen(true);
               }}
-              className="relative flex items-center gap-2 p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-white transition-all shadow-md group"
+              className="relative flex items-center gap-2 p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-white transition-all shadow-md group cursor-pointer"
             >
               <div className="relative">
                 <ShoppingBag className="w-5 h-5" />
@@ -704,6 +758,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, categor
                 className="w-full text-left p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Track Order
+              </button>
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsCartDrawerOpen(true);
+                  if (onOpenCart) onOpenCart();
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold"
+              >
+                <span className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>My Shopping Bag</span>
+                </span>
+                {itemCount > 0 && (
+                  <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    {itemCount} items
+                  </span>
+                )}
               </button>
 
               {/* Mobile Theme Switcher */}

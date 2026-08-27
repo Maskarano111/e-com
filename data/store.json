@@ -154,8 +154,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 88,
-      "createdAt": "2026-08-26T10:16:50.549Z",
-      "updatedAt": "2026-08-26T10:16:50.551Z"
+      "createdAt": "2026-08-27T12:55:53.185Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-bp-monitor",
@@ -220,8 +220,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 65,
-      "createdAt": "2026-08-26T10:16:50.551Z",
-      "updatedAt": "2026-08-26T10:16:50.551Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-pressure-washer",
@@ -283,8 +283,8 @@
       "isNewArrival": true,
       "isBestSeller": false,
       "salesCount": 32,
-      "createdAt": "2026-08-26T10:16:50.551Z",
-      "updatedAt": "2026-08-26T10:16:50.551Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-tummy-wrap",
@@ -341,8 +341,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 71,
-      "createdAt": "2026-08-26T10:16:50.551Z",
-      "updatedAt": "2026-08-26T10:16:50.551Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-leather-belts",
@@ -400,8 +400,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 49,
-      "createdAt": "2026-08-26T10:16:50.551Z",
-      "updatedAt": "2026-08-26T10:16:50.551Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-mini-atomizers",
@@ -455,8 +455,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 120,
-      "createdAt": "2026-08-26T10:16:50.551Z",
-      "updatedAt": "2026-08-26T10:16:50.551Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-iphone-15-pro",
@@ -542,8 +542,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 42,
-      "createdAt": "2026-08-26T10:16:50.552Z",
-      "updatedAt": "2026-08-26T10:16:50.552Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-samsung-s24-ultra",
@@ -605,8 +605,8 @@
       "isNewArrival": true,
       "isBestSeller": true,
       "salesCount": 38,
-      "createdAt": "2026-08-26T10:16:50.552Z",
-      "updatedAt": "2026-08-26T10:16:50.552Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-sony-wh1000xm5",
@@ -664,8 +664,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 45,
-      "createdAt": "2026-08-26T10:16:50.552Z",
-      "updatedAt": "2026-08-26T10:16:50.552Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-air-fryer-8l",
@@ -722,8 +722,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 58,
-      "createdAt": "2026-08-26T10:16:50.552Z",
-      "updatedAt": "2026-08-26T10:16:50.552Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-nike-air-force-1",
@@ -819,8 +819,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 94,
-      "createdAt": "2026-08-26T10:16:50.552Z",
-      "updatedAt": "2026-08-26T10:16:50.552Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     },
     {
       "id": "prod-baccarat-rouge-540",
@@ -881,8 +881,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 35,
-      "createdAt": "2026-08-26T10:16:50.552Z",
-      "updatedAt": "2026-08-26T10:16:50.552Z"
+      "createdAt": "2026-08-27T12:55:53.186Z",
+      "updatedAt": "2026-08-27T12:55:53.186Z"
     }
   ],
   "categories": [

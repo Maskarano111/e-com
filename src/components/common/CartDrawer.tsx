@@ -15,12 +15,18 @@ import { useCart } from '../../context/CartContext';
 import { useSettings } from '../../context/SettingsContext';
 
 interface CartDrawerProps {
-  onNavigateToCart: () => void;
-  onNavigateToCheckout: () => void;
-  onNavigateToShop: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onNavigate?: (view: string, param?: any) => void;
+  onNavigateToCart?: () => void;
+  onNavigateToCheckout?: () => void;
+  onNavigateToShop?: () => void;
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
+  isOpen,
+  onClose,
+  onNavigate,
   onNavigateToCart,
   onNavigateToCheckout,
   onNavigateToShop
@@ -45,6 +51,31 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [couponInput, setCouponInput] = useState('');
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
+  const isVisible = (isOpen !== undefined ? isOpen : false) || isCartDrawerOpen;
+
+  const handleClose = () => {
+    setIsCartDrawerOpen(false);
+    if (onClose) onClose();
+  };
+
+  const handleGoToShop = () => {
+    handleClose();
+    if (onNavigate) onNavigate('shop');
+    else if (onNavigateToShop) onNavigateToShop();
+  };
+
+  const handleGoToCheckout = () => {
+    handleClose();
+    if (onNavigate) onNavigate('checkout');
+    else if (onNavigateToCheckout) onNavigateToCheckout();
+  };
+
+  const handleGoToCart = () => {
+    handleClose();
+    if (onNavigate) onNavigate('cart');
+    else if (onNavigateToCart) onNavigateToCart();
+  };
+
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!couponInput.trim()) return;
@@ -54,7 +85,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     setCouponInput('');
   };
 
-  if (!isCartDrawerOpen) return null;
+  if (!isVisible) return null;
 
   return (
     <AnimatePresence>
@@ -65,7 +96,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
-          onClick={() => setIsCartDrawerOpen(false)}
+          onClick={handleClose}
         />
 
         <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
@@ -89,8 +120,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
               <button
                 id="btn-close-cart-drawer"
-                onClick={() => setIsCartDrawerOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
+                onClick={handleClose}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -118,15 +149,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white text-base">Your shopping bag is empty</h4>
                     <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
-                      Discover luxury designer perfumes, authentic Arabian oud, artisanal scented candles, and exclusive fragrance discovery sets.
+                      Discover electronics, fashion, beauty, perfumes, phones, home appliances, and groceries.
                     </p>
                   </div>
                   <button
-                    onClick={() => {
-                      setIsCartDrawerOpen(false);
-                      onNavigateToShop();
-                    }}
-                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm"
+                    onClick={handleGoToShop}
+                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
                   >
                     Start Shopping Now
                   </button>
@@ -145,41 +173,43 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{item.name}</h4>
                           <button
                             onClick={() => removeFromCart(item.id)}
-                            className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                            className="text-slate-400 hover:text-rose-500 transition-colors p-1 cursor-pointer"
                             title="Remove item"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        {item.variationName && (
-                          <p className="text-[11px] text-emerald-600 font-medium">{item.variationName}</p>
+                        {item.selectedVariation && (
+                          <span className="inline-block mt-0.5 text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                            {item.selectedVariation.name}
+                          </span>
                         )}
-                        <p className="text-xs font-black text-slate-900 dark:text-white mt-1">
+                        <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                           {formatPrice(item.price)}
-                        </p>
+                        </div>
                       </div>
 
                       {/* Stepper */}
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5">
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50 dark:border-slate-800">
+                        <div className="flex items-center gap-2 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 bg-slate-50 dark:bg-slate-800">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="w-6 h-6 rounded flex items-center justify-center text-slate-600 hover:bg-white dark:hover:bg-slate-700"
+                            className="w-6 h-6 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="w-8 text-center text-xs font-bold text-slate-900 dark:text-white">
+                          <span className="text-xs font-bold text-slate-900 dark:text-white px-1">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             disabled={item.quantity >= item.stockQuantity}
-                            className="w-6 h-6 rounded flex items-center justify-center text-slate-600 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30"
+                            className="w-6 h-6 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 cursor-pointer"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <span className="text-xs font-black text-slate-900 dark:text-white">
                           {formatPrice(item.price * item.quantity)}
                         </span>
                       </div>
@@ -189,19 +219,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               )}
             </div>
 
-            {/* Footer Summary & Checkout */}
+            {/* Footer Summary */}
             {cart.length > 0 && (
-              <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-4">
+              <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-4">
                 {/* Coupon input */}
                 {appliedCoupon ? (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
-                    <div className="flex items-center gap-2">
-                      <Tag className="w-4 h-4 text-emerald-600" />
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300">
+                    <div className="flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5" />
                       <span>Coupon <strong>{appliedCoupon.code}</strong> Applied</span>
                     </div>
                     <button
                       onClick={removeCoupon}
-                      className="text-xs font-bold text-rose-600 hover:underline"
+                      className="text-xs font-bold text-rose-600 hover:underline cursor-pointer"
                     >
                       Remove
                     </button>
@@ -219,7 +249,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <button
                       type="submit"
                       disabled={isApplyingCoupon || !couponInput.trim()}
-                      className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold hover:bg-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-white transition-all disabled:opacity-40"
+                      className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold hover:bg-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-white transition-all disabled:opacity-40 cursor-pointer"
                     >
                       Apply
                     </button>
@@ -252,11 +282,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div className="space-y-2">
                   <button
                     id="btn-drawer-checkout"
-                    onClick={() => {
-                      setIsCartDrawerOpen(false);
-                      onNavigateToCheckout();
-                    }}
-                    className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-98"
+                    onClick={handleGoToCheckout}
+                    className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-98 cursor-pointer"
                   >
                     <span>Proceed to Checkout</span>
                     <ArrowRight className="w-4 h-4" />
@@ -264,11 +291,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                   <button
                     id="btn-drawer-view-cart"
-                    onClick={() => {
-                      setIsCartDrawerOpen(false);
-                      onNavigateToCart();
-                    }}
-                    className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors"
+                    onClick={handleGoToCart}
+                    className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
                   >
                     View Shopping Cart Details
                   </button>

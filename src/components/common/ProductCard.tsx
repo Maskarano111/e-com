@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Star, Heart, Eye, ShoppingBag, Check, Zap } from 'lucide-react';
+import { Star, Heart, Eye, ShoppingBag, Check, Zap, Scale } from 'lucide-react';
 import { Product } from '../../types/index';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { useCompare } from '../../context/CompareContext';
 import { useSettings } from '../../context/SettingsContext';
 
 interface ProductCardProps {
@@ -19,9 +20,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { isInCompare, addToCompare } = useCompare();
   const { formatPrice } = useSettings();
 
   const isLiked = isInWishlist(product.id);
+  const isCompared = isInCompare(product.id);
   const isOutOfStock = product.stockQuantity <= 0;
   const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= 5;
 
@@ -63,22 +66,42 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
       </div>
 
-      {/* Wishlist Button */}
-      <button
-        id={`btn-wishlist-${product.id}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleWishlist(product);
-        }}
-        className={`absolute top-3 right-3 z-10 p-2 rounded-xl backdrop-blur-md transition-all shadow-sm ${
-          isLiked
-            ? 'bg-rose-500 text-white hover:bg-rose-600'
-            : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-rose-500'
-        }`}
-        title={isLiked ? 'Remove from wishlist' : 'Add to wishlist'}
-      >
-        <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-      </button>
+      {/* Top Right Actions (Wishlist & Compare) */}
+      <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
+        {/* Wishlist Button */}
+        <button
+          id={`btn-wishlist-${product.id}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleWishlist(product);
+          }}
+          className={`p-2 rounded-xl backdrop-blur-md transition-all shadow-sm ${
+            isLiked
+              ? 'bg-rose-500 text-white hover:bg-rose-600'
+              : 'bg-white/85 dark:bg-slate-800/85 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-rose-500'
+          }`}
+          title={isLiked ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+        </button>
+
+        {/* Compare Button */}
+        <button
+          id={`btn-compare-${product.id}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            addToCompare(product);
+          }}
+          className={`p-2 rounded-xl backdrop-blur-md transition-all shadow-sm ${
+            isCompared
+              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+              : 'bg-white/85 dark:bg-slate-800/85 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-emerald-600'
+          }`}
+          title={isCompared ? 'Remove from comparison' : 'Add to comparison'}
+        >
+          <Scale className="w-4 h-4" />
+        </button>
+      </div>
 
       {/* Product Image Stage */}
       <div className="relative aspect-square w-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">

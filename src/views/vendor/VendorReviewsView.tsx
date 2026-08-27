@@ -44,7 +44,7 @@ export const VendorReviewsView: React.FC = () => {
       try {
         const [prodsRes, reviewsRes] = await Promise.all([
           api.getVendorProducts(vendorId),
-          api.getReviews('prod-portable-blender')
+          api.getReviews({ productId: 'prod-portable-blender' })
         ]);
         setProducts(prodsRes.products || []);
         setReviews([
