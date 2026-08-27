@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowRight,
   Flame,
@@ -98,20 +98,53 @@ export const HomeView: React.FC<HomeViewProps> = ({
     }
   }, [propProducts]);
 
-  const safeBanners = Array.isArray(banners) ? banners : [];
+  const safeBanners = Array.isArray(banners) && banners.length > 0 ? banners : initialBanners;
   const heroBanners = safeBanners.filter((b) => b.position === 'hero' && b.status === 'active');
-  const nextBanner = () => setCurrentBannerIndex((prev) => (prev + 1) % (heroBanners.length || 1));
-  const prevBanner = () => setCurrentBannerIndex((prev) => (prev - 1 + heroBanners.length) % (heroBanners.length || 1));
+  const activeBannersList = heroBanners.length > 0 ? heroBanners : initialBanners;
 
-  const activeBanner = heroBanners[currentBannerIndex] || {
-    id: 'hero-default',
-    title: "Ghana's Premier Online Superstore",
-    subtitle: 'Electronics, Fashion, Home Appliances, Health & Groceries',
-    highlight: 'MEGA SALE 2026',
-    message: 'Explore over 10,000 genuine products delivered express to your doorstep across Accra & all 16 regions.',
-    image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1600&auto=format&fit=crop&q=80',
-    buttonText: 'Shop All Departments',
-    destinationUrl: '/shop'
+  const [isPaused, setIsPaused] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  const nextBanner = () => {
+    setCurrentBannerIndex((prev) => (prev + 1) % activeBannersList.length);
+  };
+
+  const prevBanner = () => {
+    setCurrentBannerIndex((prev) => (prev - 1 + activeBannersList.length) % activeBannersList.length);
+  };
+
+  // Auto-play timer (slides every 5.5 seconds unless hovered)
+  useEffect(() => {
+    if (activeBannersList.length <= 1 || isPaused) return;
+
+    const interval = setInterval(() => {
+      nextBanner();
+    }, 5500);
+
+    return () => clearInterval(interval);
+  }, [activeBannersList.length, isPaused, currentBannerIndex]);
+
+  const activeBanner = activeBannersList[currentBannerIndex] || activeBannersList[0];
+
+  // Touch swipe support for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsPaused(true);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+
+    // Minimum swipe distance threshold (50px)
+    if (diff > 50) {
+      nextBanner();
+    } else if (diff < -50) {
+      prevBanner();
+    }
+    setTouchStart(null);
+    setIsPaused(false);
   };
 
   return (
@@ -119,54 +152,89 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* 1. HERO CAROUSEL */}
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-        <div className="relative rounded-3xl overflow-hidden bg-slate-950 text-white min-h-[460px] md:min-h-[520px] flex items-center shadow-2xl">
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-all duration-1000 opacity-40"
-            style={{ backgroundImage: `url(${activeBanner.image})` }}
-          />
+        <div
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="relative rounded-3xl overflow-hidden bg-slate-950 text-white min-h-[460px] md:min-h-[520px] flex items-center shadow-2xl group select-none"
+        >
+          {/* Animated Background Images with smooth crossfade and slow Ken-Burns zoom */}
+          {activeBannersList.map((banner, index) => (
+            <div
+              key={banner.id || index}
+              className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out ${
+                index === currentBannerIndex
+                  ? 'opacity-40 scale-105 transition-transform duration-[7000ms]'
+                  : 'opacity-0 scale-100 pointer-events-none'
+              }`}
+              style={{ backgroundImage: `url(${banner.image})` }}
+            />
+          ))}
+
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-slate-900/30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
           <div className="absolute top-10 right-16 w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
           <div className="absolute bottom-10 right-32 w-48 h-48 rounded-full bg-rose-500/10 blur-2xl pointer-events-none" />
 
+          {/* Slide Text Content */}
           <div className="relative z-10 max-w-2xl p-5 sm:p-12 lg:p-16 space-y-5 sm:space-y-6">
-            {activeBanner.highlight && (
-              <motion.span
-                initial={{ opacity: 0, y: -8 }}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`badge-${currentBannerIndex}`}
+                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm"
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{activeBanner.highlight}</span>
-              </motion.span>
-            )}
-            <motion.h1
-              key={currentBannerIndex}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.12] tracking-tight text-white"
-            >
-              {activeBanner.title}
-            </motion.h1>
-            <motion.p
-              key={`sub-${currentBannerIndex}`}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-xs sm:text-sm md:text-base text-slate-300 leading-relaxed max-w-lg"
-            >
-              {activeBanner.message || activeBanner.subtitle}
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-wrap items-center gap-3 pt-2"
-            >
+                {activeBanner.highlight && (
+                  <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                    <span>{activeBanner.highlight}</span>
+                  </span>
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            <AnimatePresence mode="wait">
+              <motion.h1
+                key={`title-${currentBannerIndex}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.4 }}
+                className="text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.12] tracking-tight text-white drop-shadow-sm"
+              >
+                {activeBanner.title}
+              </motion.h1>
+            </AnimatePresence>
+
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={`sub-${currentBannerIndex}`}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="text-xs sm:text-sm md:text-base text-slate-300 leading-relaxed max-w-lg"
+              >
+                {activeBanner.message || activeBanner.subtitle}
+              </motion.p>
+            </AnimatePresence>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 id="btn-hero-shop"
-                onClick={() => onNavigate('shop')}
+                onClick={() => {
+                  if (activeBanner.destinationUrl) {
+                    const match = activeBanner.destinationUrl.match(/category=([^&]+)/);
+                    if (match) {
+                      onNavigate('shop', { category: match[1] });
+                      return;
+                    }
+                  }
+                  onNavigate('shop');
+                }}
                 className="px-7 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-xl shadow-emerald-600/35 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <span>{activeBanner.buttonText || 'Shop All Products'}</span>
@@ -175,37 +243,56 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <button
                 id="btn-hero-deals"
                 onClick={() => onNavigate('shop', { dealsOnly: true })}
-                className="px-6 py-3.5 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-sm backdrop-blur-md border border-rose-500/35 flex items-center gap-2 transition-all cursor-pointer"
+                className="px-6 py-3.5 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-sm backdrop-blur-md border border-rose-500/35 flex items-center gap-2 transition-all cursor-pointer hover:scale-105"
               >
                 <Flame className="w-4 h-4 text-rose-400" />
                 <span>Today's Flash Deals</span>
               </button>
-            </motion.div>
+            </div>
           </div>
 
-          {heroBanners.length > 1 && (
+          {/* Navigation Controls & Animated Progress Bar */}
+          {activeBannersList.length > 1 && (
             <>
-              <div className="absolute bottom-6 left-8 sm:left-16 flex items-center gap-2 z-20">
-                {heroBanners.map((_, i) => (
+              {/* Slide Progress Indicator Pills */}
+              <div className="absolute bottom-6 left-6 sm:left-14 flex items-center gap-2 z-20">
+                {activeBannersList.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentBannerIndex(i)}
-                    className={`transition-all rounded-full ${
-                      i === currentBannerIndex ? 'w-6 h-2 bg-emerald-500' : 'w-2 h-2 bg-white/30 hover:bg-white/60'
-                    }`}
-                  />
+                    className="relative cursor-pointer transition-all"
+                    title={`Slide ${i + 1}`}
+                  >
+                    {i === currentBannerIndex ? (
+                      <div className="w-10 sm:w-12 h-2.5 bg-slate-800/90 rounded-full overflow-hidden border border-emerald-500/40 p-0.5">
+                        <motion.div
+                          key={`progress-${currentBannerIndex}-${isPaused ? 'paused' : 'running'}`}
+                          initial={{ width: '0%' }}
+                          animate={{ width: isPaused ? '100%' : '100%' }}
+                          transition={{ duration: isPaused ? 0 : 5.5, ease: 'linear' }}
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-xs"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-2.5 h-2.5 rounded-full bg-white/30 hover:bg-white/70 transition-all hover:scale-125" />
+                    )}
+                  </button>
                 ))}
               </div>
-              <div className="absolute bottom-4 right-6 z-20 flex items-center gap-2">
+
+              {/* Prev / Next Chevrons */}
+              <div className="absolute bottom-5 right-5 sm:right-10 z-20 flex items-center gap-2">
                 <button
                   onClick={prevBanner}
-                  className="p-2.5 rounded-full bg-slate-900/80 hover:bg-emerald-600 text-white border border-slate-700/70 transition-all backdrop-blur-sm hover:scale-110"
+                  className="p-2.5 rounded-full bg-slate-900/80 hover:bg-emerald-600 text-white border border-slate-700/70 transition-all backdrop-blur-sm hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
+                  aria-label="Previous Slide"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   onClick={nextBanner}
-                  className="p-2.5 rounded-full bg-slate-900/80 hover:bg-emerald-600 text-white border border-slate-700/70 transition-all backdrop-blur-sm hover:scale-110"
+                  className="p-2.5 rounded-full bg-slate-900/80 hover:bg-emerald-600 text-white border border-slate-700/70 transition-all backdrop-blur-sm hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
+                  aria-label="Next Slide"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
