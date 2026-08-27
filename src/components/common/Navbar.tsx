@@ -362,11 +362,21 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
-            {/* Theme Toggle Button (Light/Dark Mode) */}
+            {/* Mobile Search Spotlight Button */}
+            <button
+              type="button"
+              onClick={onOpenCommandPalette}
+              className="md:hidden p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Search Catalog (Ctrl+K)"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
+            {/* Theme Toggle Button (Light/Dark Mode) - Desktop & Tablet */}
             <button
               id="btn-theme-toggle"
               onClick={toggleTheme}
-              className="p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+              className="hidden sm:flex p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
               title={resolvedTheme === 'dark' ? 'Switch to Light Mode (Clean White)' : 'Switch to Dark Mode (Midnight Emerald)'}
             >
               {resolvedTheme === 'dark' ? (
@@ -376,11 +386,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
 
-            {/* Compare Products Button */}
+            {/* Compare Products Button - Desktop */}
             <button
               id="btn-compare-nav"
               onClick={() => setIsCompareModalOpen(true)}
-              className="relative p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="hidden sm:flex relative p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Compare Products Matrix"
             >
               <Scale className="w-5 h-5" />
@@ -391,11 +401,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
 
-            {/* Wishlist Icon */}
+            {/* Wishlist Icon - Desktop */}
             <button
               id="btn-wishlist-nav"
               onClick={() => onNavigate('wishlist')}
-              className="relative p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="hidden sm:flex relative p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Saved Wishlist"
             >
               <Heart className="w-5 h-5" />
@@ -406,14 +416,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
 
-            {/* Shopping Cart Drawer Trigger */}
+            {/* Shopping Cart Drawer Trigger - Desktop */}
             <button
               id="btn-cart-nav"
               onClick={() => {
                 setIsCartDrawerOpen(true);
                 if (onOpenCart) onOpenCart();
               }}
-              className="relative flex items-center gap-2 p-2.5 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-white transition-all shadow-md group cursor-pointer"
+              className="hidden sm:flex relative items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-white transition-all shadow-md group cursor-pointer"
             >
               <div className="relative">
                 <ShoppingBag className="w-5 h-5" />
@@ -423,7 +433,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </span>
                 )}
               </div>
-              <div className="hidden sm:block text-left text-xs">
+              <div className="text-left text-xs">
                 <p className="text-[10px] opacity-75 leading-none">My Bag</p>
                 <p className="font-bold leading-tight mt-0.5">{formatPrice(subtotal)}</p>
               </div>
@@ -435,7 +445,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   id="btn-user-menu"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 p-1.5 sm:pr-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-2 p-1.5 sm:pr-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   <img
                     src={user.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${user.firstName}`}
@@ -452,10 +462,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   id="btn-login-nav"
                   onClick={() => onNavigate('login')}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-emerald-600 hover:text-emerald-600 text-xs font-bold transition-all"
+                  className="flex items-center gap-1.5 p-2 sm:px-3.5 sm:py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-emerald-600 hover:text-emerald-600 text-xs font-bold transition-all cursor-pointer"
+                  title="Sign In"
                 >
-                  <UserIcon className="w-4 h-4" />
-                  <span>Sign In</span>
+                  <UserIcon className="w-4 h-4 text-emerald-600" />
+                  <span className="hidden sm:inline">Sign In</span>
                 </button>
               )}
 
@@ -752,6 +763,62 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* User Account / Profile Mobile Card */}
+            {!user ? (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between shadow-md">
+                <div>
+                  <p className="font-bold text-xs">Welcome to NovaMart</p>
+                  <p className="text-[10px] text-emerald-100">Sign in to save items &amp; track orders</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onNavigate('login');
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-white text-emerald-700 font-black text-xs shadow-xs active:scale-95 cursor-pointer"
+                >
+                  Sign In
+                </button>
+              </div>
+            ) : (
+              <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src={user.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${user.firstName}`}
+                    alt={user.firstName}
+                    className="w-9 h-9 rounded-xl object-cover bg-emerald-100"
+                  />
+                  <div>
+                    <p className="font-bold text-xs text-slate-900 dark:text-white">{user.firstName} {user.lastName}</p>
+                    <p className="text-[10px] text-slate-500 capitalize">{(user.role || 'customer').replace('_', ' ')}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onNavigate('account');
+                    }}
+                    className="text-xs font-bold text-emerald-600 hover:underline cursor-pointer"
+                  >
+                    Account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="text-xs text-rose-500 hover:underline font-bold cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1 text-sm font-semibold text-slate-800 dark:text-slate-200">
               <button
