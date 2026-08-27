@@ -1059,6 +1059,54 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           }}
         />
       )}
+
+      {/* 6. STICKY MOBILE BOTTOM ACTION BAR */}
+      <div className="md:hidden fixed bottom-14 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-3 shadow-2xl flex items-center justify-between gap-3 safe-area-bottom">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] text-slate-400 truncate">{product.name}</p>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-base font-black text-slate-900 dark:text-white">
+              {formatPrice(product.discountPrice || product.price)}
+            </span>
+            {product.discountPrice && product.discountPrice < product.price && (
+              <span className="text-[10px] text-slate-400 line-through">
+                {formatPrice(product.price)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => toggleWishlist(product)}
+            className={`p-2.5 rounded-xl border transition-colors ${
+              isLiked
+                ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 text-rose-500'
+                : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+          </button>
+
+          <button
+            id="btn-mobile-sticky-add-cart"
+            onClick={() => {
+              if (product.variations && product.variations.length > 0 && !selectedVariation) {
+                showToast('info', 'Choose Option', 'Please select a model/size above.');
+                window.scrollTo({ top: 400, behavior: 'smooth' });
+              } else {
+                handleAddToCart();
+                setIsCartDrawerOpen(true);
+              }
+            }}
+            disabled={product.stockQuantity <= 0}
+            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all active:scale-95 disabled:opacity-40 cursor-pointer"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>{product.stockQuantity <= 0 ? 'Out of Stock' : 'Add to Bag'}</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

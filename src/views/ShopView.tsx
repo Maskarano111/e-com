@@ -490,7 +490,7 @@ export const ShopView: React.FC<ShopViewProps> = ({
       </div>
 
       {/* 2. HYBRID MARKETPLACE ORIGIN & WAREHOUSE FILTER BAR */}
-      <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+      <div className="flex items-center gap-2 pt-1 pb-1.5 overflow-x-auto no-scrollbar whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
         <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1">
           <span>📦</span>
           <span>Dispatch:</span>

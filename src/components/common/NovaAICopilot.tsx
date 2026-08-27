@@ -224,7 +224,7 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-          className="fixed bottom-6 right-6 z-40"
+          className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-40"
         >
           <div className="relative group">
             {/* Glowing ring animation */}
@@ -232,7 +232,7 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
 
             <button
               onClick={() => setIsOpen(true)}
-              className="relative flex items-center gap-2.5 px-4 py-3.5 bg-slate-900 dark:bg-slate-950 text-white rounded-full shadow-2xl border border-emerald-500/30 hover:border-emerald-400 transition-all group-hover:scale-105"
+              className="relative flex items-center gap-2.5 px-4 py-3.5 bg-slate-900 dark:bg-slate-950 text-white rounded-full shadow-2xl border border-emerald-500/30 hover:border-emerald-400 transition-all group-hover:scale-105 cursor-pointer"
             >
               <div className="p-1 rounded-full bg-emerald-500/20 text-emerald-400">
                 <Sparkles className="w-5 h-5 animate-spin" style={{ animationDuration: '8s' }} />
@@ -252,7 +252,7 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.94 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-4 sm:right-6 z-50 w-[94vw] sm:w-[400px] h-[580px] max-h-[85vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden"
+            className="fixed bottom-20 md:bottom-6 right-2 sm:right-6 z-50 w-[96vw] sm:w-[400px] h-[580px] max-h-[75vh] sm:max-h-[85vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-between border-b border-slate-800">

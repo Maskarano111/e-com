@@ -63,7 +63,7 @@ export const ProductCompareModal: React.FC<ProductCompareModalProps> = ({ onNavi
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 dark:bg-slate-950/95 text-white backdrop-blur-md px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-700/60 flex items-center gap-4 sm:gap-6 max-w-[92vw] sm:max-w-2xl"
+          className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 dark:bg-slate-950/95 text-white backdrop-blur-md px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-2xl shadow-2xl border border-slate-700/60 flex items-center gap-3 sm:gap-6 max-w-[94vw] sm:max-w-2xl"
         >
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">

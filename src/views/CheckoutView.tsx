@@ -114,6 +114,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
   });
   const [hasCopiedAccount, setHasCopiedAccount] = useState(false);
   const [transferTimer, setTransferTimer] = useState(1800); // 30 mins
+  const [showMobileSummary, setShowMobileSummary] = useState(false);
 
   // Modals & Processing States
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -320,6 +321,57 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
       </div>
 
       <form onSubmit={handleSubmitOrder}>
+        {/* Mobile-Only Collapsible Order Summary Bar */}
+        <div className="lg:hidden mb-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <button
+            type="button"
+            onClick={() => setShowMobileSummary(!showMobileSummary)}
+            className="w-full p-4 flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800/60 cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
+              <span>{showMobileSummary ? 'Hide Order Summary' : 'Show Order Summary'} ({cart.length} items)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-600 font-black">{formatPrice(total)}</span>
+              <span className="text-slate-400">{showMobileSummary ? '▲' : '▼'}</span>
+            </div>
+          </button>
+
+          {showMobileSummary && (
+            <div className="p-4 space-y-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+              <div className="max-h-48 overflow-y-auto space-y-2">
+                {cart.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-2">
+                    <span className="truncate flex-1 text-slate-700 dark:text-slate-300">
+                      {item.name} <strong className="text-slate-500 font-normal">x{item.quantity}</strong>
+                    </span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {formatPrice(item.price * item.quantity)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1 text-[11px] text-slate-500">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span className="font-bold">{formatPrice(subtotal)}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-bold">
+                    <span>Discount:</span>
+                    <span>-{formatPrice(discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Delivery ({countryConfig.name}):</span>
+                  <span className="font-bold">{deliveryFee === 0 ? 'FREE' : formatPrice(deliveryFee)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Form Sections (7 cols) */}
           <div className="lg:col-span-7 space-y-8">
