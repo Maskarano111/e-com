@@ -56,7 +56,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isInCompare, addToCompare } = useCompare();
   const { addRecentlyViewed } = useRecentlyViewed();
-  const { formatPrice, settings } = useSettings();
+  const { formatPrice, settings, country, countryConfig } = useSettings();
   const { showToast } = useToast();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -519,14 +519,40 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
               {product.shortDescription || product.description}
             </p>
-            <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+
+            {/* Hybrid Market Delivery & Origin Card */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {product.originCountry === country || (!product.originCountry && country === 'GH') ? (
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-500/20 flex items-center gap-1">
+                      <span>{country === 'NG' ? '🇳🇬' : '🇬🇭'}</span>
+                      <span>In-Stock Local Warehouse ({product.originCity || (country === 'NG' ? 'Lagos, Nigeria' : 'Accra, Ghana')})</span>
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-indigo-500/20 flex items-center gap-1">
+                      <span>✈️</span>
+                      <span>Cross-Border Dispatch ({product.originCountry === 'NG' ? 'Nigeria 🇳🇬' : 'Ghana 🇬🇭'})</span>
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] font-bold text-slate-500">
+                  {product.originCountry === country || (!product.originCountry && country === 'GH')
+                    ? '⚡ Express: 24–48 Hours'
+                    : '📦 Transit: 4–6 Days'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                {product.originCountry === country || (!product.originCountry && country === 'GH')
+                  ? `Delivers directly from our local ${countryConfig.hubName} to your doorstep in ${countryConfig.name}.`
+                  : `Secured cross-border fulfillment with tracking and customs clearance handled by NovaMart.`}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 <span>100% Genuine Brand Guarantee</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>Same-Day Dispatch in Accra</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -534,7 +560,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>MTN MoMo & Card Payments</span>
+                <span>{country === 'NG' ? 'NIP Bank Transfer & Verve Card' : 'MTN MoMo & Card Payments'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>Verified Merchant Warranty</span>
               </div>
             </div>
           </div>

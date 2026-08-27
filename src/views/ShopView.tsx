@@ -46,7 +46,7 @@ export const ShopView: React.FC<ShopViewProps> = ({
   onNavigate,
   onOpenQuickView
 }) => {
-  const { formatPrice } = useSettings();
+  const { formatPrice, country, countryConfig } = useSettings();
 
   const [categories, setCategories] = useState<Category[]>(propCategories || initialCategories);
   const [products, setProducts] = useState<Product[]>(propProducts || initialProducts);
@@ -83,6 +83,7 @@ export const ShopView: React.FC<ShopViewProps> = ({
   // Filters State
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'all');
   const [searchQuery, setSearchQuery] = useState<string>(initialSearch || '');
+  const [originFilter, setOriginFilter] = useState<'all' | 'local_only' | 'GH' | 'NG'>('all');
   const [dealsOnly, setDealsOnly] = useState<boolean>(initialDealsOnly || initialFlashDealOnly);
   const [featuredOnly, setFeaturedOnly] = useState<boolean>(initialFeatured);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -140,6 +141,16 @@ export const ShopView: React.FC<ShopViewProps> = ({
         }
       }
 
+      // Origin filter
+      if (originFilter === 'local_only') {
+        const isLocal = product.originCountry === country || (!product.originCountry && country === 'GH');
+        if (!isLocal) return false;
+      } else if (originFilter === 'GH') {
+        if (product.originCountry && product.originCountry !== 'GH') return false;
+      } else if (originFilter === 'NG') {
+        if (product.originCountry !== 'NG') return false;
+      }
+
       // Deals only
       if (dealsOnly && (!product.discountPrice || product.discountPrice >= product.price)) {
         return false;
@@ -181,12 +192,20 @@ export const ShopView: React.FC<ShopViewProps> = ({
       if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       if (sortBy === 'popularity') return (b.reviewCount || 0) - (a.reviewCount || 0);
-      return 0; // Default
+
+      // Smart Market Prioritization (Local warehouse items shown first)
+      const aIsLocal = a.originCountry === country || (!a.originCountry && country === 'GH');
+      const bIsLocal = b.originCountry === country || (!b.originCountry && country === 'GH');
+      if (aIsLocal && !bIsLocal) return -1;
+      if (!aIsLocal && bIsLocal) return 1;
+      return 0;
     });
   }, [
     products,
     selectedCategory,
     searchQuery,
+    originFilter,
+    country,
     dealsOnly,
     featuredOnly,
     selectedBrands,
@@ -470,7 +489,63 @@ export const ShopView: React.FC<ShopViewProps> = ({
         </div>
       </div>
 
-      {/* 2. ACTIVE FILTER BADGES */}
+      {/* 2. HYBRID MARKETPLACE ORIGIN & WAREHOUSE FILTER BAR */}
+      <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1">
+          <span>📦</span>
+          <span>Dispatch:</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => setOriginFilter('all')}
+          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            originFilter === 'all'
+              ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <span>🌐</span>
+          <span>All Warehouses ({safeProducts.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setOriginFilter('local_only')}
+          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            originFilter === 'local_only'
+              ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/20'
+              : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800/60'
+          }`}
+        >
+          <span>⚡</span>
+          <span>Local Express ({country === 'NG' ? 'Nigeria 🇳🇬' : 'Ghana 🇬🇭'} • 1–2 Days)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setOriginFilter('NG')}
+          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            originFilter === 'NG'
+              ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <span>🇳🇬</span>
+          <span>Nigeria Warehouses</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setOriginFilter('GH')}
+          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            originFilter === 'GH'
+              ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <span>🇬🇭</span>
+          <span>Ghana Warehouses</span>
+        </button>
+      </div>
+
+      {/* 3. ACTIVE FILTER BADGES */}
       {activeFiltersCount > 0 && (
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mr-1">Active:</span>

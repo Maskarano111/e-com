@@ -21,7 +21,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isInCompare, addToCompare } = useCompare();
-  const { formatPrice } = useSettings();
+  const { formatPrice, country } = useSettings();
 
   const isLiked = isInWishlist(product.id);
   const isCompared = isInCompare(product.id);
@@ -169,6 +169,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <span className="ml-auto text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded">
                 Only {product.stockQuantity} left
               </span>
+            )}
+          </div>
+
+          {/* Hybrid Market Origin Badge (Local vs Cross-Border) */}
+          <div className="mt-2.5">
+            {product.originCountry === country || (!product.originCountry && country === 'GH') ? (
+              <div className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
+                <span>{country === 'NG' ? '🇳🇬' : '🇬🇭'}</span>
+                <span>Ships Locally ({product.originCity || (country === 'NG' ? 'Lagos' : 'Accra')}) • 1–2 Days</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-800/60">
+                <span>✈️</span>
+                <span>Cross-Border from {product.originCountry === 'NG' ? 'Nigeria 🇳🇬' : 'Ghana 🇬🇭'} • 4–6 Days</span>
+              </div>
             )}
           </div>
         </div>

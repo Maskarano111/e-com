@@ -56,6 +56,8 @@ export interface Product {
   specifications: ProductSpecification[];
   weight?: string;
   tags: string[];
+  originCountry?: 'GH' | 'NG';
+  originCity?: string;
   isNewArrival?: boolean;
   isBestSeller?: boolean;
   salesCount?: number;
@@ -285,6 +287,8 @@ export interface ProductFilters {
   minPrice?: number;
   maxPrice?: number;
   rating?: number;
+  originCountry?: 'all' | 'GH' | 'NG';
+  localOnly?: boolean;
   availability?: 'in_stock' | 'all';
   sortBy?: 'newest' | 'popularity' | 'price_low' | 'price_high' | 'rating';
   featured?: boolean;
@@ -311,6 +315,8 @@ export interface Vendor {
   description: string;
   logo: string;
   banner?: string;
+  country?: 'Ghana' | 'Nigeria';
+  countryCode?: 'GH' | 'NG';
   address: string;
   city: string;
   status: 'active' | 'pending' | 'suspended';

@@ -217,6 +217,8 @@
         "bp-monitor",
         "flash-sale"
       ],
+      "originCountry": "NG",
+      "originCity": "Ikeja, Lagos, Nigeria",
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 65,
@@ -397,6 +399,8 @@
         "belts",
         "flash-sale"
       ],
+      "originCountry": "NG",
+      "originCity": "Lekki, Lagos, Nigeria",
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 49,

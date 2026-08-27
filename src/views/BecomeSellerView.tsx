@@ -32,6 +32,7 @@ export const BecomeSellerView: React.FC<BecomeSellerViewProps> = ({ onNavigate }
   // Form State
   const [storeName, setStoreName] = useState('');
   const [category, setCategory] = useState('Electronics & Phones');
+  const [sellerCountry, setSellerCountry] = useState<'Ghana' | 'Nigeria'>('Ghana');
   const [ownerFirstName, setOwnerFirstName] = useState('');
   const [ownerLastName, setOwnerLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -41,6 +42,7 @@ export const BecomeSellerView: React.FC<BecomeSellerViewProps> = ({ onNavigate }
   const [city, setCity] = useState('Accra');
   const [description, setDescription] = useState('');
   const [payoutMethod, setPayoutMethod] = useState<'mtn_momo' | 'telecel_cash' | 'airteltigo' | 'bank_transfer'>('mtn_momo');
+  const [bankName, setBankName] = useState('Access Bank / GTBank');
   const [accountName, setAccountName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
 
@@ -65,11 +67,14 @@ export const BecomeSellerView: React.FC<BecomeSellerViewProps> = ({ onNavigate }
         password,
         category,
         description: description || `Official seller store of ${storeName} on NovaMart.`,
-        address: address || 'Accra, Ghana',
-        city,
+        country: sellerCountry,
+        countryCode: sellerCountry === 'Nigeria' ? 'NG' : 'GH',
+        address: address || (sellerCountry === 'Nigeria' ? 'Lagos, Nigeria' : 'Accra, Ghana'),
+        city: city || (sellerCountry === 'Nigeria' ? 'Lagos' : 'Accra'),
         commissionRate: 10,
         payoutDetails: {
           method: payoutMethod,
+          bankName: sellerCountry === 'Nigeria' ? bankName : undefined,
           accountName: accountName || `${ownerFirstName} ${ownerLastName}`,
           accountNumber: accountNumber || phone
         }
@@ -184,8 +189,58 @@ export const BecomeSellerView: React.FC<BecomeSellerViewProps> = ({ onNavigate }
           <div className="space-y-4">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <Store className="w-4 h-4 text-emerald-600" />
-              <span>1. Store Identity &amp; Department</span>
+              <span>1. Store Identity &amp; Location</span>
             </h3>
+
+            {/* Country Selector */}
+            <div>
+              <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                Merchant Country of Operation *
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSellerCountry('Ghana');
+                    setCity('Accra');
+                    setPhone('+233 ');
+                    setPayoutMethod('mtn_momo');
+                  }}
+                  className={`p-3 rounded-2xl border text-left font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    sellerCountry === 'Ghana'
+                      ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-500/20'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                  }`}
+                >
+                  <span className="text-xl">🇬🇭</span>
+                  <div>
+                    <p className="text-xs">Ghana Merchant</p>
+                    <p className="text-[10px] opacity-70">Accra / Kumasi Warehouses</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSellerCountry('Nigeria');
+                    setCity('Lagos');
+                    setPhone('+234 ');
+                    setPayoutMethod('bank_transfer');
+                  }}
+                  className={`p-3 rounded-2xl border text-left font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    sellerCountry === 'Nigeria'
+                      ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-500/20'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                  }`}
+                >
+                  <span className="text-xl">🇳🇬</span>
+                  <div>
+                    <p className="text-xs">Nigeria Merchant</p>
+                    <p className="text-[10px] opacity-70">Lagos / Abuja Depots</p>
+                  </div>
+                </button>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -197,7 +252,7 @@ export const BecomeSellerView: React.FC<BecomeSellerViewProps> = ({ onNavigate }
                   required
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
-                  placeholder="e.g. Kwame Tech Hub"
+                  placeholder={sellerCountry === 'Nigeria' ? 'e.g. Lagos Gadget Den' : 'e.g. Kwame Tech Hub'}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-hidden focus:border-emerald-500"
                 />
               </div>
@@ -218,6 +273,35 @@ export const BecomeSellerView: React.FC<BecomeSellerViewProps> = ({ onNavigate }
                   <option value="Health & Fitness">Health &amp; Fitness</option>
                   <option value="Computers & Gaming">Computers &amp; Gaming</option>
                 </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  Warehouse City *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder={sellerCountry === 'Nigeria' ? 'e.g. Ikeja, Lagos / Abuja' : 'e.g. Accra / Kumasi'}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-hidden focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  Physical Store / Warehouse Address
+                </label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder={sellerCountry === 'Nigeria' ? 'e.g. 14 Allen Avenue, Ikeja, Lagos' : 'e.g. Ring Road Central, Accra'}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-hidden focus:border-emerald-500"
+                />
               </div>
             </div>
 
@@ -318,52 +402,67 @@ export const BecomeSellerView: React.FC<BecomeSellerViewProps> = ({ onNavigate }
           </div>
 
           {/* Section 3: Payout Coordinates */}
+          {/* Section 3: Payout Coordinates */}
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-emerald-600" />
-              <span>3. Mobile Money Payout Account</span>
+              <span>
+                3. {sellerCountry === 'Nigeria' ? 'Nigerian Bank Payout Account (₦)' : 'Ghana Mobile Money Payout Account (GH₵)'}
+              </span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                  Payout Method
+                  Payout Channel
                 </label>
-                <select
-                  value={payoutMethod}
-                  onChange={(e) => setPayoutMethod(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-hidden"
-                >
-                  <option value="mtn_momo">MTN Mobile Money</option>
-                  <option value="telecel_cash">Telecel Cash</option>
-                  <option value="airteltigo">AT Money</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                </select>
+                {sellerCountry === 'Nigeria' ? (
+                  <select
+                    value={payoutMethod}
+                    onChange={(e) => setPayoutMethod(e.target.value as any)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-hidden"
+                  >
+                    <option value="bank_transfer">Direct NIP Bank Transfer</option>
+                    <option value="bank_transfer">OPay Merchant Wallet</option>
+                    <option value="bank_transfer">PalmPay Business Account</option>
+                  </select>
+                ) : (
+                  <select
+                    value={payoutMethod}
+                    onChange={(e) => setPayoutMethod(e.target.value as any)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-hidden"
+                  >
+                    <option value="mtn_momo">MTN Mobile Money</option>
+                    <option value="telecel_cash">Telecel Cash</option>
+                    <option value="airteltigo">AT Money</option>
+                    <option value="bank_transfer">Ghana Commercial Bank</option>
+                  </select>
+                )}
               </div>
 
               <div>
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                  Registered Name
+                  Account / Beneficiary Name
                 </label>
                 <input
                   type="text"
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
-                  placeholder="Subscriber Name"
+                  placeholder="Official Account Name"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-hidden"
                 />
               </div>
 
               <div>
                 <label className="block font-bold text-slate-800 dark:text-slate-200 mb-1">
-                  MoMo / Account Number
+                  {sellerCountry === 'Nigeria' ? 'NUBAN Account Number' : 'MoMo / Account Number'}
                 </label>
                 <input
                   type="text"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  placeholder="024XXXXXXX"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-hidden"
+                  placeholder={sellerCountry === 'Nigeria' ? '0123456789 (10-digits)' : '024XXXXXXX'}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-hidden font-mono"
                 />
               </div>
             </div>

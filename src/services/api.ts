@@ -1315,6 +1315,8 @@ export const api = {
     logo?: string;
     address: string;
     city?: string;
+    country?: 'Ghana' | 'Nigeria';
+    countryCode?: 'GH' | 'NG';
     commissionRate?: number;
     payoutDetails: {
       method: 'mtn_momo' | 'telecel_cash' | 'airteltigo' | 'bank_transfer';
@@ -1365,11 +1367,13 @@ export const api = {
           email: data.email,
           phone: data.phone,
           category: data.category,
-          description: data.description || `Official store of ${data.storeName} on NovaMart Ghana.`,
+          description: data.description || `Official store of ${data.storeName} on NovaMart West Africa.`,
           logo: data.logo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
           banner: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80',
+          country: data.country || 'Ghana',
+          countryCode: data.countryCode || 'GH',
           address: data.address,
-          city: data.city || 'Accra',
+          city: data.city || (data.countryCode === 'NG' ? 'Lagos' : 'Accra'),
           status: 'active',
           commissionRate: data.commissionRate !== undefined ? data.commissionRate : 10,
           payoutDetails: data.payoutDetails,
