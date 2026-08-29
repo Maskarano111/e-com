@@ -130,7 +130,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // 3. Check browser timezone (Lagos / West Africa vs Accra)
     try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.toLowerCase();
+      const tz = (Intl?.DateTimeFormat?.()?.resolvedOptions?.()?.timeZone || '').toLowerCase();
       if (tz.includes('lagos') || tz.includes('nigeria') || tz.includes('porto-novo')) {
         return 'NG';
       }
@@ -138,6 +138,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     return 'GH';
   });
+
 
   const [currency, setCurrencyState] = useState<SupportedCurrency>(() => {
     try {
