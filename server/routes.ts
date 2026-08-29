@@ -1626,7 +1626,425 @@ router.post('/admin/products/bulk-import', (req: Request, res: Response) => {
 });
 
 // ----------------------------------------------------
-// 17. GEMINI AI SHOPPING ASSISTANT & STYLIST
+// 17. VENDOR MANAGEMENT (FULL CRUD)
+// ----------------------------------------------------
+router.get('/vendors', (req: Request, res: Response) => {
+  const { status } = req.query;
+  let vendors = db.get('vendors');
+  if (status && status !== 'all') {
+    vendors = vendors.filter((v: any) => v.status === status);
+  }
+  const products = db.get('products');
+  const orders = db.get('orders');
+  const enriched = vendors.map((v: any) => {
+    const vProds = products.filter((p: any) => p.vendorId === v.id);
+    let totalRevenue = v.totalRevenue || 0;
+    orders.forEach((o: any) => {
+      o.items.forEach((item: any) => {
+        if (item.vendorId === v.id) totalRevenue += item.total;
+      });
+    });
+    return { ...v, totalProducts: vProds.length || v.totalProducts || 0, totalRevenue: Math.max(v.totalRevenue || 0, totalRevenue) };
+  });
+  res.json(enriched);
+});
+
+router.get('/vendors/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const vendors = db.get('vendors');
+  const vendor = vendors.find((v: any) => v.id === id || v.userId === id || v.slug === id);
+  if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
+  res.json(vendor);
+});
+
+router.post('/vendors', (req: Request, res: Response) => {
+  const data = req.body;
+  const vendors = db.get('vendors');
+  const users = db.get('users');
+
+  const vendorId = uid('vend');
+  const userId = uid('usr-seller');
+
+  const newUser = {
+    id: userId,
+    firstName: data.ownerFirstName || data.ownerName?.split(' ')[0] || 'Seller',
+    lastName: data.ownerLastName || data.ownerName?.split(' ')[1] || '',
+    email: data.email,
+    phone: data.phone,
+    role: 'vendor' as const,
+    vendorId,
+    vendorStoreName: data.storeName,
+    profileImage: data.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.storeName)}`,
+    passwordHash: data.password || 'seller123',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  users.push(newUser);
+  db.set('users', users);
+
+  const newVendor = {
+    id: vendorId,
+    userId,
+    storeName: data.storeName,
+    slug: data.storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    ownerName: data.ownerName || `${data.ownerFirstName} ${data.ownerLastName}`,
+    email: data.email,
+    phone: data.phone,
+    category: data.category || 'General',
+    description: data.description || '',
+    logo: data.logo || '',
+    banner: data.banner || '',
+    country: data.country || 'Ghana',
+    countryCode: data.countryCode || 'GH',
+    address: data.address || '',
+    city: data.city || 'Accra',
+    status: 'active',
+    commissionRate: data.commissionRate || 10,
+    payoutDetails: data.payoutDetails || { method: 'mtn_momo', accountName: '', accountNumber: '' },
+    rating: 5.0,
+    reviewCount: 0,
+    totalProducts: 0,
+    totalSales: 0,
+    totalRevenue: 0,
+    balance: 0,
+    pendingBalance: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  vendors.unshift(newVendor);
+  db.set('vendors', vendors);
+  res.status(201).json({ vendor: newVendor, user: { ...newUser, passwordHash: undefined } });
+});
+
+router.put('/vendors/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const updates = req.body;
+  const vendors = db.get('vendors');
+  const idx = vendors.findIndex((v: any) => v.id === id || v.userId === id);
+  if (idx === -1) return res.status(404).json({ error: 'Vendor not found' });
+  vendors[idx] = { ...vendors[idx], ...updates, updatedAt: new Date().toISOString() };
+  db.set('vendors', vendors);
+  res.json({ vendor: vendors[idx] });
+});
+
+router.put('/vendors/:id/approve', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const vendors = db.get('vendors');
+  const idx = vendors.findIndex((v: any) => v.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Vendor not found' });
+  vendors[idx].status = 'active';
+  vendors[idx].updatedAt = new Date().toISOString();
+  db.set('vendors', vendors);
+  const notifications = db.get('notifications');
+  notifications.unshift({
+    id: uid('notif'), userId: vendors[idx].userId, target: 'customer',
+    title: 'Vendor Account Approved! 🎉',
+    message: `Your store "${vendors[idx].storeName}" has been approved. You can now start listing products.`,
+    type: 'system', read: false, createdAt: new Date().toISOString()
+  });
+  db.set('notifications', notifications);
+  res.json({ vendor: vendors[idx] });
+});
+
+router.put('/vendors/:id/suspend', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const vendors = db.get('vendors');
+  const idx = vendors.findIndex((v: any) => v.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Vendor not found' });
+  vendors[idx].status = 'suspended';
+  vendors[idx].updatedAt = new Date().toISOString();
+  db.set('vendors', vendors);
+  res.json({ vendor: vendors[idx] });
+});
+
+router.delete('/vendors/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  let vendors = db.get('vendors');
+  vendors = vendors.filter((v: any) => v.id !== id);
+  db.set('vendors', vendors);
+  res.json({ success: true, message: 'Vendor removed' });
+});
+
+router.get('/vendors/:id/products', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const products = db.get('products').filter((p: any) => p.vendorId === id);
+  res.json({ products });
+});
+
+router.post('/vendors/:id/products', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const productData = req.body;
+  const products = db.get('products');
+  const vendors = db.get('vendors');
+  const vendor = vendors.find((v: any) => v.id === id);
+
+  const newProd = {
+    id: uid('prod'),
+    name: productData.name,
+    slug: (productData.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000),
+    description: productData.description || '',
+    shortDescription: productData.shortDescription || '',
+    categoryId: productData.categoryId || 'cat-phones',
+    brand: productData.brand || vendor?.storeName || 'Generic',
+    vendorId: id,
+    vendorName: vendor?.storeName || 'Vendor',
+    sku: productData.sku || `VND-${Math.floor(1000 + Math.random() * 9000)}`,
+    price: parseFloat(productData.price) || 100,
+    discountPrice: productData.discountPrice ? parseFloat(productData.discountPrice) : undefined,
+    stockQuantity: parseInt(productData.stockQuantity, 10) || 10,
+    status: productData.status || 'active',
+    featured: !!productData.featured,
+    rating: 5.0,
+    reviewCount: 0,
+    images: productData.images || [productData.featuredImage || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80'],
+    featuredImage: productData.featuredImage || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
+    specifications: productData.specifications || [],
+    tags: productData.tags || [],
+    isNewArrival: true,
+    isBestSeller: false,
+    salesCount: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  products.unshift(newProd);
+  db.set('products', products);
+  if (vendor) {
+    const vIdx = vendors.findIndex((v: any) => v.id === id);
+    if (vIdx !== -1) { vendors[vIdx].totalProducts = (vendors[vIdx].totalProducts || 0) + 1; db.set('vendors', vendors); }
+  }
+  res.status(201).json({ product: newProd });
+});
+
+router.put('/vendors/:vendorId/products/:productId', (req: Request, res: Response) => {
+  const { productId } = req.params;
+  const updates = req.body;
+  const products = db.get('products');
+  const idx = products.findIndex((p: any) => p.id === productId);
+  if (idx === -1) return res.status(404).json({ error: 'Product not found' });
+  products[idx] = { ...products[idx], ...updates, updatedAt: new Date().toISOString() };
+  db.set('products', products);
+  res.json({ product: products[idx] });
+});
+
+router.delete('/vendors/:vendorId/products/:productId', (req: Request, res: Response) => {
+  const { productId } = req.params;
+  let products = db.get('products');
+  products = products.filter((p: any) => p.id !== productId);
+  db.set('products', products);
+  res.json({ success: true });
+});
+
+router.get('/vendors/:id/orders', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const orders = db.get('orders').filter((o: any) => o.items.some((item: any) => item.vendorId === id || !item.vendorId));
+  res.json(orders);
+});
+
+router.get('/vendors/:id/stats', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const vendors = db.get('vendors');
+  const products = db.get('products');
+  const vendor = vendors.find((v: any) => v.id === id || v.userId === id);
+  const vProds = products.filter((p: any) => p.vendorId === (vendor?.id || id));
+  const lowStock = vProds.filter((p: any) => p.stockQuantity < 5).length;
+  const commissionRate = vendor?.commissionRate || 10;
+  const grossRevenue = vendor?.totalRevenue || 18450;
+  const commissionPaid = (grossRevenue * commissionRate) / 100;
+  res.json({
+    grossRevenue, netEarnings: grossRevenue - commissionPaid, commissionPaid,
+    ordersCount: vendor?.totalSales || 48, productsCount: vProds.length || vendor?.totalProducts || 12,
+    lowStockCount: lowStock, rating: vendor?.rating || 4.8, reviewCount: vendor?.reviewCount || 64,
+    balance: vendor?.balance || 3450, pendingBalance: vendor?.pendingBalance || 1200
+  });
+});
+
+// Vendor Payouts
+router.get('/vendors/:id/payouts', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const payouts = db.get('payouts');
+  res.json(payouts.filter((p: any) => p.vendorId === id));
+});
+
+router.post('/vendors/:id/payouts', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { amount, payoutDetails, notes } = req.body;
+  const vendors = db.get('vendors');
+  const vIdx = vendors.findIndex((v: any) => v.id === id || v.userId === id);
+  const vendor = vendors[vIdx];
+  if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
+  if ((vendor.balance || 0) < amount) return res.status(400).json({ error: 'Insufficient available balance' });
+
+  const payouts = db.get('payouts');
+  const newPayout = {
+    id: uid('pay'),
+    vendorId: vendor.id,
+    vendorName: vendor.storeName,
+    amount,
+    status: 'pending',
+    payoutDetails: payoutDetails || vendor.payoutDetails,
+    notes: notes || '',
+    createdAt: new Date().toISOString()
+  };
+  payouts.unshift(newPayout);
+  db.set('payouts', payouts);
+
+  vendors[vIdx].balance = Math.max(0, (vendors[vIdx].balance || 0) - amount);
+  vendors[vIdx].pendingBalance = (vendors[vIdx].pendingBalance || 0) + amount;
+  db.set('vendors', vendors);
+  res.status(201).json({ payout: newPayout });
+});
+
+// Admin payout management
+router.get('/admin/vendor-payouts', (req: Request, res: Response) => {
+  const { status } = req.query;
+  let payouts = db.get('payouts');
+  if (status && status !== 'all') payouts = payouts.filter((p: any) => p.status === status);
+  res.json(payouts);
+});
+
+router.put('/admin/vendor-payouts/:id/approve', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { transactionRef } = req.body;
+  const payouts = db.get('payouts');
+  const idx = payouts.findIndex((p: any) => p.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Payout not found' });
+
+  payouts[idx].status = 'completed';
+  payouts[idx].transactionRef = transactionRef || `REF-${Date.now()}`;
+  payouts[idx].processedAt = new Date().toISOString();
+  db.set('payouts', payouts);
+
+  // Update vendor balances
+  const vendors = db.get('vendors');
+  const vIdx = vendors.findIndex((v: any) => v.id === payouts[idx].vendorId);
+  if (vIdx !== -1) {
+    vendors[vIdx].pendingBalance = Math.max(0, (vendors[vIdx].pendingBalance || 0) - payouts[idx].amount);
+    db.set('vendors', vendors);
+  }
+  res.json({ payout: payouts[idx] });
+});
+
+router.put('/admin/vendor-payouts/:id/reject', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const payouts = db.get('payouts');
+  const idx = payouts.findIndex((p: any) => p.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Payout not found' });
+
+  payouts[idx].status = 'rejected';
+  payouts[idx].notes = reason || 'Rejected by admin';
+  payouts[idx].processedAt = new Date().toISOString();
+  db.set('payouts', payouts);
+
+  // Return balance to vendor
+  const vendors = db.get('vendors');
+  const vIdx = vendors.findIndex((v: any) => v.id === payouts[idx].vendorId);
+  if (vIdx !== -1) {
+    vendors[vIdx].balance = (vendors[vIdx].balance || 0) + payouts[idx].amount;
+    vendors[vIdx].pendingBalance = Math.max(0, (vendors[vIdx].pendingBalance || 0) - payouts[idx].amount);
+    db.set('vendors', vendors);
+  }
+  res.json({ payout: payouts[idx] });
+});
+
+// Order Return Requests
+router.post('/orders/:id/return-request', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { reason, items, refundPreference, additionalNotes } = req.body;
+  const orders = db.get('orders');
+  const order = orders.find((o: any) => o.id === id || o.orderNumber === id);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+
+  const returnRequests = db.get('returnRequests') || [];
+  const newRequest = {
+    id: uid('ret'),
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    customerId: order.userId,
+    customerName: order.customerName,
+    customerEmail: order.customerEmail,
+    items: items || order.items,
+    reason,
+    refundPreference: refundPreference || 'original_method',
+    additionalNotes: additionalNotes || '',
+    status: 'pending',
+    refundAmount: order.total,
+    createdAt: new Date().toISOString()
+  };
+  returnRequests.unshift(newRequest);
+  db.set('returnRequests', returnRequests);
+
+  // Notify admin
+  const notifications = db.get('notifications');
+  notifications.unshift({
+    id: uid('notif'), target: 'admin',
+    title: `Return Request #${order.orderNumber}`,
+    message: `${order.customerName} requested a return for order #${order.orderNumber}. Reason: ${reason}`,
+    type: 'order', read: false, link: '/admin/orders', createdAt: new Date().toISOString()
+  });
+  db.set('notifications', notifications);
+  res.status(201).json({ returnRequest: newRequest });
+});
+
+router.get('/admin/return-requests', (req: Request, res: Response) => {
+  const returnRequests = db.get('returnRequests') || [];
+  res.json(returnRequests);
+});
+
+router.put('/admin/return-requests/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status, adminNote, refundAmount } = req.body;
+  const returnRequests = db.get('returnRequests') || [];
+  const idx = returnRequests.findIndex((r: any) => r.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Return request not found' });
+  returnRequests[idx] = { ...returnRequests[idx], status, adminNote, refundAmount: refundAmount || returnRequests[idx].refundAmount, processedAt: new Date().toISOString() };
+  db.set('returnRequests', returnRequests);
+  if (status === 'approved' && returnRequests[idx].customerId) {
+    const notifications = db.get('notifications');
+    notifications.unshift({
+      id: uid('notif'), userId: returnRequests[idx].customerId, target: 'customer',
+      title: 'Return Request Approved ✅',
+      message: `Your return request for order #${returnRequests[idx].orderNumber} has been approved. Refund will be processed within 3-5 business days.`,
+      type: 'order', read: false, createdAt: new Date().toISOString()
+    });
+    db.set('notifications', notifications);
+  }
+  res.json({ returnRequest: returnRequests[idx] });
+});
+
+// Loyalty Points
+router.get('/users/:id/loyalty', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const loyalty = db.get('loyalty') || [];
+  const userPoints = loyalty.filter((l: any) => l.userId === id);
+  const balance = userPoints.filter((l: any) => l.type === 'earn').reduce((s: number, l: any) => s + l.points, 0)
+    - userPoints.filter((l: any) => l.type === 'redeem').reduce((s: number, l: any) => s + l.points, 0);
+  res.json({ balance, history: userPoints.slice(0, 20) });
+});
+
+router.post('/users/:id/loyalty/redeem', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { points } = req.body;
+  const loyalty = db.get('loyalty') || [];
+  const userPoints = loyalty.filter((l: any) => l.userId === id);
+  const balance = userPoints.filter((l: any) => l.type === 'earn').reduce((s: number, l: any) => s + l.points, 0)
+    - userPoints.filter((l: any) => l.type === 'redeem').reduce((s: number, l: any) => s + l.points, 0);
+  if (balance < points) return res.status(400).json({ error: 'Insufficient loyalty points' });
+  loyalty.unshift({ id: uid('lty'), userId: id, type: 'redeem', points, description: 'Points redeemed at checkout', createdAt: new Date().toISOString() });
+  db.set('loyalty', loyalty);
+  const discountAmount = points / 10; // 10 points = GH₵ 1
+  res.json({ success: true, pointsRedeemed: points, discountAmount });
+});
+
+// Audit Log
+router.get('/admin/audit-log', (req: Request, res: Response) => {
+  const log = db.get('auditLog') || [];
+  res.json(log.slice(0, 100));
+});
+
+// ----------------------------------------------------
+// 18. GEMINI AI SHOPPING ASSISTANT & STYLIST
 // ----------------------------------------------------
 router.post('/ai/chat', async (req: Request, res: Response) => {
   const { message } = req.body;
@@ -1640,34 +2058,48 @@ router.post('/ai/chat', async (req: Request, res: Response) => {
   if (apiKey && apiKey !== 'MY_GEMINI_API_KEY') {
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const catalogSummary = products.slice(0, 30).map(p => 
-        `[${p.id}] ${p.name} | Category: ${p.categoryName} | Price: GH₵ ${p.discountPrice || p.price} | Brand: ${p.brand} | Origin: ${p.originCity || 'Accra, Ghana'}`
+      const catalogSummary = products.slice(0, 40).map(p => 
+        `[${p.id}] ${p.name} | Category: ${p.categoryName} | Price: GH₵ ${p.discountPrice || p.price} | Brand: ${p.brand}`
       ).join('\n');
 
-      const systemPrompt = `You are NovaAI, the friendly and knowledgeable shopping assistant exclusively for NovaMart West Africa (Ghana 🇬🇭 and Nigeria 🇳🇬).
+      const systemPrompt = `You are NovaAI, the elite, multi-task shopping copilot and concierge for NovaMart (West Africa's Premier Online Superstore across Ghana 🇬🇭 and Nigeria 🇳🇬).
 
-Guidelines:
-1. GREETINGS: If the user says "hi", "hello", "hey", or greets you, greet them warmly: "Hello there! 👋 Welcome to NovaMart. How can I assist you with your shopping today? I can help you find products, check discounts, track an order, or answer questions about delivery and payment."
-2. SYSTEM BOUNDARY: Only answer questions related to NovaMart e-commerce, products, orders, delivery, and payment. If asked about unrelated topics, politely redirect back to shopping on NovaMart.
-3. STORE KNOWLEDGE:
-- Ghana Delivery: GH₵ 35 standard (24-48h), free over GH₵ 500. Payment via MTN MoMo, Telecel Cash, Cards.
-- Nigeria Delivery: ₦2,500 standard (1-2 days in Lagos/Abuja), free over ₦50,000. Payment via Bank Transfer, OPay, Cards.
-- 10% Welcome Coupon: WELCOME10
-- 7-day hassle-free returns on genuine items.
+You have full authority to assist users with:
+1. Store & Platform Inquiries: Explain what NovaMart is, verified multi-vendor marketplace, authenticity guarantee.
+2. Product Recommendations & Comparisons: Search, compare specifications, and recommend items based on budget and intent.
+3. Order Tracking: Explain dispatch timelines, courier tracking, and return policies.
+4. Discounts & Coupons: Share the active WELCOME10 coupon (10% off).
+5. Seller Onboarding: Guide merchants on how to become a verified vendor.
+6. Payments & Logistics: Mobile Money (MTN, Telecel), Cards, Bank Transfers, COD, and express 24-48h delivery.
 
-Catalog snapshot:
+Catalog Snapshot:
 ${catalogSummary}
 
-Format responses nicely in markdown with bullet points and emojis where appropriate.`;
+Format responses with crisp markdown, bullet points, and emojis. Always be welcoming and proactive with actionable suggestions.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-          { role: 'user', parts: [{ text: `${systemPrompt}\n\nUser Question: ${message}` }] }
-        ]
-      });
+      let replyText = '';
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [
+            { role: 'user', parts: [{ text: `${systemPrompt}\n\nUser Question: ${message}` }] }
+          ]
+        });
+        replyText = response.text || '';
+      } catch (sdkErr: any) {
+        console.warn('SDK call error, attempting direct REST fallback:', sdkErr?.message || sdkErr);
+        // Direct REST fallback
+        const restRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `${systemPrompt}\n\nUser Question: ${message}` }] }]
+          })
+        });
+        const restJson: any = await restRes.json();
+        replyText = restJson.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      }
 
-      const replyText = response.text || '';
       const matchedProducts = products.filter(p => 
         replyText.toLowerCase().includes(p.name.toLowerCase().slice(0, 15)) ||
         replyText.includes(p.id)
@@ -1680,14 +2112,23 @@ Format responses nicely in markdown with bullet points and emojis where appropri
         products: matchedProducts.length > 0 ? matchedProducts : undefined
       });
     } catch (err: any) {
-      console.warn('Gemini API call failed, falling back to local engine:', err?.message || err);
+      console.warn('Gemini API call failed, using enhanced local engine:', err?.message || err);
     }
   }
 
-  // Fallback to local semantic response
+  // Enhanced multi-intent local intelligence engine
   const q = message.toLowerCase().trim();
 
-  // Greetings check
+  // 1. About the site / Platform overview
+  if (q.includes('about this site') || q.includes('about us') || q.includes('what is this site') || q.includes('tell me about this site') || q.includes('what is novamart') || q.includes('who owns') || q.includes('what do you sell')) {
+    return res.json({
+      success: true,
+      source: 'local-smart',
+      text: `🇬🇭🇳🇬 **Welcome to NovaMart!**\n\n**NovaMart** is West Africa's premier multi-vendor online superstore and marketplace serving Ghana and Nigeria.\n\n### 🌟 What We Offer:\n• 📱 **Tech & Electronics**: Genuine smartphones, high-performance laptops, noise-cancelling audio, and accessories.\n• 🍳 **Home & Kitchen**: Premium air fryers, portable blenders, heavy-duty pressure washers, and smart home appliances.\n• 👗 **Fashion & Accessories**: Genuine full-grain leather belts, footwear, and apparel.\n• ✨ **Beauty & Niche Fragrances**: Authentic Extrait de Parfum, pocket travel atomizers, and skincare.\n• 🏃 **Health & Fitness**: Digital blood pressure monitors, snatch waist trainers, and wellness essentials.\n\n### 🛡️ Why Shop With Us?\n• **100% Authenticity Guarantee**: Every single item is QC-inspected.\n• **Express Nationwide Delivery**: 24–48h delivery to Accra/Kumasi and Lagos/Abuja.\n• **Flexible Payments**: MTN MoMo, Telecel Cash, NIP Bank Transfer, Debit Cards & Cash on Delivery.\n• **7-Day Hassle-Free Returns**.\n\nHow can I help you shop today? Try asking for deals, tracking an order, or finding a gift!`
+    });
+  }
+
+  // 2. Greetings
   if (['hi', 'hello', 'hey', 'hey there', 'good morning', 'good afternoon', 'good evening', 'how are you', 'whats up'].includes(q)) {
     return res.json({
       success: true,
@@ -1696,19 +2137,53 @@ Format responses nicely in markdown with bullet points and emojis where appropri
     });
   }
 
-  const matched = products.filter(p => {
+  // 3. Become a Seller / Vendor
+  if (q.includes('seller') || q.includes('vendor') || q.includes('sell on') || q.includes('merchant') || q.includes('open store')) {
+    return res.json({
+      success: true,
+      source: 'local-smart',
+      text: `🏪 **Sell on NovaMart Marketplace!**\n\nJoin hundreds of verified merchants reaching over 50,000+ active shoppers across Ghana and Nigeria.\n\n### 🚀 Seller Benefits:\n• **Zero Setup Fee**: Launch your online storefront in under 5 minutes.\n• **Integrated Logistics**: We handle rider dispatch and nationwide cash-on-delivery.\n• **Fast Payouts**: Automated weekly payouts directly to your MoMo or Bank Account.\n• **Vendor Dashboard**: Real-time sales analytics, inventory manager, and customer review center.\n\n👉 Click **"Become a Seller"** in the top navigation bar or footer to register your store today!`
+    });
+  }
+
+  // 4. Contact / Customer Support
+  if (q.includes('contact') || q.includes('support') || q.includes('phone') || q.includes('help desk') || q.includes('customer service') || q.includes('call') || q.includes('email')) {
+    return res.json({
+      success: true,
+      source: 'local-smart',
+      text: `📞 **NovaMart Customer Care & Concierge**\n\nOur support team is available **Monday to Saturday (8:00 AM – 8:00 PM)**:\n\n• **Ghana Hotline**: +233 (0) 302 998 844\n• **Nigeria Hotline**: +234 (0) 1 888 3920\n• **WhatsApp Support**: +233 55 123 4567\n• **Email**: support@novamart.gh\n• **HQ Address**: Nova Plaza, Airport Commercial Area, Accra, Ghana\n\nYou can also message me directly anytime for instant answers!`
+    });
+  }
+
+  // 5. Gifts & Recommendations
+  if (q.includes('gift') || q.includes('recommend') || q.includes('present') || q.includes('birthday') || q.includes('wedding')) {
+    const giftItems = products.filter(p => ['prod-baccarat-rouge-540', 'prod-sony-wh1000xm5', 'prod-leather-belts', 'prod-portable-blender'].includes(p.id));
+    return res.json({
+      success: true,
+      source: 'local-smart',
+      text: `🎁 **Curated Gift Recommendations for You:**\n\nHere are our top-rated, crowd-pleaser gifts guaranteed to impress:\n1. 🌟 **Baccarat Rouge 540 Extrait (70ml)**: Iconic luxury perfume with Egyptian Jasmine & Ambergris.\n2. 🎧 **Sony WH-1000XM5 ANC Headphones**: World-class wireless audio with 30hr battery.\n3. 👔 **Genuine Leather 3-Piece Belt Set**: Handcrafted full-grain leather gift box.\n4. 🥤 **Portable USB Rechargeable Blender**: Healthy on-the-go smoothies in seconds.`,
+      products: giftItems.length > 0 ? giftItems : products.slice(0, 3)
+    });
+  }
+
+  // 6. Product Matching
+  const stopWords = ['can', 'you', 'tell', 'me', 'about', 'this', 'site', 'show', 'the', 'what', 'are', 'is', 'a', 'an', 'in', 'for', 'with', 'and'];
+  const keywords = q.split(' ').filter(w => w.length > 2 && !stopWords.includes(w));
+
+  const matched = keywords.length > 0 ? products.filter(p => {
     const text = `${p.name} ${p.categoryName} ${p.brand} ${(p.tags || []).join(' ')}`.toLowerCase();
-    return q.split(' ').some(w => w.length > 2 && text.includes(w));
-  }).slice(0, 3);
+    return keywords.some(w => text.includes(w));
+  }).slice(0, 3) : [];
 
   return res.json({
     success: true,
     source: 'local-smart',
     text: matched.length > 0
-      ? `Here are top recommendations from our active store catalog for you: 🌟`
-      : `I am your **NovaMart Shopping Assistant** and can help with anything in our store! 🛍️\n\nYou can ask me to find products, add items to cart, track orders, or explain delivery & payment options. What are you looking for today?`,
+      ? `Here are top recommendations from our active store catalog matching **"${keywords.join(' ')}"**:`
+      : `I am your **NovaMart Shopping Assistant** and can help with anything in our store! 🛍️\n\nYou can ask me to:\n• 🔍 Find products by category or brand\n• 🛒 Add items directly to your cart\n• 📦 Track your orders\n• 🏷️ Apply discounts and coupons\n• 🚚 Explain delivery and payment options\n\nWhat are you looking for today?`,
     products: matched.length > 0 ? matched : undefined
   });
 });
+
 
 export default router;

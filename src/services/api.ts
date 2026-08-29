@@ -1730,6 +1730,155 @@ export const api = {
         };
       }
     );
+  },
+
+  // Return Requests
+  async createReturnRequest(orderId: string, data: { reason: string; refundPreference?: string; additionalNotes?: string }) {
+    return safeFetch<{ returnRequest: any }>(
+      `${API_BASE}/orders/${orderId}/return-request`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      },
+      () => ({ returnRequest: { id: `ret-${Date.now()}`, orderId, status: 'pending', ...data, createdAt: new Date().toISOString() } })
+    );
+  },
+
+  async getAdminReturnRequests() {
+    return safeFetch<any[]>(
+      `${API_BASE}/admin/return-requests`,
+      undefined,
+      () => []
+    );
+  },
+
+  async updateReturnRequest(id: string, data: { status: string; adminNote?: string; refundAmount?: number }) {
+    return safeFetch<{ returnRequest: any }>(
+      `${API_BASE}/admin/return-requests/${id}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      },
+      () => ({ returnRequest: { id, ...data } })
+    );
+  },
+
+  // Loyalty Points
+  async getUserLoyalty(userId: string) {
+    return safeFetch<{ balance: number; history: any[] }>(
+      `${API_BASE}/users/${userId}/loyalty`,
+      undefined,
+      () => {
+        const loyalty = getLocal<any[]>('novamart_loyalty', []);
+        const userPoints = loyalty.filter(l => l.userId === userId);
+        const balance = userPoints.filter(l => l.type === 'earn').reduce((s, l) => s + l.points, 0)
+          - userPoints.filter(l => l.type === 'redeem').reduce((s, l) => s + l.points, 0);
+        return { balance, history: userPoints.slice(0, 20) };
+      }
+    );
+  },
+
+  async redeemLoyaltyPoints(userId: string, points: number) {
+    return safeFetch<{ success: boolean; pointsRedeemed: number; discountAmount: number }>(
+      `${API_BASE}/users/${userId}/loyalty/redeem`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ points })
+      },
+      () => ({ success: true, pointsRedeemed: points, discountAmount: points / 10 })
+    );
+  },
+
+  // Vendor Approve/Suspend
+  async approveVendor(vendorId: string) {
+    return safeFetch<{ vendor: Vendor }>(
+      `${API_BASE}/vendors/${vendorId}/approve`,
+      { method: 'PUT' },
+      () => {
+        const vendors = getLocal<Vendor[]>(STORAGE_KEYS.VENDORS, initialVendors);
+        const idx = vendors.findIndex(v => v.id === vendorId);
+        if (idx !== -1) { vendors[idx].status = 'active'; setLocal(STORAGE_KEYS.VENDORS, vendors); return { vendor: vendors[idx] }; }
+        return { vendor: {} as Vendor };
+      }
+    );
+  },
+
+  async suspendVendor(vendorId: string) {
+    return safeFetch<{ vendor: Vendor }>(
+      `${API_BASE}/vendors/${vendorId}/suspend`,
+      { method: 'PUT' },
+      () => {
+        const vendors = getLocal<Vendor[]>(STORAGE_KEYS.VENDORS, initialVendors);
+        const idx = vendors.findIndex(v => v.id === vendorId);
+        if (idx !== -1) { vendors[idx].status = 'suspended'; setLocal(STORAGE_KEYS.VENDORS, vendors); return { vendor: vendors[idx] }; }
+        return { vendor: {} as Vendor };
+      }
+    );
+  },
+
+  // Admin Payout Approve/Reject
+  async approvePayoutRequest(payoutId: string, transactionRef?: string) {
+    return safeFetch<{ payout: any }>(
+      `${API_BASE}/admin/vendor-payouts/${payoutId}/approve`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactionRef })
+      },
+      () => {
+        const payouts = getLocal<any[]>(STORAGE_KEYS.PAYOUTS, []);
+        const idx = payouts.findIndex(p => p.id === payoutId);
+        if (idx !== -1) { payouts[idx].status = 'completed'; payouts[idx].transactionRef = transactionRef || `REF-${Date.now()}`; setLocal(STORAGE_KEYS.PAYOUTS, payouts); return { payout: payouts[idx] }; }
+        return { payout: {} };
+      }
+    );
+  },
+
+  async rejectPayoutRequest(payoutId: string, reason?: string) {
+    return safeFetch<{ payout: any }>(
+      `${API_BASE}/admin/vendor-payouts/${payoutId}/reject`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      },
+      () => {
+        const payouts = getLocal<any[]>(STORAGE_KEYS.PAYOUTS, []);
+        const idx = payouts.findIndex(p => p.id === payoutId);
+        if (idx !== -1) { payouts[idx].status = 'rejected'; payouts[idx].notes = reason; setLocal(STORAGE_KEYS.PAYOUTS, payouts); return { payout: payouts[idx] }; }
+        return { payout: {} };
+      }
+    );
+  },
+
+  // Product Q&A
+  async getProductQuestions(productId: string) {
+    return safeFetch<any[]>(
+      `${API_BASE}/products/${productId}/questions`,
+      undefined,
+      () => getLocal<any[]>(`novamart_qa_${productId}`, [])
+    );
+  },
+
+  async askProductQuestion(productId: string, data: { question: string; askerName?: string }) {
+    return safeFetch<any>(
+      `${API_BASE}/products/${productId}/questions`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      },
+      () => {
+        const qa = getLocal<any[]>(`novamart_qa_${productId}`, []);
+        const newQ = { id: `qa-${Date.now()}`, productId, question: data.question, askerName: data.askerName || 'Shopper', answers: [], createdAt: new Date().toISOString() };
+        qa.unshift(newQ);
+        setLocal(`novamart_qa_${productId}`, qa);
+        return newQ;
+      }
+    );
   }
 };
 

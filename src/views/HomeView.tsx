@@ -50,8 +50,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onNavigate,
   onOpenQuickView
 }) => {
-  const { formatPrice } = useSettings();
+  const { formatPrice, country, countryConfig } = useSettings();
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
   const [banners, setBanners] = useState<Banner[]>(propBanners || initialBanners);
   const [categories, setCategories] = useState<Category[]>(propCategories || initialCategories);
   const [products, setProducts] = useState<Product[]>(propProducts || initialProducts);
@@ -307,11 +308,32 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* Scrollable on mobile, grid on md+ */}
         <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
           {[
-            { icon: Truck, color: 'emerald', label: 'Express Delivery', sub: 'Same-day in Accra & Tema' },
-            { icon: ShieldCheck, color: 'indigo', label: '100% Genuine Goods', sub: 'Verified & Brand Warrantied' },
-            { icon: RotateCcw, color: 'amber', label: '7-Day Easy Returns', sub: 'Hassle-free guarantee' },
-            { icon: ShoppingBag, color: 'rose', label: 'Secure Payments', sub: 'MTN MoMo, Telecel & Cards' }
+            {
+              icon: Truck,
+              color: 'emerald',
+              label: 'Express Delivery',
+              sub: country === 'NG' ? 'Lagos & Abuja 24h Express' : 'Same-day in Accra & Tema'
+            },
+            {
+              icon: ShieldCheck,
+              color: 'indigo',
+              label: '100% Genuine Goods',
+              sub: 'Verified & Brand Warrantied'
+            },
+            {
+              icon: RotateCcw,
+              color: 'amber',
+              label: '7-Day Easy Returns',
+              sub: 'Hassle-free guarantee'
+            },
+            {
+              icon: ShoppingBag,
+              color: 'rose',
+              label: 'Secure Payments',
+              sub: country === 'NG' ? 'Bank Transfer, OPay, Cards' : 'MTN MoMo, Telecel & Cards'
+            }
           ].map(({ icon: Icon, color, label, sub }) => (
+
             <div
               key={label}
               className="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow shrink-0 min-w-[220px] md:min-w-0"

@@ -14,15 +14,19 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
-  Search,
   Store,
   ShieldCheck,
   Sparkles,
   Zap,
-  Activity
+  Activity,
+  Warehouse,
+  Image,
+  CreditCard,
+  RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
+
 
 interface AdminLayoutProps {
   currentTab: string;
@@ -44,11 +48,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
   const NAV_ITEMS = [
     { id: 'overview', label: 'Dashboard & Analytics', icon: LayoutDashboard, badge: 'Live' },
-    { id: 'vendors', label: 'Vendors & Merchants', icon: Store, badge: 'New' },
-    { id: 'products', label: 'Products & Inventory', icon: Package, badge: undefined },
-    { id: 'orders', label: 'Orders & Dispatch', icon: ShoppingBag, badge: '3 New' },
+    { id: 'vendors', label: 'Vendors & Merchants', icon: Store, badge: undefined },
+    { id: 'products', label: 'Products & Catalog', icon: Package, badge: undefined },
+    { id: 'inventory', label: 'Inventory & Stock', icon: Warehouse, badge: undefined },
+    { id: 'orders', label: 'Orders & Dispatch', icon: ShoppingBag, badge: undefined },
+    { id: 'returns', label: 'Returns & Refunds', icon: RotateCcw, badge: undefined },
+    { id: 'payments', label: 'Payments & Revenue', icon: CreditCard, badge: undefined },
     { id: 'categories', label: 'Departments & Tags', icon: Layers, badge: undefined },
     { id: 'coupons', label: 'Coupons & Vouchers', icon: Tag, badge: undefined },
+    { id: 'banners', label: 'Banners & Promos', icon: Image, badge: undefined },
     { id: 'customers', label: 'VIP & Customer Base', icon: Users, badge: undefined },
     { id: 'reviews', label: 'Review Moderation', icon: MessageSquare, badge: undefined },
     { id: 'settings', label: 'Boutique Settings', icon: Settings, badge: undefined }

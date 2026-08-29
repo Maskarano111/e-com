@@ -67,8 +67,36 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Notification polling
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      try {
+        const res = await api.getNotifications({ userId: user.id, target: 'customer' });
+        if (res) setNotifications(res);
+      } catch {}
+    };
+    load();
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Click outside notifications
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setIsNotifOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   // Load categories if not provided in props
   useEffect(() => {
@@ -400,6 +428,60 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               )}
             </button>
+
+            {/* Notification Bell - for logged-in users */}
+            {user && (
+              <div className="relative hidden sm:block" ref={notifRef}>
+                <button
+                  id="btn-notifications-nav"
+                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  className="relative p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  title="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-sm animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+                <AnimatePresence>
+                  {isNotifOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden"
+                    >
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <span className="text-sm font-black text-slate-900 dark:text-white">Notifications</span>
+                        {unreadCount > 0 && (
+                          <button onClick={async () => {
+                            for (const n of notifications.filter(n => !n.read)) {
+                              await api.markNotificationRead(n.id);
+                            }
+                            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                          }} className="text-xs text-emerald-600 font-bold hover:underline">
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                        {notifications.length === 0 ? (
+                          <div className="py-8 text-center text-slate-400 text-sm">No notifications yet</div>
+                        ) : notifications.slice(0, 8).map(n => (
+                          <div key={n.id} className={`p-3 ${!n.read ? 'bg-emerald-50/60 dark:bg-emerald-950/20' : ''}`}>
+                            <p className="text-xs font-bold text-slate-900 dark:text-white">{n.title}</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>
+                            <p className="text-[10px] text-slate-400 mt-1">{new Date(n.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             {/* Wishlist Icon - Desktop */}
             <button

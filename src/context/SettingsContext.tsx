@@ -114,14 +114,39 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
 
   const [country, setCountryState] = useState<SupportedCountry>(() => {
+    // 1. Check URL parameters first (e.g. ?country=NG or ?market=nigeria)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramCountry = urlParams.get('country')?.toUpperCase() || urlParams.get('market')?.toUpperCase();
+      if (paramCountry === 'NG' || paramCountry === 'NIGERIA') return 'NG';
+      if (paramCountry === 'GH' || paramCountry === 'GHANA') return 'GH';
+    } catch {}
+
+    // 2. Check explicitly stored user preference
     try {
       const stored = localStorage.getItem('novamart_country');
       if (stored === 'GH' || stored === 'NG') return stored as SupportedCountry;
     } catch {}
+
+    // 3. Check browser timezone (Lagos / West Africa vs Accra)
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone.toLowerCase();
+      if (tz.includes('lagos') || tz.includes('nigeria') || tz.includes('porto-novo')) {
+        return 'NG';
+      }
+    } catch {}
+
     return 'GH';
   });
 
   const [currency, setCurrencyState] = useState<SupportedCurrency>(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramCountry = urlParams.get('country')?.toUpperCase() || urlParams.get('market')?.toUpperCase();
+      if (paramCountry === 'NG' || paramCountry === 'NIGERIA') return 'NGN';
+      if (paramCountry === 'GH' || paramCountry === 'GHANA') return 'GHS';
+    } catch {}
+
     try {
       const stored = localStorage.getItem('novamart_currency');
       if (stored && stored in CURRENCY_MAP) return stored as SupportedCurrency;
@@ -130,6 +155,28 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [isLoading, setIsLoading] = useState(true);
+
+  // Auto Geo-IP detection on initial visit if not manually chosen
+  useEffect(() => {
+    const detectGeoCountry = async () => {
+      try {
+        const stored = localStorage.getItem('novamart_country');
+        if (stored) return; // User already made an explicit choice
+
+        // Free IP country lookup
+        const res = await fetch('https://api.country.is/').catch(() => null);
+        if (res && res.ok) {
+          const data = await res.json();
+          if (data && data.country === 'NG') {
+            setCountry('NG');
+          } else if (data && data.country === 'GH') {
+            setCountry('GH');
+          }
+        }
+      } catch {}
+    };
+    detectGeoCountry();
+  }, []);
 
   const setCountry = (newCountry: SupportedCountry) => {
     setCountryState(newCountry);
@@ -162,6 +209,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     refreshSettings();
   }, []);
+
 
   const currencyConfig = CURRENCY_MAP[currency] || CURRENCY_MAP.GHS;
   const countryConfig = COUNTRY_MAP[country] || COUNTRY_MAP.GH;

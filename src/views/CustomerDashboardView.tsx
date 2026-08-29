@@ -257,6 +257,7 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
               { id: 'overview', label: 'Overview', icon: LayoutDashboard },
               { id: 'orders', label: 'My Orders', icon: Package, count: orders.length },
               { id: 'wishlist', label: 'Saved Items', icon: Heart, count: wishlist.length },
+              { id: 'loyalty', label: 'Loyalty Points', icon: Award, count: points },
               { id: 'addresses', label: 'Delivery Locations', icon: MapPin, count: addresses.length },
               { id: 'notifications', label: 'Alerts', icon: Bell, count: notifications.filter((n) => !n.read).length },
               { id: 'profile', label: 'Profile & Account Info', icon: User },
@@ -531,6 +532,24 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                         >
                           View Receipt
                         </button>
+                        {(String(o.orderStatus || (o as any).status || '') === 'Delivered') && (
+                          <button
+                            onClick={async () => {
+                              const reason = prompt('Please describe the reason for return:');
+                              if (!reason) return;
+                              try {
+                                await api.createReturnRequest(o.id, { reason, refundPreference: 'original_method' });
+                                showToast('Return request submitted! We will review it within 24 hours.', 'success');
+                              } catch {
+                                showToast('Failed to submit return request', 'error');
+                              }
+                            }}
+                            className="px-3.5 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-bold flex items-center gap-1.5"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            Return
+                          </button>
+                        )}
                         <button
                           onClick={() => onNavigate('track-order', { orderNumber: o.orderNumber })}
                           className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-xs flex items-center gap-1.5"
@@ -539,10 +558,74 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                           <span>Track Rider</span>
                         </button>
                       </div>
+
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB: LOYALTY POINTS */}
+          {activeTab === 'loyalty' && (
+            <div className="bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
+              <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="font-black text-base text-slate-900 dark:text-white">Loyalty Rewards</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Earn points on every purchase and redeem for discounts</p>
+              </div>
+
+              {/* Points Card */}
+              <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-teal-600 rounded-3xl p-6 text-white">
+                <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full" />
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full" />
+                <div className="relative z-10 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-emerald-100 mb-1">Available Points</p>
+                    <p className="text-5xl font-black">{points.toLocaleString()}</p>
+                    <p className="text-xs text-emerald-200 mt-2">≈ {formatPrice(points / 10)} in discount value</p>
+                  </div>
+                  <div className="text-right">
+                    <Award className="w-16 h-16 text-white/30" />
+                    <p className="text-[10px] text-emerald-200 mt-2 font-bold uppercase tracking-wider">{tier}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* How it works */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { icon: ShoppingBag, title: 'Earn Points', desc: 'Get 2 points for every ₵1 spent on orders', color: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600' },
+                  { icon: Gift, title: 'Redeem Rewards', desc: 'Redeem 100 points = ₵10 off on any order', color: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600' },
+                  { icon: Crown, title: 'Tier Upgrades', desc: 'Unlock better rates as you reach higher tiers', color: 'bg-amber-50 dark:bg-amber-950/30 text-amber-600' },
+                ].map(item => (
+                  <div key={item.title} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${item.color}`}>
+                      <item.icon className="w-5 h-5" />
+                    </div>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white mb-1">{item.title}</h4>
+                    <p className="text-[11px] text-slate-500">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Points history placeholder */}
+              <div>
+                <h4 className="text-sm font-black text-slate-900 dark:text-white mb-3">Points History</h4>
+                <div className="space-y-2">
+                  {orders.slice(0, 5).map(o => (
+                    <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-xs">
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">Order #{o.orderNumber}</p>
+                        <p className="text-slate-400">{new Date(o.createdAt).toLocaleDateString('en-GB')}</p>
+                      </div>
+                      <span className="font-black text-emerald-600">+{Math.round((o.total || 0) * 0.2)} pts</span>
+                    </div>
+                  ))}
+                  {orders.length === 0 && (
+                    <div className="text-center py-8 text-slate-400 text-sm">Place orders to start earning loyalty points!</div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

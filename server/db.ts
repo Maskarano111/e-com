@@ -11,13 +11,16 @@ import {
   Banner,
   NotificationItem,
   StoreSettings,
-  DeliveryAddress
+  DeliveryAddress,
+  Vendor,
+  VendorPayoutRequest
 } from '../src/types/index';
 import {
   initialCategories,
   initialProducts,
   initialBanners,
-  initialCoupons
+  initialCoupons,
+  initialVendors
 } from '../src/data/initialData';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -35,6 +38,11 @@ export interface DatabaseSchema {
   notifications: NotificationItem[];
   addresses: DeliveryAddress[];
   settings: StoreSettings;
+  vendors: Vendor[];
+  payouts: VendorPayoutRequest[];
+  returnRequests: any[];
+  loyalty: any[];
+  auditLog: any[];
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
@@ -342,6 +350,11 @@ class Database {
         parsed.settings = DEFAULT_SETTINGS;
         if (!parsed.orders || parsed.orders.length === 0) parsed.orders = DEFAULT_ORDERS;
         if (!parsed.reviews || parsed.reviews.length === 0) parsed.reviews = DEFAULT_REVIEWS;
+        if (!parsed.vendors) parsed.vendors = initialVendors;
+        if (!parsed.payouts) parsed.payouts = [];
+        if (!parsed.returnRequests) parsed.returnRequests = [];
+        if (!parsed.loyalty) parsed.loyalty = [];
+        if (!parsed.auditLog) parsed.auditLog = [];
         this.saveData(parsed);
         return parsed;
       }
@@ -360,7 +373,12 @@ class Database {
       banners: initialBanners,
       notifications: DEFAULT_NOTIFICATIONS,
       addresses: DEFAULT_ADDRESSES,
-      settings: DEFAULT_SETTINGS
+      settings: DEFAULT_SETTINGS,
+      vendors: initialVendors,
+      payouts: [],
+      returnRequests: [],
+      loyalty: [],
+      auditLog: []
     };
     this.saveData(initial);
     return initial;

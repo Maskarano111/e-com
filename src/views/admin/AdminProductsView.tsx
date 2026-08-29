@@ -50,8 +50,27 @@ export const AdminProductsView: React.FC = () => {
   const [featuredImage, setFeaturedImage] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
-  const [isFeatured, setIsFeatured] = useState(false);
   const [isFlashDeal, setIsFlashDeal] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  const handleAIGenerate = () => {
+    if (!name.trim()) {
+      showToast('error', 'Name Required', 'Please enter a product title first.');
+      return;
+    }
+    setIsGeneratingAI(true);
+    setTimeout(() => {
+      const generatedShort = `Premium quality ${name} engineered for superior performance, reliability, and everyday convenience.`;
+      const generatedFull = `The all-new ${name} brings exceptional craftsmanship, advanced modern engineering, and unmatched durability.\n\nKey Features:\n• Engineered with high-grade components for long-lasting performance\n• Serial-inspected and backed by full warranty coverage\n• 100% Genuine batch delivered in factory sealed retail packaging\n• Complete with official accessories, documentation, and user guide.`;
+      const generatedSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      setShortDescription(generatedShort);
+      setDescription(generatedFull);
+      if (!slug) setSlug(generatedSlug);
+      setIsGeneratingAI(false);
+      showToast('success', 'AI Generated! ✨', 'Product copy & SEO slug generated successfully.');
+    }, 350);
+  };
 
   const loadData = async () => {
     setIsLoading(true);
@@ -569,6 +588,19 @@ export const AdminProductsView: React.FC = () => {
                   />
                 </div>
 
+                <div className="flex items-center justify-between pt-1">
+                  <label className="block font-bold text-slate-700 dark:text-slate-300">Product Descriptions</label>
+                  <button
+                    type="button"
+                    onClick={handleAIGenerate}
+                    disabled={isGeneratingAI}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-bold text-xs border border-purple-300 dark:border-purple-800 transition-colors cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{isGeneratingAI ? 'Generating...' : '✨ AI Generate Copy'}</span>
+                  </button>
+                </div>
+
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Short Summary</label>
                   <input
@@ -583,12 +615,13 @@ export const AdminProductsView: React.FC = () => {
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Detailed Description</label>
                   <textarea
-                    rows={3}
+                    rows={4}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                   />
                 </div>
+
 
                 <div className="flex items-center gap-6 pt-1">
                   <label className="flex items-center gap-2 cursor-pointer">

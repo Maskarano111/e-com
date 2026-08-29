@@ -26,6 +26,7 @@ import { CheckoutView } from './views/CheckoutView';
 import { OrderConfirmationView } from './views/OrderConfirmationView';
 import { OrderTrackingView } from './views/OrderTrackingView';
 import { CustomerDashboardView } from './views/CustomerDashboardView';
+import { WishlistView } from './views/WishlistView';
 import { AuthViews } from './views/AuthViews';
 import { StaticPages } from './views/StaticPages';
 
@@ -34,9 +35,13 @@ import { AdminLayout } from './views/admin/AdminLayout';
 import { AdminOverviewView } from './views/admin/AdminOverviewView';
 import { AdminVendorsView } from './views/admin/AdminVendorsView';
 import { AdminProductsView } from './views/admin/AdminProductsView';
+import { AdminInventoryView } from './views/admin/AdminInventoryView';
 import { AdminOrdersView } from './views/admin/AdminOrdersView';
+import { AdminReturnRequestsView } from './views/admin/AdminReturnRequestsView';
+import { AdminPaymentsView } from './views/admin/AdminPaymentsView';
 import { AdminCategoriesView } from './views/admin/AdminCategoriesView';
 import { AdminCouponsView } from './views/admin/AdminCouponsView';
+import { AdminBannersView } from './views/admin/AdminBannersView';
 import { AdminCustomersView } from './views/admin/AdminCustomersView';
 import { AdminReviewsView } from './views/admin/AdminReviewsView';
 import { AdminSettingsView } from './views/admin/AdminSettingsView';
@@ -140,9 +145,13 @@ const MainApp: React.FC = () => {
         {adminTab === 'overview' && <AdminOverviewView onNavigateTab={(tab) => setAdminTab(tab)} />}
         {adminTab === 'vendors' && <AdminVendorsView />}
         {adminTab === 'products' && <AdminProductsView />}
+        {adminTab === 'inventory' && <AdminInventoryView />}
         {adminTab === 'orders' && <AdminOrdersView />}
+        {adminTab === 'returns' && <AdminReturnRequestsView />}
+        {adminTab === 'payments' && <AdminPaymentsView />}
         {adminTab === 'categories' && <AdminCategoriesView />}
         {adminTab === 'coupons' && <AdminCouponsView />}
+        {adminTab === 'banners' && <AdminBannersView />}
         {adminTab === 'customers' && <AdminCustomersView />}
         {adminTab === 'reviews' && <AdminReviewsView />}
         {adminTab === 'settings' && <AdminSettingsView />}
@@ -249,6 +258,13 @@ const MainApp: React.FC = () => {
         {currentView === 'account' && (
           <CustomerDashboardView
             initialTab={viewParams.tab || 'overview'}
+            onNavigate={handleNavigate}
+            onOpenQuickView={handleOpenQuickView}
+          />
+        )}
+
+        {currentView === 'wishlist' && (
+          <WishlistView
             onNavigate={handleNavigate}
             onOpenQuickView={handleOpenQuickView}
           />

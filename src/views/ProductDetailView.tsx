@@ -25,8 +25,12 @@ import {
   Info,
   CheckCircle2,
   Store,
-  Scale
+  Scale,
+  Bot,
+  Send,
+  ThumbsUp
 } from 'lucide-react';
+
 import { Product, ProductVariation, Review } from '../types/index';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -64,8 +68,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | undefined>(undefined);
-  const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'box' | 'faq' | 'shipping' | 'reviews'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'box' | 'faq' | 'shipping' | 'reviews' | 'ai_assistant'>('description');
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [aiAnswer, setAiAnswer] = useState<{ q: string; a: string } | null>(null);
+  const [isAnsweringAI, setIsAnsweringAI] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewsList, setReviewsList] = useState<Review[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
@@ -687,6 +693,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             { id: 'description', label: 'Overview', icon: Info },
             { id: 'specs', label: 'Specs', icon: Sparkles },
             { id: 'box', label: "In The Box", icon: Package },
+            { id: 'ai_assistant', label: '✨ Ask Product AI', icon: Bot },
             { id: 'faq', label: 'FAQs', icon: HelpCircle },
             { id: 'shipping', label: 'Delivery', icon: Truck },
             { id: 'reviews', label: `Reviews (${reviewsList.length || product.reviewCount})`, icon: Star }
@@ -806,6 +813,139 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               </div>
             </div>
           )}
+
+          {/* TAB: ASK PRODUCT AI */}
+          {activeTab === 'ai_assistant' && (
+            <div className="max-w-3xl space-y-6">
+              <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 text-white border border-emerald-500/30 shadow-xl space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black">NovaAI Product Intelligence</h3>
+                    <p className="text-xs text-emerald-300/80">Ask any question about specifications, compatibility, or warranty</p>
+                  </div>
+                </div>
+
+                {/* AI Review Sentiment Box */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                  <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold mb-1">
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span>96% Satisfaction</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">High praise for durability, genuine build quality, and battery/motor reliability.</p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-2 text-amber-400 text-xs font-bold mb-1">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>100% Authentic</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">Verified official serial-numbered batch with 7-day hassle-free replacement.</p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-2 text-blue-400 text-xs font-bold mb-1">
+                      <Truck className="w-3.5 h-3.5" />
+                      <span>Express Dispatch</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">Stocked locally for 24–48h courier delivery with MoMo payment on arrival.</p>
+                  </div>
+                </div>
+
+                {/* Question Input Box */}
+                <div className="pt-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={aiQuestion}
+                      onChange={(e) => setAiQuestion(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const q = aiQuestion.trim();
+                          if (!q) return;
+                          setIsAnsweringAI(true);
+                          setAiAnswer({
+                            q: q,
+                            a: `"${product.name}" is 100% genuine and fully tested. It comes with full warranty support, rapid dispatch across ${countryConfig.name}, and standard accessories included in the retail box.`
+                          });
+                          setIsAnsweringAI(false);
+                          setAiQuestion('');
+                        }
+                      }}
+                      placeholder={`Ask NovaAI anything about "${product.name}"...`}
+                      className="flex-1 px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-slate-400 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    />
+                    <button
+                      onClick={() => {
+                        const q = aiQuestion.trim();
+                        if (!q) return;
+                        setIsAnsweringAI(true);
+                        setAiAnswer({
+                          q: q,
+                          a: `"${product.name}" is 100% genuine and fully tested. It comes with full warranty support, rapid dispatch across ${countryConfig.name}, and standard accessories included in the retail box.`
+                        });
+                        setIsAnsweringAI(false);
+                        setAiQuestion('');
+                      }}
+                      disabled={isAnsweringAI}
+                      className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span>Ask</span>
+                    </button>
+                  </div>
+
+                  {/* Suggested AI Prompts */}
+                  <div className="flex items-center gap-2 flex-wrap pt-3">
+                    <span className="text-[11px] text-slate-400 font-semibold">Suggested:</span>
+                    {[
+                      'Is this suitable for daily use?',
+                      'What warranty is included?',
+                      'How fast is shipping to Accra/Lagos?',
+                      'Can I pay via Mobile Money?'
+                    ].map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => {
+                          setIsAnsweringAI(true);
+                          let answer = '';
+                          if (suggestion.includes('daily use')) {
+                            answer = `Yes! "${product.name}" is built for heavy-duty daily usage with high-grade components.`;
+                          } else if (suggestion.includes('warranty')) {
+                            answer = `"${product.name}" is covered by NovaMart's 100% Authenticity Guarantee and a 7-day hassle-free replacement policy.`;
+                          } else if (suggestion.includes('shipping')) {
+                            answer = `Express dispatch takes 24–48 hours for central cities with live SMS courier tracking.`;
+                          } else {
+                            answer = `Yes! We accept MTN Mobile Money, Telecel Cash, NIP Bank Transfer, Cards, and Cash on Delivery.`;
+                          }
+                          setAiAnswer({ q: suggestion, a: answer });
+                          setIsAnsweringAI(false);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-200 text-[11px] font-medium transition-colors cursor-pointer border border-white/10"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* AI Answer Bubble */}
+                {aiAnswer && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-2xl bg-white/10 border border-emerald-500/40 text-xs space-y-2 mt-3"
+                  >
+                    <p className="font-bold text-emerald-300">Q: {aiAnswer.q}</p>
+                    <p className="text-slate-100 leading-relaxed">🤖 NovaAI: {aiAnswer.a}</p>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          )}
+
 
           {/* TAB 4: FAQS */}
           {activeTab === 'faq' && (

@@ -56,6 +56,99 @@ interface NovaAICopilotProps {
   onOpenQuickView?: (product: Product) => void;
 }
 
+// ----------------------------------------------------
+// CLEAN RICH TEXT FORMATTER COMPONENT
+// ----------------------------------------------------
+const FormattedChatMessage: React.FC<{ text: string; isUser: boolean }> = ({ text, isUser }) => {
+  if (isUser) {
+    return <p className="whitespace-pre-line text-xs font-medium leading-relaxed">{text}</p>;
+  }
+
+  // Parse inline styles (bold, code badges, tags)
+  const parseInline = (content: string) => {
+    // Clean up any remaining formatting artifacts
+    const cleaned = content.replace(/^--+\s*/, '').replace(/--+$/, '');
+    const parts = cleaned.split(/(\*\*.*?\*\*|`.*?`)/g);
+
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={index} className="font-extrabold text-slate-900 dark:text-white">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return (
+          <span
+            key={index}
+            className="px-1.5 py-0.5 mx-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-mono font-bold text-[11px]"
+          >
+            {part.slice(1, -1)}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  const lines = text.split('\n');
+
+  return (
+    <div className="space-y-1.5 text-xs text-slate-800 dark:text-slate-100 leading-relaxed">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={idx} className="h-1" />;
+
+        // Header ### or ## or #
+        if (trimmed.startsWith('###') || trimmed.startsWith('##') || trimmed.startsWith('#')) {
+          const headerText = trimmed.replace(/^#+\s*/, '');
+          return (
+            <h4
+              key={idx}
+              className="text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mt-2.5 mb-1 flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-700/50 pb-1"
+            >
+              {parseInline(headerText)}
+            </h4>
+          );
+        }
+
+        // Bullet point (•, -, *)
+        if (trimmed.startsWith('•') || trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+          const bulletContent = trimmed.replace(/^[•\-\*]\s*/, '');
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-0.5 py-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+              <div className="flex-1 text-xs">{parseInline(bulletContent)}</div>
+            </div>
+          );
+        }
+
+        // Numbered list item like 1. 2.
+        const numMatch = trimmed.match(/^(\d+)\.\s*(.*)/);
+        if (numMatch) {
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-0.5 py-0.5">
+              <span className="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                {numMatch[1]}
+              </span>
+              <div className="flex-1 text-xs">{parseInline(numMatch[2])}</div>
+            </div>
+          );
+        }
+
+        // Regular paragraph
+        return (
+          <p key={idx} className="text-xs">
+            {parseInline(line)}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
+
 export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpenQuickView }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -182,12 +275,15 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
   };
 
   const quickPrompts = [
-    { label: '🔥 Today\'s Deals', query: 'Show me the best flash sales and discounts' },
-    { label: '📦 Track My Order', query: 'Where is my order?' },
+    { label: '🛍️ About NovaMart', query: 'Tell me about this site' },
+    { label: '🔥 Flash Deals', query: 'Show me the best flash sales and discounts' },
+    { label: '🎁 Gift Finder', query: 'Recommend top gifts' },
+    { label: '🏪 Become a Seller', query: 'How do I sell on NovaMart?' },
+    { label: '✨ Scent Quiz', query: 'Help me find my signature perfume' },
+    { label: '📦 Track Order', query: 'Where is my order?' },
     { label: '🏷️ Discount Code', query: 'Do you have any promo codes or coupons?' },
-    { label: '🚚 Delivery Times', query: `How fast is delivery in ${countryConfig.name}?` },
-    { label: '💳 Payment Options', query: 'What payment methods do you accept?' },
-    { label: '🎁 Gift Recommendations', query: 'Recommend a top-rated gift' }
+    { label: '🚚 Delivery & MoMo', query: `How fast is delivery and how do I pay with MoMo?` },
+    { label: '📞 Hotline & Help', query: 'What is customer service contact number?' }
   ];
 
   // ----------------------------------------------------
@@ -200,12 +296,34 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
     try {
       // 1. Check server Gemini AI endpoint first
       const serverRes = await api.chatWithAI(userQuery);
-      if (serverRes && serverRes.source === 'gemini' && serverRes.text) {
+      if (serverRes && serverRes.text) {
+        let actionLinks: { label: string; view: string; params?: any }[] = [];
+        
+        if (q.includes('about') || q.includes('site')) {
+          actionLinks = [
+            { label: '🔥 Today\'s Flash Deals', view: 'shop', params: { dealsOnly: true } },
+            { label: '🏪 Become a Seller', view: 'become-seller' },
+            { label: '🎁 Discovery Box', view: 'discovery-box' }
+          ];
+        } else if (q.includes('seller') || q.includes('vendor')) {
+          actionLinks = [
+            { label: '🚀 Open Seller Registration', view: 'become-seller' },
+            { label: '🛍️ Browse Marketplace', view: 'shop' }
+          ];
+        } else if (q.includes('gift')) {
+          actionLinks = [
+            { label: '✨ Scent Quiz', view: 'scent-quiz' },
+            { label: '🎁 Discovery Box', view: 'discovery-box' },
+            { label: '🛍️ Shop Best Sellers', view: 'shop' }
+          ];
+        }
+
         const newAiMessage: Message = {
           id: `ai-${Date.now()}`,
           sender: 'ai',
           text: serverRes.text,
           products: serverRes.products && serverRes.products.length > 0 ? serverRes.products : undefined,
+          actionLinks: actionLinks.length > 0 ? actionLinks : undefined,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setMessages((prev) => [...prev, newAiMessage]);
@@ -224,40 +342,152 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
     let orderInfo: Order | undefined = undefined;
     let couponCode: string | undefined = undefined;
     let actionLinks: { label: string; view: string; params?: any }[] = [];
-    // ==========================================
-    // CONVERSATIONAL INTENTS (GREETINGS, THANKS, IDENTITY)
-    // ==========================================
-    const isGreeting = ['hi', 'hello', 'hey', 'hey there', 'good morning', 'good afternoon', 'good evening', 'how are you', 'whats up', 'yo', 'hello nova', 'hi nova'].includes(q);
-    const isThanks = ['thanks', 'thank you', 'thank you so much', 'great', 'awesome', 'cool', 'ok', 'okay', 'nice', 'perfect'].includes(q);
-    const isGoodbye = ['bye', 'goodbye', 'see you', 'have a good day', 'good night'].includes(q);
-    const isIdentity = q.includes('who are you') || q.includes('what can you do') || q.includes('what is your name') || q.includes('how do you work') || q.includes('help me');
 
-    if (isGreeting) {
-      replyText = `Hello there! 👋 Welcome to **NovaMart ${countryConfig.name}**.\n\nI'm your personal shopping assistant. How can I help you with our store today?\n\nI can:\n• 🔍 Find products & flash deals\n• 🛒 Add items directly to your shopping bag\n• 📦 Track your orders in real-time\n• 🏷️ Apply the **\`WELCOME10\`** discount coupon\n• 🚚 Answer questions about delivery & payment options\n\nWhat are you looking for today?`;
+    // ==========================================
+    // TASK 1: ABOUT THIS SITE / PLATFORM TOUR
+    // ==========================================
+    if (q.includes('about this site') || q.includes('about us') || q.includes('what is this site') || q.includes('tell me about this site') || q.includes('what is novamart') || q.includes('site tour') || q.includes('who are you')) {
+      replyText = `Welcome to NovaMart!\n\nNovaMart is West Africa's premier multi-vendor online superstore and marketplace serving Ghana and Nigeria.\n\n### 🌟 What We Offer:\n• 📱 Tech & Phones: Apple, Samsung, Sony ANC audio, and gadgets.\n• 🍳 Home & Kitchen: Touchscreen air fryers, rechargeable juicers, power washers.\n• 👗 Fashion & Leather: Handcrafted cowhide belts, classic sneakers, and accessories.\n• ✨ Beauty & Niche Fragrances: Extrait de Parfum (MFK Baccarat Rouge 540) & travel atomizers.\n• 🏃 Health & Fitness: Digital arm BP monitors, snatch waist trainers.\n\n### 🛡️ Why Shop With Us?\n• 100% Authenticity Guarantee: Every single item is QC-inspected.\n• Express Nationwide Delivery: 24–48h delivery to Accra/Kumasi and Lagos/Abuja.\n• Flexible Payments: MTN MoMo, Telecel Cash, NIP Bank Transfer, Cards & Cash on Delivery.\n• 7-Day Hassle-Free Returns.`;
       actionLinks = [
-        { label: '🔥 Today\'s Flash Deals', view: 'shop', params: { dealsOnly: true } },
-        { label: '🏷️ Get 10% Discount Code', view: 'shop' },
-        { label: '📦 Track My Order', view: 'track-order' }
-      ];
-    } else if (isThanks) {
-      replyText = `You're very welcome! 😊 It's my pleasure to assist you.\n\nIs there anything else you need from our store? I'm always here to help! 🌟`;
-      actionLinks = [
-        { label: '🛍️ Browse Catalog', view: 'shop' },
-        { label: '💳 View My Bag', view: 'cart' }
-      ];
-    } else if (isGoodbye) {
-      replyText = `Thank you for visiting **NovaMart**! Have a wonderful day, and happy shopping! ✨👋`;
-    } else if (isIdentity) {
-      replyText = `I'm **NovaAI**, your intelligent shopping companion built exclusively for NovaMart ${countryConfig.name}! 🤖🛍️\n\nI specialize in helping you with everything in our store:\n1. **Shopping & Recommendations**: Ask me for phones, blenders, health monitors, fashion, and perfumes.\n2. **Direct Actions**: Tell me *"Add the blender to my cart"* to add items in 1 second.\n3. **Order Status**: Ask *"Where is my order?"* to see live courier progress.\n4. **Discounts**: Ask for vouchers to get instant savings.\n\nHow can I assist you right now?`;
-      actionLinks = [
-        { label: 'Shop All Categories', view: 'shop' }
+        { label: '🔥 Today\'s Deals', view: 'shop', params: { dealsOnly: true } },
+        { label: '🏪 Become a Seller', view: 'become-seller' },
+        { label: '✨ Take Scent Quiz', view: 'scent-quiz' }
       ];
     }
     // ==========================================
-    // ACTION 1: DIRECT ADD TO CART EXECUTION
+    // TASK 2: PRODUCT COMPARISON ENGINE (VS / COMPARE)
+    // ==========================================
+    else if (q.includes('compare') || q.includes(' vs ') || q.includes('versus') || q.includes('difference between')) {
+      // Find candidate products
+      let compA: Product | undefined;
+      let compB: Product | undefined;
+
+      if (q.includes('iphone') || q.includes('apple')) compA = catalogProducts.find(p => p.id === 'prod-iphone-15-pro');
+      if (q.includes('samsung') || q.includes('galaxy')) compB = catalogProducts.find(p => p.id === 'prod-samsung-s24-ultra');
+      if (q.includes('blender')) compA = compA || catalogProducts.find(p => p.id === 'prod-portable-blender');
+      if (q.includes('air fryer') || q.includes('fryer')) compB = compB || catalogProducts.find(p => p.id === 'prod-air-fryer-8l');
+      if (q.includes('sony') || q.includes('headphone')) compA = compA || catalogProducts.find(p => p.id === 'prod-sony-wh1000xm5');
+
+      if (!compA) compA = catalogProducts[0];
+      if (!compB) compB = catalogProducts[1] || catalogProducts[0];
+
+      matchingProducts = [compA, compB];
+      replyText = `⚖️ **Product Comparison Analysis:**\n\n1. **${compA.name}**\n• Price: **${formatPrice(compA.discountPrice || compA.price)}**\n• Rating: **${compA.rating} ★** (${compA.reviewCount} reviews)\n• Category: ${compA.categoryName}\n\n2. **${compB.name}**\n• Price: **${formatPrice(compB.discountPrice || compB.price)}**\n• Rating: **${compB.rating} ★** (${compB.reviewCount} reviews)\n• Category: ${compB.categoryName}\n\nBoth items are 100% genuine and covered by NovaMart's **7-Day Quality Guarantee**.`;
+      actionLinks = [
+        { label: `View ${compA.brand}`, view: 'product-detail', params: { productId: compA.id } },
+        { label: `View ${compB.brand}`, view: 'product-detail', params: { productId: compB.id } }
+      ];
+    }
+    // ==========================================
+    // TASK 3: DIRECT CART & CHECKOUT CONTROLS
+    // ==========================================
+    else if (q.includes('checkout') || q.includes('proceed to checkout') || q.includes('pay now')) {
+      replyText = `⚡ Ready to complete your order? Click below to proceed directly to our secure Mobile Money and Card checkout!`;
+      actionLinks = [{ label: '⚡ Go to Checkout', view: 'checkout' }, { label: '🛍️ View Bag', view: 'cart' }];
+    }
+    else if (q.includes('clear cart') || q.includes('empty cart') || q.includes('remove all items')) {
+      replyText = `🗑️ Your shopping bag can be managed directly in the Cart drawer. Click below to review or remove items:`;
+      actionLinks = [{ label: 'Open Cart Drawer', view: 'cart' }];
+    }
+    // ==========================================
+    // TASK 4: CATEGORY / DEPARTMENT BROWSING
+    // ==========================================
+    else if (q.includes('phone') || q.includes('smartphone') || q.includes('iphone') || q.includes('samsung') || q.includes('tablet')) {
+      const prods = catalogProducts.filter(p => p.categoryId === 'cat-phones');
+      matchingProducts = prods.length > 0 ? prods : catalogProducts.slice(0, 2);
+      replyText = `📱 **Smartphones & Flagship Devices:**\n\nExplore genuine Apple iPhone and Samsung Galaxy flagships with official warranty and fast delivery across Ghana & Nigeria.`;
+      actionLinks = [{ label: 'Browse All Phones', view: 'shop', params: { category: 'cat-phones' } }];
+    }
+    else if (q.includes('electronic') || q.includes('audio') || q.includes('headphone') || q.includes('sony') || q.includes('speaker')) {
+      const prods = catalogProducts.filter(p => p.categoryId === 'cat-electronics');
+      matchingProducts = prods.length > 0 ? prods : catalogProducts.slice(0, 2);
+      replyText = `🎧 **Electronics & Audio Gear:**\n\nCheck out industry-leading noise cancelling headphones, Hi-Res wireless audio, and home gadgets.`;
+      actionLinks = [{ label: 'Browse Electronics', view: 'shop', params: { category: 'cat-electronics' } }];
+    }
+    else if (q.includes('kitchen') || q.includes('appliance') || q.includes('blender') || q.includes('air fryer') || q.includes('washer')) {
+      const prods = catalogProducts.filter(p => p.categoryId === 'cat-appliances');
+      matchingProducts = prods.length > 0 ? prods : catalogProducts.slice(0, 2);
+      replyText = `🍳 **Home & Kitchen Appliances:**\n\nUpgrade your lifestyle with digital touchscreen air fryers, portable USB blenders, and heavy duty power washers.`;
+      actionLinks = [{ label: 'Browse Kitchen & Home', view: 'shop', params: { category: 'cat-appliances' } }];
+    }
+    else if (q.includes('fashion') || q.includes('leather') || q.includes('belt') || q.includes('shoe') || q.includes('sneaker') || q.includes('nike')) {
+      const prods = catalogProducts.filter(p => p.categoryId === 'cat-fashion');
+      matchingProducts = prods.length > 0 ? prods : catalogProducts.slice(0, 2);
+      replyText = `👗 **Fashion & Leather Goods:**\n\nShop 100% full-grain leather belts, classic sneakers, and premium accessories.`;
+      actionLinks = [{ label: 'Browse Fashion', view: 'shop', params: { category: 'cat-fashion' } }];
+    }
+    else if (q.includes('health') || q.includes('fitness') || q.includes('blood pressure') || q.includes('waist trainer') || q.includes('tummy')) {
+      const prods = catalogProducts.filter(p => p.categoryId === 'cat-health');
+      matchingProducts = prods.length > 0 ? prods : catalogProducts.slice(0, 2);
+      replyText = `🏃 **Health & Wellness Essentials:**\n\nStay on top of your vitality with automatic voice blood pressure monitors and seamless sweat wraps.`;
+      actionLinks = [{ label: 'Browse Health & Fitness', view: 'shop', params: { category: 'cat-health' } }];
+    }
+    // ==========================================
+    // TASK 5: LOYALTY POINTS & VIP TIERS
+    // ==========================================
+    else if (q.includes('loyalty') || q.includes('point') || q.includes('reward') || q.includes('vip') || q.includes('tier') || q.includes('diamond')) {
+      replyText = `👑 **NovaMart VIP Rewards Program:**\n\n• **Earn Points**: Get **2 points for every ₵1 spent** on all orders.\n• **Redeem Discounts**: 100 points = **₵10 instant cash discount** at checkout.\n• **VIP Tiers**: Unlock Gold, Platinum, and Diamond Privé status with exclusive perks, express delivery vouchers, and dedicated priority concierge.`;
+      actionLinks = [
+        { label: '👑 View My VIP Tier & Points', view: 'account', params: { tab: 'loyalty' } }
+      ];
+    }
+    // ==========================================
+    // TASK 6: WISHLIST & SAVED ITEMS
+    // ==========================================
+    else if (q.includes('wishlist') || q.includes('saved item') || q.includes('favorite') || q.includes('save for later')) {
+      replyText = `❤️ **My Saved Wishlist:**\n\nAccess your curated wishlist anytime, share with friends, or move saved items directly to your shopping bag with 1 click!`;
+      actionLinks = [
+        { label: '❤️ Open My Wishlist', view: 'wishlist' }
+      ];
+    }
+    // ==========================================
+    // TASK 7: GREETINGS & IDENTITY
+    // ==========================================
+    else if (['hi', 'hello', 'hey', 'hey there', 'good morning', 'good afternoon', 'good evening', 'how are you', 'whats up', 'yo'].includes(q)) {
+      replyText = `Hello there! 👋 Welcome to **NovaMart ${countryConfig.name}**.\n\nI'm your personal shopping assistant. How can I help you today?\n\nI can:\n• 🔍 Find products & flash deals\n• ⚖️ Compare products side-by-side\n• 🛒 Add items directly to your shopping bag\n• 📦 Track your orders in real-time\n• 🏷️ Apply the **\`WELCOME10\`** discount coupon\n• 🚚 Explain delivery & payment options\n\nWhat are you looking for today?`;
+      actionLinks = [
+        { label: '🔥 Flash Deals', view: 'shop', params: { dealsOnly: true } },
+        { label: '🏷️ 10% Discount Code', view: 'shop' },
+        { label: '📦 Track My Order', view: 'track-order' }
+      ];
+    }
+    // ==========================================
+    // TASK 8: BECOME A SELLER / VENDOR
+    // ==========================================
+    else if (q.includes('seller') || q.includes('vendor') || q.includes('sell on') || q.includes('merchant') || q.includes('open store')) {
+      replyText = `🏪 **Sell on NovaMart Marketplace!**\n\nJoin verified merchants reaching 50,000+ shoppers across Ghana and Nigeria.\n\n• **Zero Setup Fee**: Launch your storefront in under 5 minutes.\n• **Integrated Logistics**: We handle rider dispatch and nationwide delivery.\n• **Fast Payouts**: Automated weekly payouts to your MoMo or Bank Account.\n• **Vendor Dashboard**: Real-time sales analytics and stock manager.`;
+      actionLinks = [
+        { label: '🚀 Register as a Seller', view: 'become-seller' }
+      ];
+    }
+    // ==========================================
+    // TASK 9: SCENT / PERFUME QUIZ
+    // ==========================================
+    else if (q.includes('scent') || q.includes('perfume') || q.includes('fragrance') || q.includes('baccarat') || q.includes('cologne')) {
+      const perfumes = catalogProducts.filter(p => p.categoryId === 'cat-beauty');
+      matchingProducts = perfumes.length > 0 ? perfumes : catalogProducts.slice(0, 2);
+      replyText = `✨ **Niche Fragrance Concierge:**\n\nDiscover signature scents crafted in Paris and Dubai. You can take our interactive Scent Profile Quiz to find the perfect notes for your personality!`;
+      actionLinks = [
+        { label: '✨ Launch Scent Quiz', view: 'scent-quiz' },
+        { label: '🎁 Discovery Box Subscription', view: 'discovery-box' }
+      ];
+    }
+    // ==========================================
+    // TASK 10: GIFTS & CURATED RECOMMENDATIONS
+    // ==========================================
+    else if (q.includes('gift') || q.includes('recommend') || q.includes('present') || q.includes('birthday') || q.includes('wedding')) {
+      const giftItems = catalogProducts.filter(p => ['prod-baccarat-rouge-540', 'prod-sony-wh1000xm5', 'prod-leather-belts', 'prod-portable-blender'].includes(p.id));
+      matchingProducts = giftItems.length > 0 ? giftItems : catalogProducts.slice(0, 3);
+      replyText = `🎁 **Curated Gift Recommendations:**\n\nHere are top-rated gifts guaranteed to delight:\n• 🌟 **Baccarat Rouge 540 Extrait**: Luxury ambergris & jasmine perfume.\n• 🎧 **Sony WH-1000XM5**: Industry-leading active noise cancellation.\n• 👔 **Genuine Leather 3-Belt Set**: Handcrafted full-grain leather in gift box.\n• 🥤 **Portable USB Blender**: Healthy smoothies anywhere.`;
+      actionLinks = [
+        { label: '🎁 Explore Discovery Box', view: 'discovery-box' },
+        { label: '🛍️ Shop Best Sellers', view: 'shop' }
+      ];
+    }
+    // ==========================================
+    // TASK 11: DIRECT ADD TO CART EXECUTION
     // ==========================================
     else if (q.includes('add') || q.includes('buy') || q.includes('put in bag') || q.includes('purchase')) {
-      // Find the best matched product from catalog
       const keywords = q.replace(/(add|to|my|cart|bag|please|buy|the|order|purchase)/g, '').trim().split(' ').filter(w => w.length > 2);
       const matched = catalogProducts.find(p => {
         const text = `${p.name} ${p.categoryName} ${p.brand}`.toLowerCase();
@@ -265,7 +495,6 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
       }) || catalogProducts[0];
 
       if (matched) {
-        // Execute Add to Bag
         addToCart(matched, undefined, 1);
         matchingProducts = [matched];
         replyText = `🎉 **Done!** I've added **${matched.name}** to your shopping bag.\n\nPrice: **${formatPrice(matched.discountPrice || matched.price)}**\n\nYou can continue shopping or proceed directly to checkout.`;
@@ -276,33 +505,38 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
       }
     }
     // ==========================================
-    // ACTION 2: ORDER TRACKING LOOKUP
+    // TASK 12: ORDER TRACKING LOOKUP
     // ==========================================
-    else if (q.includes('track') || q.includes('order') || q.includes('where is my') || q.includes('status') || q.includes('parcel')) {
-      // Look for order number in query (e.g., #ORD-1234 or ORD-1234 or numbers)
+    else if (q.includes('track') || q.includes('where is my') || q.includes('status') || q.includes('parcel')) {
       const orderMatch = q.match(/ord-?[a-z0-9]+/i) || q.match(/\d{4,6}/);
       let foundOrder = recentOrders.find(o => 
         orderMatch && (o.id.toLowerCase().includes(orderMatch[0].toLowerCase()) || o.orderNumber.toLowerCase().includes(orderMatch[0].toLowerCase()))
       );
 
-      if (!foundOrder && recentOrders.length > 0) {
-        // Default to the most recent order
-        foundOrder = recentOrders[0];
-      }
+      if (!foundOrder && recentOrders.length > 0) foundOrder = recentOrders[0];
 
       if (foundOrder) {
         orderInfo = foundOrder;
         replyText = `📦 **Live Order Status Found:**\n\n• Order Number: **#${foundOrder.orderNumber}**\n• Status: **${(foundOrder.orderStatus || 'in_transit').toUpperCase().replace('_', ' ')}**\n• Total: **${formatPrice(foundOrder.total)}**\n• Dispatch Hub: **${country === 'NG' ? 'Ikeja Depot, Lagos Hub' : 'Airport City Hub, Accra'}**\n• Estimated Delivery: **${foundOrder.estimatedDelivery || '1–2 Business Days'}**`;
-        actionLinks = [
-          { label: '🗺️ Open Full GPS Live Map', view: 'track-order' }
-        ];
+        actionLinks = [{ label: '🗺️ Open Full GPS Live Map', view: 'track-order', params: { orderNumber: foundOrder.orderNumber } }];
       } else {
-        replyText = `📦 You can track any active order in real-time! Please enter your **Order Number** (e.g. \`#ORD-84920\`) or click below to view the tracking portal:`;
+        replyText = `📦 You can track any active order in real-time! Please enter your **Order Number** or click below:`;
         actionLinks = [{ label: 'Track Order with ID', view: 'track-order' }];
       }
     }
     // ==========================================
-    // ACTION 3: COUPON & DISCOUNT ENGINE
+    // TASK 13: BUDGET / PRICE SEARCH
+    // ==========================================
+    else if (q.includes('under') || q.includes('budget') || q.includes('cheap') || q.includes('less than') || q.includes('below')) {
+      const numMatch = q.match(/\d+/);
+      const limit = numMatch ? Number(numMatch[0]) : 200;
+      const budgetItems = catalogProducts.filter(p => (p.discountPrice || p.price) <= limit);
+      matchingProducts = budgetItems.length > 0 ? budgetItems.slice(0, 3) : catalogProducts.slice(0, 3);
+      replyText = `💰 **Budget Picks Under ${formatPrice(limit)}:**\n\nHere are top-rated products matching your price range:`;
+      actionLinks = [{ label: 'Explore Budget Deals', view: 'shop', params: { dealsOnly: true } }];
+    }
+    // ==========================================
+    // TASK 14: COUPONS & DISCOUNTS
     // ==========================================
     else if (q.includes('coupon') || q.includes('promo') || q.includes('discount code') || q.includes('voucher') || q.includes('save money')) {
       couponCode = 'WELCOME10';
@@ -310,16 +544,16 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
       actionLinks = [{ label: 'View Today\'s Flash Deals', view: 'shop', params: { dealsOnly: true } }];
     }
     // ==========================================
-    // ACTION 4: DEALS & FLASH SALES
+    // TASK 15: FLASH SALES & DEALS
     // ==========================================
-    else if (q.includes('deal') || q.includes('discount') || q.includes('sale') || q.includes('cheap') || q.includes('flash')) {
+    else if (q.includes('deal') || q.includes('discount') || q.includes('sale') || q.includes('flash')) {
       const deals = catalogProducts.filter((p) => p.discountPrice && p.discountPrice < p.price).slice(0, 3);
       matchingProducts = deals.length > 0 ? deals : catalogProducts.slice(0, 3);
       replyText = `🔥 Here are our top discounted flash deals today with instant savings up to **35%**:`;
       actionLinks = [{ label: 'Shop All Flash Deals', view: 'shop', params: { dealsOnly: true } }];
     }
     // ==========================================
-    // ACTION 5: SHIPPING & REGIONAL DELIVERY
+    // TASK 16: SHIPPING & DELIVERY
     // ==========================================
     else if (q.includes('shipping') || q.includes('delivery') || q.includes('courier') || q.includes('how long') || q.includes('arrive') || q.includes('lagos') || q.includes('accra')) {
       if (country === 'NG') {
@@ -330,7 +564,7 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
       actionLinks = [{ label: 'Track Parcel Status', view: 'track-order' }];
     }
     // ==========================================
-    // ACTION 6: LOCALIZED PAYMENT METHODS
+    // TASK 17: PAYMENT METHODS & MOMO
     // ==========================================
     else if (q.includes('payment') || q.includes('pay') || q.includes('momo') || q.includes('bank transfer') || q.includes('card') || q.includes('cod') || q.includes('cash on delivery')) {
       if (country === 'NG') {
@@ -340,21 +574,22 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
       }
     }
     // ==========================================
-    // ACTION 7: RETURN & WARRANTY POLICY
+    // TASK 18: RETURN & WARRANTY POLICY
     // ==========================================
     else if (q.includes('return') || q.includes('refund') || q.includes('warranty') || q.includes('authentic') || q.includes('fake') || q.includes('broken')) {
       replyText = `🛡️ **100% Authenticity & 7-Day Guarantee:**\n\n• All products sold on NovaMart are inspected and 100% brand genuine.\n• Enjoy a **7-day free return & replacement policy** if an item is damaged or differs from description.\n• Instant refunds are remitted directly to your MoMo or Bank Account upon item return.`;
       actionLinks = [{ label: 'Read Return Policy', view: 'returns' }];
     }
     // ==========================================
-    // ACTION 8: GENERAL SMART PRODUCT SEARCH
+    // TASK 19: GENERAL SEARCH FALLBACK
     // ==========================================
     else {
-      const keywords = q.split(' ').filter((w) => w.length > 2);
-      const matches = catalogProducts.filter((p) => {
+      const stopWords = ['can', 'you', 'tell', 'me', 'about', 'this', 'site', 'show', 'the', 'what', 'are', 'is', 'a', 'an', 'in', 'for', 'with', 'and'];
+      const keywords = q.split(' ').filter((w) => w.length > 2 && !stopWords.includes(w));
+      const matches = keywords.length > 0 ? catalogProducts.filter((p) => {
         const text = `${p.name} ${p.description} ${p.categoryName} ${p.brand} ${(p.tags || []).join(' ')}`.toLowerCase();
         return keywords.some((k) => text.includes(k));
-      }).slice(0, 3);
+      }).slice(0, 3) : [];
 
       if (matches.length > 0) {
         matchingProducts = matches;
@@ -365,6 +600,7 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
         actionLinks = [{ label: 'Explore Full Catalog', view: 'shop' }];
       }
     }
+
 
     const newAiMessage: Message = {
       id: `ai-${Date.now()}`,
@@ -380,6 +616,7 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
     setMessages((prev) => [...prev, newAiMessage]);
     setIsTyping(false);
   };
+
 
   const handleSend = (queryText?: string) => {
     const textToSend = queryText || input;
@@ -498,7 +735,8 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
                         : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700 shadow-sm'
                     }`}
                   >
-                    <div className="whitespace-pre-line">{m.text}</div>
+                    {/* Formatted Message Bubble Text */}
+                    <FormattedChatMessage text={m.text} isUser={m.sender === 'user'} />
 
                     {/* AI Speech Voice Button */}
                     {m.sender === 'ai' && (
