@@ -12,12 +12,16 @@ import {
   Package,
   CheckCircle2,
   ExternalLink,
-  ArrowLeft
+  ArrowLeft,
+  MessageCircle,
+  Bot
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Vendor, Product } from '../types/index';
 import { ProductCard } from '../components/common/ProductCard';
+import { StoreChatModal } from '../components/common/StoreChatModal';
 import { useSettings } from '../context/SettingsContext';
+
 
 interface VendorStoreViewProps {
   vendorId: string;
@@ -35,7 +39,9 @@ export const VendorStoreView: React.FC<VendorStoreViewProps> = ({
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
 
   useEffect(() => {
     const loadStoreData = async () => {
@@ -131,7 +137,16 @@ export const VendorStoreView: React.FC<VendorStoreViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsChatOpen(true)}
+              className="px-5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 shadow-lg flex items-center gap-2 transition-all active:scale-95 cursor-pointer backdrop-blur-md"
+            >
+              <Bot className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Live Chat</span>
+            </button>
+
             <a
               href={`https://wa.me/${(vendor?.phone || '233248881234').replace(/[^0-9]/g, '')}`}
               target="_blank"
@@ -139,11 +154,21 @@ export const VendorStoreView: React.FC<VendorStoreViewProps> = ({
               className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/25 flex items-center gap-2 transition-all active:scale-95"
             >
               <Phone className="w-3.5 h-3.5" />
-              <span>Contact Seller</span>
+              <span>WhatsApp</span>
             </a>
           </div>
         </div>
       </div>
+
+      {/* Store Chat Modal */}
+      {isChatOpen && (
+        <StoreChatModal
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          vendor={vendor}
+        />
+      )}
+
 
       {/* Catalog Search & Department Filters */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

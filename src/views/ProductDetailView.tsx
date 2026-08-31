@@ -31,7 +31,7 @@ import {
   ThumbsUp
 } from 'lucide-react';
 
-import { Product, ProductVariation, Review } from '../types/index';
+import { Product, ProductVariation, Review, Vendor } from '../types/index';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useCompare } from '../context/CompareContext';
@@ -39,8 +39,10 @@ import { useRecentlyViewed } from '../context/RecentlyViewedContext';
 import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
 import { ReviewModal } from '../components/common/ReviewModal';
+import { StoreChatModal } from '../components/common/StoreChatModal';
 import { ProductCard } from '../components/common/ProductCard';
 import { api } from '../services/api';
+
 import { generateWhatsAppProductLink } from '../utils/whatsappHelper';
 
 interface ProductDetailViewProps {
@@ -75,10 +77,13 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const [aiAnswer, setAiAnswer] = useState<{ q: string; a: string } | null>(null);
   const [isAnsweringAI, setIsAnsweringAI] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [vendorData, setVendorData] = useState<Vendor | null>(null);
   const [reviewsList, setReviewsList] = useState<Review[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
 
   // Load product data (stable, no infinite loop)
   useEffect(() => {
@@ -161,10 +166,21 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
     fetchReviews();
 
+    if (targetId) {
+      api.getProduct(targetId).then((res) => {
+        if (res?.product?.vendorId) {
+          api.getVendorById(res.product.vendorId).then((v) => {
+            if (v && isMounted) setVendorData(v);
+          });
+        }
+      });
+    }
+
     return () => {
       isMounted = false;
     };
   }, [productId]);
+
 
   if (isLoadingProduct) {
     return (
@@ -495,32 +511,59 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           </div>
 
           {/* Verified Seller / Vendor Card */}
-          <div
-            onClick={() => {
-              if (product.vendorId) {
-                onNavigate('vendor-store', { vendorId: product.vendorId });
-              }
-            }}
-            className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex items-center justify-between gap-3 text-xs cursor-pointer hover:border-amber-400 transition-colors group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs group-hover:scale-105 transition-transform">
+          <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div
+              onClick={() => {
+                if (product.vendorId) {
+                  onNavigate('vendor-store', { vendorId: product.vendorId });
+                }
+              }}
+              className="flex items-center gap-3 cursor-pointer group flex-1"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs group-hover:scale-105 transition-transform shrink-0">
                 <Store className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Sold &amp; Fulfilled By</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Sold &amp; Fulfilled By</p>
+                  <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[9px] font-black uppercase tracking-wider border border-amber-300 dark:border-amber-800">
+                    Verified
+                  </span>
+                </div>
                 <p className="font-bold text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors">
                   {product.vendorName || 'NovaMart Official Flagship'}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[10px] font-black uppercase tracking-wider border border-amber-300 dark:border-amber-800">
-                Verified Merchant
-              </span>
-              <ChevronRight className="w-4 h-4 text-amber-600 group-hover:translate-x-0.5 transition-transform" />
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsChatOpen(true);
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              >
+                <Bot className="w-3.5 h-3.5" />
+                <span>Chat with Seller</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (product.vendorId) {
+                    onNavigate('vendor-store', { vendorId: product.vendorId });
+                  }
+                }}
+                className="p-1.5 rounded-xl text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                title="View Store"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
+
 
           {/* Quick Summary Highlights */}
           <div className="space-y-2">
@@ -1237,6 +1280,27 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           }}
         />
       )}
+
+      {/* Store Chat Modal */}
+      {isChatOpen && (
+        <StoreChatModal
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          vendor={
+            vendorData ||
+            ({
+              id: product.vendorId || 'vend-official',
+              storeName: product.vendorName || 'NovaMart Official Flagship',
+              city: product.originCity || (country === 'NG' ? 'Lagos' : 'Accra'),
+              phone: '+233 24 888 1234',
+              rating: 4.9,
+              logo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80'
+            } as any)
+          }
+          product={product}
+        />
+      )}
+
 
       {/* 6. STICKY MOBILE BOTTOM ACTION BAR */}
       <div className="md:hidden fixed bottom-14 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-3 shadow-2xl flex items-center justify-between gap-3 safe-area-bottom">
