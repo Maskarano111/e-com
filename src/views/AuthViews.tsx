@@ -261,23 +261,19 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
             </div>
 
             {/* Header */}
-            <div className="text-center space-y-1.5">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2">
-                {currentMode === 'login' ? <Lock className="w-6 h-6" /> : currentMode === 'register' ? <UserCheck className="w-6 h-6" /> : <KeyRound className="w-6 h-6" />}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 mb-3 shadow-inner">
+                <User className="w-6 h-6" />
               </div>
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                {currentMode === 'login'
-                  ? 'Welcome to NovaMart'
-                  : currentMode === 'register'
-                  ? 'Create Your Account'
-                  : 'Reset Your Password'}
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                {currentMode === 'login' && 'Welcome Back'}
+                {currentMode === 'register' && 'Create Customer Account'}
+                {currentMode === 'forgot-password' && 'Reset Password'}
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {currentMode === 'login'
-                  ? 'Access your saved cart, orders, and wishlist'
-                  : currentMode === 'register'
-                  ? 'Create an account for instant order tracking, discounts & perks'
-                  : 'Enter your account email to receive a password reset link'}
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {currentMode === 'login' && 'Sign in to access your orders, wishlist & discounts'}
+                {currentMode === 'register' && 'For shoppers to track orders, save items & get exclusive discounts'}
+                {currentMode === 'forgot-password' && 'Enter your email to receive recovery instructions'}
               </p>
             </div>
 
@@ -553,19 +549,36 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
-                <div className="text-center pt-2">
-                  <span className="text-slate-500 dark:text-slate-400">Already have an account? </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCurrentMode('login');
-                      setErrorMessage(null);
-                    }}
-                    className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
-                  >
-                    Sign In
-                  </button>
+                <div className="text-center pt-2 space-y-3">
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400">Already have an account? </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentMode('login');
+                        setErrorMessage(null);
+                      }}
+                      className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                    >
+                      Sign In
+                    </button>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Want to sell products on NovaMart?
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('become-seller')}
+                      className="inline-flex items-center gap-1 mt-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                    >
+                      <span>Register as a Merchant / Seller instead</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
+
               </form>
             )}
 
