@@ -43,18 +43,19 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       return;
     }
 
-    Array.from(files).forEach((file) => {
+    Array.from(files).forEach((file: File) => {
       if (file.size > 5 * 1024 * 1024) {
         showToast('error', 'File Too Large', `${file.name} is larger than 5MB.`);
         return;
       }
       const reader = new FileReader();
       reader.onload = (loadEvt) => {
-        const dataUrl = loadEvt.target?.result as string;
+        const dataUrl = (loadEvt.target?.result as string) || '';
         setImages((prev) => [...prev, { name: file.name, dataUrl }].slice(0, 3));
       };
       reader.readAsDataURL(file);
     });
+
   };
 
   const removePhoto = (index: number) => {

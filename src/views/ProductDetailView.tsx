@@ -64,7 +64,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const { showToast } = useToast();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
   const [relatedProductsList, setRelatedProductsList] = useState<Product[]>([]);
+
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | undefined>(undefined);
