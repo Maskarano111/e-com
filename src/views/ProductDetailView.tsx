@@ -1057,14 +1057,25 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                       key={rev.id}
                       className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h4 className="font-bold text-xs text-slate-900 dark:text-white">{rev.userName}</h4>
-                          <div className="flex items-center gap-1 text-amber-400 mt-0.5">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-xs text-slate-900 dark:text-white">{rev.userName}</h4>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 text-[10px] font-bold">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Verified Buyer</span>
+                            </span>
+                            {rev.location && (
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                • {rev.location}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 text-amber-400 mt-1">
                             {[...Array(5)].map((_, j) => (
                               <Star
                                 key={j}
-                                className={`w-3 h-3 ${j < rev.rating ? 'fill-current' : 'text-slate-200 dark:text-slate-700'}`}
+                                className={`w-3.5 h-3.5 ${j < rev.rating ? 'fill-current' : 'text-slate-200 dark:text-slate-700'}`}
                               />
                             ))}
                           </div>
@@ -1073,11 +1084,36 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                           {new Date(rev.createdAt).toLocaleDateString('en-GB')}
                         </span>
                       </div>
+
+                      {rev.title && (
+                        <h5 className="font-bold text-xs text-slate-900 dark:text-white">
+                          {rev.title}
+                        </h5>
+                      )}
+
                       <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                         {rev.comment}
                       </p>
+
+                      {/* Customer Uploaded Photos */}
+                      {rev.images && rev.images.length > 0 && (
+                        <div className="flex items-center gap-2 pt-2">
+                          {rev.images.map((img, imgIdx) => (
+                            <div
+                              key={imgIdx}
+                              onClick={() => {
+                                setIsLightboxOpen(true);
+                              }}
+                              className="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-emerald-500 cursor-pointer shadow-xs transition-transform hover:scale-105"
+                            >
+                              <img src={img} alt="Customer review photo" className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))
+
                 )}
               </div>
             </div>

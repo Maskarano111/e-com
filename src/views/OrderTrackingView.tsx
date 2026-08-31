@@ -332,12 +332,22 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
                 <h2 className="text-xl font-black text-slate-900 dark:text-white">#{order.orderNumber}</h2>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <a
+                  href={`https://wa.me/?text=Track%20my%20NovaMart%20Order%20%23${order.orderNumber}%20(${order.orderStatus})%20with%20OTP%20${deliveryOtp}%20at%20${encodeURIComponent(window.location.href)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>Send WhatsApp Alert</span>
+                </a>
+
                 <button
                   onClick={handleDownloadInvoice}
                   className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5 text-emerald-600" /> Download PDF Receipt
+                  <Download className="w-3.5 h-3.5 text-emerald-600" /> PDF Receipt
                 </button>
 
                 <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
@@ -347,10 +357,11 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
                     ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
                     : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                 }`}>
-                  Status: {order.orderStatus}
+                  {order.orderStatus}
                 </span>
               </div>
             </div>
+
 
             {/* Visual 7-Stage Timeline */}
             <div className="py-4">

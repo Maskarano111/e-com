@@ -154,9 +154,13 @@ export const VendorProductsView: React.FC<VendorProductsViewProps> = ({ initialO
           description,
           tags,
           brand: vendor?.storeName || 'Verified Merchant',
+          vendorId: vendor?.id || vendorId,
+          vendorName: vendor?.storeName || 'Verified Merchant',
+          originCountry: vendor?.countryCode || (vendor?.country === 'Nigeria' ? 'NG' : 'GH'),
+          originCity: vendor?.city || (vendor?.countryCode === 'NG' ? 'Lagos' : 'Accra'),
           status: 'active'
         });
-        showToast('success', 'Product Listed!', `${name} is now live on the NovaMart store.`);
+        showToast('success', 'Product Listed!', `${name} is now listed in your ${vendor?.countryCode === 'NG' ? 'Nigerian' : 'Ghanaian'} marketplace catalog.`);
       }
 
       setIsModalOpen(false);
@@ -164,6 +168,7 @@ export const VendorProductsView: React.FC<VendorProductsViewProps> = ({ initialO
     } catch (err: any) {
       showToast('error', 'Upload Failed', err.message || 'Could not save product.');
     }
+
   };
 
   const handleDeleteProduct = async (productId: string, productName: string) => {

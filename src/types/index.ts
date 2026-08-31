@@ -207,10 +207,15 @@ export interface Review {
   rating: number;
   title: string;
   comment: string;
+  images?: string[];
+  country?: 'GH' | 'NG' | string;
+  location?: string;
+  helpfulCount?: number;
   status: 'approved' | 'pending' | 'rejected';
   verifiedPurchase: boolean;
   createdAt: string;
 }
+
 
 export interface Coupon {
   id: string;
