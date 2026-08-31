@@ -303,6 +303,20 @@ export interface VendorPayoutDetails {
   branch?: string;
 }
 
+export interface VendorVerificationDocuments {
+  businessRegNumber?: string; // CAC or RGD Registration
+  businessRegDoc?: string; // Document image / PDF
+  tin?: string; // Tax Identification Number
+  nationalIdType?: string; // Ghana Card, NIN, Passport, Driver's License
+  nationalIdNumber?: string;
+  nationalIdFront?: string;
+  nationalIdBack?: string;
+  proofOfAddressDoc?: string;
+  stateOrRegion?: string;
+  submittedAt?: string;
+  rejectionReason?: string;
+}
+
 export interface Vendor {
   id: string;
   userId: string; // ID of the User associated with this vendor
@@ -319,7 +333,9 @@ export interface Vendor {
   countryCode?: 'GH' | 'NG';
   address: string;
   city: string;
+  stateOrRegion?: string;
   status: 'active' | 'pending' | 'suspended';
+  verificationDocuments?: VendorVerificationDocuments;
   commissionRate: number; // e.g. 10 for 10%
   payoutDetails: VendorPayoutDetails;
   rating: number;
@@ -332,6 +348,7 @@ export interface Vendor {
   createdAt: string;
   updatedAt: string;
 }
+
 
 export interface VendorPayoutRequest {
   id: string;

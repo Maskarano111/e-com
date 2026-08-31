@@ -2044,8 +2044,140 @@ router.get('/admin/audit-log', (req: Request, res: Response) => {
 });
 
 // ----------------------------------------------------
+// 17.5 MULTI-VENDOR / SELLER ROUTES
+// ----------------------------------------------------
+router.get('/vendors', (req: Request, res: Response) => {
+  const vendors = db.get('vendors') || [];
+  res.json(vendors);
+});
+
+router.get('/vendors/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const vendors = db.get('vendors') || [];
+  const vendor = vendors.find(v => v.id === id || v.userId === id);
+  if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
+  res.json({ vendor });
+});
+
+router.post('/vendors', (req: Request, res: Response) => {
+  const data = req.body;
+  const vendors = db.get('vendors') || [];
+  const users = db.get('users') || [];
+
+  const vendorId = `vend-${Date.now().toString().slice(-6)}`;
+  const userId = `usr-seller-${Date.now().toString().slice(-6)}`;
+
+  const newUser = {
+    id: userId,
+    firstName: data.ownerFirstName,
+    lastName: data.ownerLastName,
+    email: data.email,
+    phone: data.phone,
+    role: 'vendor' as const,
+    vendorId,
+    vendorStoreName: data.storeName,
+    profileImage: data.logo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    passwordHash: data.password || 'seller123'
+  };
+
+  users.push(newUser);
+  db.set('users', users);
+
+  const newVendor = {
+    id: vendorId,
+    userId,
+    storeName: data.storeName,
+    slug: data.storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    ownerName: `${data.ownerFirstName} ${data.ownerLastName}`.trim(),
+    email: data.email,
+    phone: data.phone,
+    category: data.category,
+    description: data.description || `Official store of ${data.storeName}`,
+    logo: data.logo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
+    banner: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80',
+    country: data.country || (data.countryCode === 'NG' ? 'Nigeria' : 'Ghana'),
+    countryCode: data.countryCode || (data.country === 'Nigeria' ? 'NG' : 'GH'),
+    address: data.address,
+    city: data.city || (data.countryCode === 'NG' ? 'Lagos' : 'Accra'),
+    stateOrRegion: data.stateOrRegion,
+    status: data.status || 'pending',
+    verificationDocuments: data.verificationDocuments,
+    commissionRate: data.commissionRate !== undefined ? data.commissionRate : 10,
+    payoutDetails: data.payoutDetails,
+    rating: 5.0,
+    reviewCount: 0,
+    totalProducts: 0,
+    totalSales: 0,
+    totalRevenue: 0,
+    balance: 0,
+    pendingBalance: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  vendors.unshift(newVendor);
+  db.set('vendors', vendors);
+
+  res.status(201).json({ vendor: newVendor, user: newUser });
+});
+
+router.put('/vendors/:id/approve', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const vendors = db.get('vendors') || [];
+  const idx = vendors.findIndex(v => v.id === id || v.userId === id);
+  if (idx === -1) return res.status(404).json({ error: 'Vendor not found' });
+
+  vendors[idx].status = 'active';
+  vendors[idx].updatedAt = new Date().toISOString();
+  db.set('vendors', vendors);
+
+  res.json({ vendor: vendors[idx] });
+});
+
+router.put('/vendors/:id/reject', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const vendors = db.get('vendors') || [];
+  const idx = vendors.findIndex(v => v.id === id || v.userId === id);
+  if (idx === -1) return res.status(404).json({ error: 'Vendor not found' });
+
+  vendors[idx].status = 'suspended';
+  vendors[idx].verificationDocuments = {
+    ...vendors[idx].verificationDocuments,
+    rejectionReason: reason
+  };
+  vendors[idx].updatedAt = new Date().toISOString();
+  db.set('vendors', vendors);
+
+  res.json({ vendor: vendors[idx] });
+});
+
+router.put('/vendors/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const data = req.body;
+  const vendors = db.get('vendors') || [];
+  const idx = vendors.findIndex(v => v.id === id || v.userId === id);
+  if (idx === -1) return res.status(404).json({ error: 'Vendor not found' });
+
+  vendors[idx] = { ...vendors[idx], ...data, updatedAt: new Date().toISOString() };
+  db.set('vendors', vendors);
+  res.json({ vendor: vendors[idx] });
+});
+
+router.delete('/vendors/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  let vendors = db.get('vendors') || [];
+  vendors = vendors.filter(v => v.id !== id);
+  db.set('vendors', vendors);
+  res.json({ success: true });
+});
+
+// ----------------------------------------------------
 // 18. GEMINI AI SHOPPING ASSISTANT & STYLIST
 // ----------------------------------------------------
+
 router.post('/ai/chat', async (req: Request, res: Response) => {
   const { message } = req.body;
   if (!message || typeof message !== 'string') {

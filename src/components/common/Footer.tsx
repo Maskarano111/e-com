@@ -22,8 +22,9 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
-  const { settings } = useSettings();
+  const { settings, country, setCountry, countryConfig } = useSettings();
   const [newsletterEmail, setNewsletterEmail] = useState('');
+
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
@@ -240,31 +241,82 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* 3. PAYMENT BADGES & COPYRIGHT */}
-        <div className="mt-12 pt-8 border-t border-slate-900 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-          <p>© {new Date().getFullYear()} NovaMart E-Commerce Ghana Ltd. All rights reserved.</p>
+        {/* 3. PAYMENT BADGES, MARKET SWITCHER & COPYRIGHT */}
+        <div className="mt-12 pt-8 border-t border-slate-900 flex flex-col md:flex-row items-center justify-between gap-6 text-xs">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <p>© {new Date().getFullYear()} NovaMart E-Commerce {country === 'NG' ? 'Nigeria' : 'Ghana'} Ltd. All rights reserved.</p>
+            
+            {/* Footer Regional Market Selector */}
+            <div className="flex items-center bg-slate-900 rounded-xl p-1 border border-slate-800">
+              <span className="text-[10px] uppercase font-bold text-slate-500 px-2">Market:</span>
+              <button
+                type="button"
+                onClick={() => setCountry('GH')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  country === 'GH'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>🇬🇭</span>
+                <span>Ghana (GH₵)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCountry('NG')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  country === 'NG'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>🇳🇬</span>
+                <span>Nigeria (₦)</span>
+              </button>
+            </div>
+          </div>
 
           {/* Accepted payment methods */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] text-slate-500 mr-1">Secured Payments:</span>
-            <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-amber-400">
-              MTN MoMo
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-rose-400">
-              Telecel Cash
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-indigo-400">
-              Paystack
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-emerald-400">
-              Visa / Mastercard
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">
-              Cash on Delivery
-            </span>
+            {country === 'NG' ? (
+              <>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-emerald-400">
+                  NIP Bank Transfer
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-teal-400">
+                  OPay & PalmPay
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-indigo-400">
+                  Paystack Verve/Cards
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">
+                  Lagos COD
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-amber-400">
+                  MTN MoMo
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-rose-400">
+                  Telecel Cash
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-indigo-400">
+                  Paystack
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-emerald-400">
+                  Visa / Mastercard
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">
+                  Cash on Delivery
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
     </footer>
   );
 };
+

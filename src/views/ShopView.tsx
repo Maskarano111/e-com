@@ -141,15 +141,13 @@ export const ShopView: React.FC<ShopViewProps> = ({
         }
       }
 
-      // Origin filter
-      if (originFilter === 'local_only') {
-        const isLocal = product.originCountry === country || (!product.originCountry && country === 'GH');
-        if (!isLocal) return false;
-      } else if (originFilter === 'GH') {
-        if (product.originCountry && product.originCountry !== 'GH') return false;
-      } else if (originFilter === 'NG') {
+      // Strict Country Market Isolation
+      if (country === 'NG') {
         if (product.originCountry !== 'NG') return false;
+      } else {
+        if (product.originCountry && product.originCountry !== 'GH') return false;
       }
+
 
       // Deals only
       if (dealsOnly && (!product.discountPrice || product.discountPrice >= product.price)) {

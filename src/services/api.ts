@@ -1315,8 +1315,11 @@ export const api = {
     logo?: string;
     address: string;
     city?: string;
+    stateOrRegion?: string;
     country?: 'Ghana' | 'Nigeria';
     countryCode?: 'GH' | 'NG';
+    status?: 'active' | 'pending' | 'suspended';
+    verificationDocuments?: any;
     commissionRate?: number;
     payoutDetails: {
       method: 'mtn_momo' | 'telecel_cash' | 'airteltigo' | 'bank_transfer';
@@ -1357,7 +1360,7 @@ export const api = {
         users.push({ ...newUser, passwordHash: data.password || 'seller123' });
         setLocal(STORAGE_KEYS.USERS, users);
 
-        // 2. Create Vendor profile
+        // 2. Create Vendor profile with verification documents
         const newVendor: Vendor = {
           id: vendorId,
           userId: userId,
@@ -1370,11 +1373,13 @@ export const api = {
           description: data.description || `Official store of ${data.storeName} on NovaMart West Africa.`,
           logo: data.logo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
           banner: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80',
-          country: data.country || 'Ghana',
-          countryCode: data.countryCode || 'GH',
+          country: data.country || (data.countryCode === 'NG' ? 'Nigeria' : 'Ghana'),
+          countryCode: data.countryCode || (data.country === 'Nigeria' ? 'NG' : 'GH'),
           address: data.address,
           city: data.city || (data.countryCode === 'NG' ? 'Lagos' : 'Accra'),
-          status: 'active',
+          stateOrRegion: data.stateOrRegion,
+          status: data.status || 'pending',
+          verificationDocuments: data.verificationDocuments,
           commissionRate: data.commissionRate !== undefined ? data.commissionRate : 10,
           payoutDetails: data.payoutDetails,
           rating: 5.0,
@@ -1392,6 +1397,54 @@ export const api = {
         setLocal(STORAGE_KEYS.VENDORS, vendors);
 
         return { vendor: newVendor, user: newUser };
+      }
+    );
+  },
+
+  async approveVendor(vendorId: string) {
+    return safeFetch<{ vendor: Vendor }>(
+      `${API_BASE}/vendors/${vendorId}/approve`,
+      { method: 'PUT' },
+      () => {
+        const vendors = getLocal<Vendor[]>(STORAGE_KEYS.VENDORS, initialVendors);
+        const idx = vendors.findIndex((v) => v.id === vendorId || v.userId === vendorId);
+        if (idx === -1) throw new Error('Vendor not found');
+
+        vendors[idx] = {
+          ...vendors[idx],
+          status: 'active',
+          updatedAt: new Date().toISOString()
+        };
+        setLocal(STORAGE_KEYS.VENDORS, vendors);
+        return { vendor: vendors[idx] };
+      }
+    );
+  },
+
+  async rejectVendor(vendorId: string, reason: string) {
+    return safeFetch<{ vendor: Vendor }>(
+      `${API_BASE}/vendors/${vendorId}/reject`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      },
+      () => {
+        const vendors = getLocal<Vendor[]>(STORAGE_KEYS.VENDORS, initialVendors);
+        const idx = vendors.findIndex((v) => v.id === vendorId || v.userId === vendorId);
+        if (idx === -1) throw new Error('Vendor not found');
+
+        vendors[idx] = {
+          ...vendors[idx],
+          status: 'suspended',
+          verificationDocuments: {
+            ...vendors[idx].verificationDocuments,
+            rejectionReason: reason
+          },
+          updatedAt: new Date().toISOString()
+        };
+        setLocal(STORAGE_KEYS.VENDORS, vendors);
+        return { vendor: vendors[idx] };
       }
     );
   },
@@ -1432,6 +1485,7 @@ export const api = {
       }
     );
   },
+
 
   async getVendorProducts(vendorId: string) {
     return safeFetch<{ products: Product[] }>(
@@ -1792,20 +1846,6 @@ export const api = {
     );
   },
 
-  // Vendor Approve/Suspend
-  async approveVendor(vendorId: string) {
-    return safeFetch<{ vendor: Vendor }>(
-      `${API_BASE}/vendors/${vendorId}/approve`,
-      { method: 'PUT' },
-      () => {
-        const vendors = getLocal<Vendor[]>(STORAGE_KEYS.VENDORS, initialVendors);
-        const idx = vendors.findIndex(v => v.id === vendorId);
-        if (idx !== -1) { vendors[idx].status = 'active'; setLocal(STORAGE_KEYS.VENDORS, vendors); return { vendor: vendors[idx] }; }
-        return { vendor: {} as Vendor };
-      }
-    );
-  },
-
   async suspendVendor(vendorId: string) {
     return safeFetch<{ vendor: Vendor }>(
       `${API_BASE}/vendors/${vendorId}/suspend`,
@@ -1818,6 +1858,7 @@ export const api = {
       }
     );
   },
+
 
   // Admin Payout Approve/Reject
   async approvePayoutRequest(payoutId: string, transactionRef?: string) {

@@ -70,6 +70,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
     if (propBestSellers) setBestSellers(propBestSellers);
   }, [propBanners, propCategories, propProducts, propDeals, propNewArrivals, propBestSellers]);
 
+  // Strict country market filter
+  const marketFilter = (p: Product) => {
+    if (country === 'NG') {
+      return p.originCountry === 'NG';
+    }
+    return p.originCountry === 'GH' || !p.originCountry;
+  };
+
+  const filteredProducts = products.filter(marketFilter);
+  const filteredDeals = deals.filter(marketFilter);
+  const filteredNewArrivals = newArrivals.filter(marketFilter);
+  const filteredBestSellers = bestSellers.filter(marketFilter);
+
   useEffect(() => {
     if (!propProducts || propProducts.length === 0) {
       const loadHomeData = async () => {
@@ -78,7 +91,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           const [bRes, cRes, pRes, dRes, nRes, sRes] = await Promise.all([
             api.getBanners(),
             api.getCategories(),
-            api.getProducts({ limit: 12 }),
+            api.getProducts({ limit: 20 }),
             api.getDeals(),
             api.getNewArrivals(),
             api.getBestSellers()
@@ -98,6 +111,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       loadHomeData();
     }
   }, [propProducts]);
+
 
   const safeBanners = Array.isArray(banners) && banners.length > 0 ? banners : initialBanners;
   const heroBanners = safeBanners.filter((b) => b.position === 'hero' && b.status === 'active');
@@ -396,9 +410,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </section>
 
       {/* 4. LIVE DEAL TIMER & FLASH SALES CAROUSEL */}
-      {deals.length > 0 && (
+      {filteredDeals.length > 0 && (
         <FlashSalesSection
-          deals={deals}
+          deals={filteredDeals}
           onNavigate={onNavigate}
           onOpenQuickView={onOpenQuickView}
         />
@@ -481,7 +495,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {products.filter((p) => p.featured).slice(0, 8).map((product) => (
+          {filteredProducts.filter((p) => p.featured).slice(0, 8).map((product) => (
             <ProductCard
               key={product.id}
               product={product}
@@ -515,7 +529,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {bestSellers.slice(0, 4).map((product) => (
+              {filteredBestSellers.slice(0, 4).map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -546,7 +560,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {newArrivals.slice(0, 4).map((product) => (
+              {filteredNewArrivals.slice(0, 4).map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -558,6 +572,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
       </section>
+
+
 
       {/* 8. CUSTOMER REVIEWS */}
       <section className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-900/60 dark:to-transparent py-16 border-y border-slate-200/60 dark:border-slate-800/60">

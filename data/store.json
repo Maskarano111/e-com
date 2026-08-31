@@ -154,8 +154,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 88,
-      "createdAt": "2026-08-29T15:41:19.406Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.185Z",
+      "updatedAt": "2026-08-31T16:05:19.200Z"
     },
     {
       "id": "prod-bp-monitor",
@@ -220,8 +220,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 65,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-pressure-washer",
@@ -283,8 +283,8 @@
       "isNewArrival": true,
       "isBestSeller": false,
       "salesCount": 32,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-tummy-wrap",
@@ -341,8 +341,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 71,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-leather-belts",
@@ -400,8 +400,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 49,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-mini-atomizers",
@@ -455,8 +455,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 120,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-iphone-15-pro",
@@ -542,8 +542,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 42,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-samsung-s24-ultra",
@@ -605,8 +605,8 @@
       "isNewArrival": true,
       "isBestSeller": true,
       "salesCount": 38,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-sony-wh1000xm5",
@@ -664,8 +664,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 45,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-air-fryer-8l",
@@ -722,8 +722,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 58,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-nike-air-force-1",
@@ -819,8 +819,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 94,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     },
     {
       "id": "prod-baccarat-rouge-540",
@@ -872,6 +872,7 @@
           "value": "Made in Paris, France (100% Genuine Batch)"
         }
       ],
+      "originCountry": "GH",
       "tags": [
         "luxury",
         "niche",
@@ -881,8 +882,355 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 35,
-      "createdAt": "2026-08-29T15:41:19.415Z",
-      "updatedAt": "2026-08-29T15:41:19.415Z"
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
+    },
+    {
+      "id": "prod-ng-infinix-note40",
+      "name": "Infinix Note 40 Pro 5G (256GB Vintage Green, 70W FastCharge + 20W Wireless MagCharge)",
+      "slug": "infinix-note-40-pro-5g-256gb-vintage-green",
+      "description": "All-Round FastCharge 2.0 with 70W Multi-Speed FastCharge and 20W Wireless MagCharge. Powered by MediaTek Dimensity 7020 5G chipset, 108MP OIS Super-Zoom Camera, 3D-Curved 120Hz AMOLED Display, and Active Halo AI lighting. Ikeja Lagos Official Stock with 12+1 Month Carlcare Warranty.",
+      "shortDescription": "70W All-Round FastCharge, 108MP OIS Camera, 120Hz 3D-Curved AMOLED.",
+      "categoryId": "cat-phones",
+      "categoryName": "Phones & Tablets",
+      "brand": "Infinix",
+      "sku": "INF-N40P-256-VGR",
+      "price": 430000,
+      "discountPrice": 385000,
+      "stockQuantity": 15,
+      "status": "active",
+      "featured": true,
+      "rating": 4.8,
+      "reviewCount": 94,
+      "images": [
+        "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Display",
+          "value": "6.78-inch 3D-Curved AMOLED 120Hz (1300 nits peak)"
+        },
+        {
+          "name": "Processor",
+          "value": "MediaTek Dimensity 7020 5G Octa-Core (6nm)"
+        },
+        {
+          "name": "RAM / Storage",
+          "value": "8GB + 8GB Extended RAM / 256GB ROM"
+        },
+        {
+          "name": "Main Camera",
+          "value": "108MP OIS Super-Zoom + 2MP + 2MP Triple Camera"
+        },
+        {
+          "name": "Fast Charging",
+          "value": "70W Wired FastCharge + 20W Wireless MagCharge"
+        },
+        {
+          "name": "Warranty",
+          "value": "13 Months Official Carlcare Nigeria Warranty"
+        }
+      ],
+      "originCountry": "NG",
+      "tags": [
+        "infinix",
+        "5g",
+        "smartphone",
+        "nigeria",
+        "flash-sale"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": true,
+      "salesCount": 68,
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
+    },
+    {
+      "id": "prod-ng-oraimo-freepods4",
+      "name": "Oraimo FreePods 4 Active Noise Cancellation True Wireless Earbuds (35.5h Playtime)",
+      "slug": "oraimo-freepods-4-anc-true-wireless-earbuds",
+      "description": "Tune out the world with up to 30dB Active Noise Cancellation. Features Transparency Mode, 4-Mic Call HD voice clarity with noise reduction, HavyBass sound engineering, and custom app EQ tuning. IPX5 water and sweat resistant.",
+      "shortDescription": "30dB ANC Wireless Earbuds with HavyBass & 35.5hr battery life.",
+      "categoryId": "cat-electronics",
+      "categoryName": "Electronics & Audio",
+      "brand": "Oraimo",
+      "sku": "ORM-FP4-ANC-BLK",
+      "price": 38000,
+      "discountPrice": 29500,
+      "stockQuantity": 28,
+      "status": "active",
+      "featured": true,
+      "rating": 4.9,
+      "reviewCount": 215,
+      "images": [
+        "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Noise Cancellation",
+          "value": "Active Noise Cancellation up to 30dB + Transparency Mode"
+        },
+        {
+          "name": "Battery Playtime",
+          "value": "8.5 Hours on Buds + 27 Hours in Case (35.5h Total)"
+        },
+        {
+          "name": "Driver Size",
+          "value": "10mm Dynamic Bass Boost Drivers"
+        },
+        {
+          "name": "Bluetooth Version",
+          "value": "Bluetooth 5.3 Ultra-Low Latency"
+        },
+        {
+          "name": "App Control",
+          "value": "Oraimo Sound App (Custom EQ & Find My Earbuds)"
+        }
+      ],
+      "originCountry": "NG",
+      "tags": [
+        "oraimo",
+        "earbuds",
+        "audio",
+        "anc",
+        "nigeria",
+        "flash-sale"
+      ],
+      "isNewArrival": false,
+      "isBestSeller": true,
+      "salesCount": 142,
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
+    },
+    {
+      "id": "prod-ng-luxury-agbada",
+      "name": "Handcrafted Royal 3-Piece Men Agbada, Kaftan & Fila Cap Set (Emerald Green & Gold)",
+      "slug": "handcrafted-royal-3-piece-men-agbada-emerald-gold",
+      "description": "Masterpiece bespoke traditional Nigerian menswear tailored from heavyweight Italian Wool-Cashmere blend with intricate metallic gold embroidery. Includes outer Agbada robe, tailored Kaftan top, tapered drawstring trousers, and matching embroidered Fila cap.",
+      "shortDescription": "Luxury 3-piece emerald green & gold embroidered Nigerian Agbada set.",
+      "categoryId": "cat-fashion",
+      "categoryName": "Fashion & Shoes",
+      "brand": "Yemi Lagos Couture",
+      "sku": "YLC-AGB-EMG-SET",
+      "price": 185000,
+      "discountPrice": 145000,
+      "stockQuantity": 10,
+      "status": "active",
+      "featured": true,
+      "rating": 5,
+      "reviewCount": 47,
+      "images": [
+        "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Fabric",
+          "value": "Premium Italian Wool Blend + Metallic Gold Thread Embroidery"
+        },
+        {
+          "name": "Package Includes",
+          "value": "Outer Flowing Agbada, Long Sleeve Kaftan, Slim-fit Trouser, Embroidered Fila Cap"
+        },
+        {
+          "name": "Occasion",
+          "value": "Weddings, Traditional Coronation, Royal Galas & Sunday Best"
+        },
+        {
+          "name": "Origin",
+          "value": "Designed & Tailored in Victoria Island, Lagos"
+        }
+      ],
+      "originCountry": "NG",
+      "tags": [
+        "agbada",
+        "native-wear",
+        "fashion",
+        "nigeria",
+        "menswear"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": true,
+      "salesCount": 39,
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
+    },
+    {
+      "id": "prod-ng-yam-pounder",
+      "name": "Century Heavy Duty Electric Stainless Steel Yam Pounder & Meat Chopper (3.5 Liters)",
+      "slug": "century-heavy-duty-electric-yam-pounder-3-5l",
+      "description": "Pound smooth, lump-free Nigerian pounded yam in under 2 minutes! High-torque 1000W pure copper motor, 3.5L food-grade stainless steel bowl, dual 4-blade stainless steel cutters, and 2-speed pulse buttons. Also perfect for mincing meat, grinding pepper, and blending fufu.",
+      "shortDescription": "1000W high-torque electric yam pounder & food processor with 3.5L steel bowl.",
+      "categoryId": "cat-appliances",
+      "categoryName": "Home & Kitchen",
+      "brand": "Century Nigeria",
+      "sku": "CEN-YP-35L-SS",
+      "price": 72000,
+      "discountPrice": 54900,
+      "stockQuantity": 18,
+      "status": "active",
+      "featured": true,
+      "rating": 4.8,
+      "reviewCount": 88,
+      "images": [
+        "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1584269600519-112d071b35e6?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Capacity",
+          "value": "3.5-Liter High Capacity 304 Stainless Steel Bowl"
+        },
+        {
+          "name": "Motor",
+          "value": "1000W Pure Copper High-Torque Motor"
+        },
+        {
+          "name": "Speed Modes",
+          "value": "Speed 1 (Soft vegetables/pepper) | Speed 2 (Yam pounding/meat mincing)"
+        },
+        {
+          "name": "Safety Mechanism",
+          "value": "Overheat Thermal Sensor & Auto-Lock Lid"
+        }
+      ],
+      "originCountry": "NG",
+      "tags": [
+        "yam-pounder",
+        "kitchen",
+        "appliances",
+        "nigeria",
+        "flash-sale"
+      ],
+      "isNewArrival": false,
+      "isBestSeller": true,
+      "salesCount": 76,
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
+    },
+    {
+      "id": "prod-ng-lattafa-khamrah",
+      "name": "Lattafa Khamrah Luxury Eau de Parfum (100ml Arabian Gourmand Warm Spice)",
+      "slug": "lattafa-khamrah-luxury-eau-de-parfum-100ml",
+      "description": "An oriental-spicy unisex fragrance that opens with cinnamon, nutmeg and bergamot. The heart reveals praline, dates, tuberose and mahonial, sitting on a lavish base of vanilla, tonka bean, benzoin, myrrh, amberwood and Akigalawood. 14+ hours longevity.",
+      "shortDescription": "Lavish Arabian gourmand fragrance with Cinnamon, Praline & Vanilla.",
+      "categoryId": "cat-beauty",
+      "categoryName": "Beauty & Perfumes",
+      "brand": "Lattafa",
+      "sku": "LTF-KHM-EDP100",
+      "price": 65000,
+      "discountPrice": 48500,
+      "stockQuantity": 24,
+      "status": "active",
+      "featured": true,
+      "rating": 4.9,
+      "reviewCount": 160,
+      "images": [
+        "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Volume",
+          "value": "100 ml (3.4 fl. oz) Heavy Crystal Presentation Flacon"
+        },
+        {
+          "name": "Scent Type",
+          "value": "Warm Spicy Gourmand Amber Unisex"
+        },
+        {
+          "name": "Top Notes",
+          "value": "Cinnamon, Nutmeg, Bergamot"
+        },
+        {
+          "name": "Heart Notes",
+          "value": "Dates, Praline, Tuberose, Mahonial"
+        },
+        {
+          "name": "Base Notes",
+          "value": "Vanilla, Tonka Bean, Benzoin, Myrrh, Amberwood"
+        }
+      ],
+      "originCountry": "NG",
+      "tags": [
+        "perfume",
+        "lattafa",
+        "oud",
+        "beauty",
+        "nigeria",
+        "flash-sale"
+      ],
+      "isNewArrival": false,
+      "isBestSeller": true,
+      "salesCount": 112,
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
+    },
+    {
+      "id": "prod-ng-solar-power-station",
+      "name": "MaxPower 1000W / 1024Wh Portable Solar Power Station & Inverter Generator (LiFePO4)",
+      "slug": "maxpower-1000w-portable-solar-power-station",
+      "description": "Eliminate power outages in your home or office. Grade-A LiFePO4 battery with 3500+ cycles (10 years lifespan), 1000W pure sine wave AC output (220V), 100W USB-C PD fast charge, and MPPT solar charging controller. Powers laptops, TVs, Wi-Fi routers, fans, and mini-fridges seamlessly with 15ms UPS auto-switch.",
+      "shortDescription": "1000W LiFePO4 solar inverter generator with 220V AC & 15ms UPS backup.",
+      "categoryId": "cat-appliances",
+      "categoryName": "Home & Kitchen",
+      "brand": "MaxPower Nigeria",
+      "sku": "MXP-PS1000-LFP",
+      "price": 780000,
+      "discountPrice": 695000,
+      "stockQuantity": 8,
+      "status": "active",
+      "featured": true,
+      "rating": 4.9,
+      "reviewCount": 38,
+      "images": [
+        "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80"
+      ],
+      "featuredImage": "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=800&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "name": "Battery Capacity",
+          "value": "1024Wh (320,000mAh) Long-Life LiFePO4"
+        },
+        {
+          "name": "AC Output",
+          "value": "2x 220V Pure Sine Wave (1000W Continuous / 2000W Surge)"
+        },
+        {
+          "name": "DC & USB Out",
+          "value": "2x USB-C 100W PD, 2x USB-A 18W QC3.0, 1x Car Socket 12V/10A"
+        },
+        {
+          "name": "Recharge Time",
+          "value": "AC Wall Socket (80 mins) | Solar Panel 200W (4-5 hours)"
+        },
+        {
+          "name": "UPS Function",
+          "value": "<15ms Automatic Transfer Switch"
+        }
+      ],
+      "originCountry": "NG",
+      "tags": [
+        "solar",
+        "inverter",
+        "power-station",
+        "nigeria",
+        "appliances"
+      ],
+      "isNewArrival": true,
+      "isBestSeller": true,
+      "salesCount": 29,
+      "createdAt": "2026-08-31T16:05:19.201Z",
+      "updatedAt": "2026-08-31T16:05:19.201Z"
     }
   ],
   "categories": [
