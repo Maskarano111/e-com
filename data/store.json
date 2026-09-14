@@ -154,8 +154,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 88,
-      "createdAt": "2026-08-31T16:05:19.185Z",
-      "updatedAt": "2026-08-31T16:05:19.200Z"
+      "createdAt": "2026-08-31T16:53:45.547Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-bp-monitor",
@@ -220,8 +220,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 65,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-pressure-washer",
@@ -283,8 +283,8 @@
       "isNewArrival": true,
       "isBestSeller": false,
       "salesCount": 32,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-tummy-wrap",
@@ -341,8 +341,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 71,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-leather-belts",
@@ -400,8 +400,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 49,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-mini-atomizers",
@@ -455,8 +455,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 120,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-iphone-15-pro",
@@ -542,8 +542,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 42,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-samsung-s24-ultra",
@@ -605,8 +605,8 @@
       "isNewArrival": true,
       "isBestSeller": true,
       "salesCount": 38,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-sony-wh1000xm5",
@@ -664,8 +664,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 45,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-air-fryer-8l",
@@ -722,8 +722,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 58,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-nike-air-force-1",
@@ -819,8 +819,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 94,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-baccarat-rouge-540",
@@ -882,8 +882,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 35,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-ng-infinix-note40",
@@ -945,8 +945,8 @@
       "isNewArrival": true,
       "isBestSeller": true,
       "salesCount": 68,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-ng-oraimo-freepods4",
@@ -1004,8 +1004,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 142,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-ng-luxury-agbada",
@@ -1058,8 +1058,8 @@
       "isNewArrival": true,
       "isBestSeller": true,
       "salesCount": 39,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-ng-yam-pounder",
@@ -1112,8 +1112,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 76,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-ng-lattafa-khamrah",
@@ -1171,8 +1171,8 @@
       "isNewArrival": false,
       "isBestSeller": true,
       "salesCount": 112,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     },
     {
       "id": "prod-ng-solar-power-station",
@@ -1229,8 +1229,8 @@
       "isNewArrival": true,
       "isBestSeller": true,
       "salesCount": 29,
-      "createdAt": "2026-08-31T16:05:19.201Z",
-      "updatedAt": "2026-08-31T16:05:19.201Z"
+      "createdAt": "2026-08-31T16:53:45.557Z",
+      "updatedAt": "2026-08-31T16:53:45.557Z"
     }
   ],
   "categories": [

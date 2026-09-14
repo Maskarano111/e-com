@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { SEOMeta, homeSEO, shopSEO, cartSEO, checkoutSEO, authSEO, wishlistSEO, accountSEO, adminSEO, vendorSEO } from './components/common/SEOMeta';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
@@ -137,66 +139,81 @@ const MainApp: React.FC = () => {
   // Render Admin Dashboard
   if (currentView === 'admin') {
     return (
-      <AdminLayout
-        currentTab={adminTab}
-        onTabChange={(tab) => setAdminTab(tab)}
-        onNavigateToStore={() => handleNavigate('home')}
-      >
-        {adminTab === 'overview' && <AdminOverviewView onNavigateTab={(tab) => setAdminTab(tab)} />}
-        {adminTab === 'vendors' && <AdminVendorsView />}
-        {adminTab === 'products' && <AdminProductsView />}
-        {adminTab === 'inventory' && <AdminInventoryView />}
-        {adminTab === 'orders' && <AdminOrdersView />}
-        {adminTab === 'returns' && <AdminReturnRequestsView />}
-        {adminTab === 'payments' && <AdminPaymentsView />}
-        {adminTab === 'categories' && <AdminCategoriesView />}
-        {adminTab === 'coupons' && <AdminCouponsView />}
-        {adminTab === 'banners' && <AdminBannersView />}
-        {adminTab === 'customers' && <AdminCustomersView />}
-        {adminTab === 'reviews' && <AdminReviewsView />}
-        {adminTab === 'settings' && <AdminSettingsView />}
-      </AdminLayout>
+      <ErrorBoundary name="Admin Dashboard">
+        <SEOMeta {...adminSEO(adminTab)} />
+        <AdminLayout
+          currentTab={adminTab}
+          onTabChange={(tab) => setAdminTab(tab)}
+          onNavigateToStore={() => handleNavigate('home')}
+        >
+          {adminTab === 'overview' && <ErrorBoundary name="Admin Overview" inline><AdminOverviewView onNavigateTab={(tab) => setAdminTab(tab)} /></ErrorBoundary>}
+          {adminTab === 'vendors' && <ErrorBoundary name="Vendors" inline><AdminVendorsView /></ErrorBoundary>}
+          {adminTab === 'products' && <ErrorBoundary name="Products" inline><AdminProductsView /></ErrorBoundary>}
+          {adminTab === 'inventory' && <ErrorBoundary name="Inventory" inline><AdminInventoryView /></ErrorBoundary>}
+          {adminTab === 'orders' && <ErrorBoundary name="Orders" inline><AdminOrdersView /></ErrorBoundary>}
+          {adminTab === 'returns' && <ErrorBoundary name="Returns" inline><AdminReturnRequestsView /></ErrorBoundary>}
+          {adminTab === 'payments' && <ErrorBoundary name="Payments" inline><AdminPaymentsView /></ErrorBoundary>}
+          {adminTab === 'categories' && <ErrorBoundary name="Categories" inline><AdminCategoriesView /></ErrorBoundary>}
+          {adminTab === 'coupons' && <ErrorBoundary name="Coupons" inline><AdminCouponsView /></ErrorBoundary>}
+          {adminTab === 'banners' && <ErrorBoundary name="Banners" inline><AdminBannersView /></ErrorBoundary>}
+          {adminTab === 'customers' && <ErrorBoundary name="Customers" inline><AdminCustomersView /></ErrorBoundary>}
+          {adminTab === 'reviews' && <ErrorBoundary name="Reviews" inline><AdminReviewsView /></ErrorBoundary>}
+          {adminTab === 'settings' && <ErrorBoundary name="Settings" inline><AdminSettingsView /></ErrorBoundary>}
+        </AdminLayout>
+      </ErrorBoundary>
     );
   }
 
   // Render Vendor / Seller Dashboard Portal
   if (currentView === 'vendor') {
     return (
-      <VendorLayout
-        currentTab={vendorTab}
-        onTabChange={(tab) => {
-          setVendorTab(tab);
-          setIsVendorAddOpen(false);
-        }}
-        onNavigateToStore={() => handleNavigate('home')}
-        onOpenAddProduct={() => {
-          setVendorTab('products');
-          setIsVendorAddOpen(true);
-        }}
-      >
-        {vendorTab === 'overview' && (
-          <VendorOverviewView
-            onNavigateTab={(tab) => setVendorTab(tab)}
-            onOpenAddProduct={() => {
-              setVendorTab('products');
-              setIsVendorAddOpen(true);
-            }}
-          />
-        )}
-        {vendorTab === 'products' && (
-          <VendorProductsView initialOpenAdd={isVendorAddOpen} />
-        )}
-        {vendorTab === 'orders' && <VendorOrdersView />}
-        {vendorTab === 'payouts' && <VendorPayoutsView />}
-        {vendorTab === 'profile' && <VendorProfileView />}
-        {vendorTab === 'reviews' && <VendorReviewsView />}
-      </VendorLayout>
+      <ErrorBoundary name="Vendor Dashboard">
+        <SEOMeta {...vendorSEO(vendorTab)} />
+        <VendorLayout
+          currentTab={vendorTab}
+          onTabChange={(tab) => {
+            setVendorTab(tab);
+            setIsVendorAddOpen(false);
+          }}
+          onNavigateToStore={() => handleNavigate('home')}
+          onOpenAddProduct={() => {
+            setVendorTab('products');
+            setIsVendorAddOpen(true);
+          }}
+        >
+          {vendorTab === 'overview' && (
+            <ErrorBoundary name="Vendor Overview" inline>
+              <VendorOverviewView
+                onNavigateTab={(tab) => setVendorTab(tab)}
+                onOpenAddProduct={() => {
+                  setVendorTab('products');
+                  setIsVendorAddOpen(true);
+                }}
+              />
+            </ErrorBoundary>
+          )}
+          {vendorTab === 'products' && <ErrorBoundary name="Vendor Products" inline><VendorProductsView initialOpenAdd={isVendorAddOpen} /></ErrorBoundary>}
+          {vendorTab === 'orders' && <ErrorBoundary name="Vendor Orders" inline><VendorOrdersView /></ErrorBoundary>}
+          {vendorTab === 'payouts' && <ErrorBoundary name="Vendor Payouts" inline><VendorPayoutsView /></ErrorBoundary>}
+          {vendorTab === 'profile' && <ErrorBoundary name="Vendor Profile" inline><VendorProfileView /></ErrorBoundary>}
+          {vendorTab === 'reviews' && <ErrorBoundary name="Vendor Reviews" inline><VendorReviewsView /></ErrorBoundary>}
+        </VendorLayout>
+      </ErrorBoundary>
     );
   }
 
   // Render Customer Storefront
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-200 pb-16 md:pb-0">
+      {/* Dynamic SEO — updates <head> on every view change */}
+      {currentView === 'home' && <SEOMeta {...homeSEO()} />}
+      {currentView === 'shop' && <SEOMeta {...shopSEO(viewParams.category)} />}
+      {currentView === 'cart' && <SEOMeta {...cartSEO()} />}
+      {currentView === 'checkout' && <SEOMeta {...checkoutSEO()} />}
+      {currentView === 'wishlist' && <SEOMeta {...wishlistSEO()} />}
+      {currentView === 'account' && <SEOMeta {...accountSEO()} />}
+      {(currentView === 'login' || currentView === 'register' || currentView === 'forgot-password') && <SEOMeta {...authSEO(currentView)} />}
+
       {/* Top Navigation */}
       <Navbar
         currentView={currentView}
@@ -208,96 +225,124 @@ const MainApp: React.FC = () => {
       {/* Main Dynamic View */}
       <main className="flex-1">
         {currentView === 'home' && (
-          <HomeView
-            onNavigate={handleNavigate}
-            onOpenQuickView={handleOpenQuickView}
-          />
+          <ErrorBoundary name="Home">
+            <HomeView
+              onNavigate={handleNavigate}
+              onOpenQuickView={handleOpenQuickView}
+            />
+          </ErrorBoundary>
         )}
 
         {currentView === 'shop' && (
-          <ShopView
-            initialCategory={viewParams.category}
-            initialSearch={viewParams.search}
-            initialDealsOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
-            initialFlashDealOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
-            onNavigate={handleNavigate}
-            onOpenQuickView={handleOpenQuickView}
-          />
+          <ErrorBoundary name="Shop">
+            <ShopView
+              initialCategory={viewParams.category}
+              initialSearch={viewParams.search}
+              initialDealsOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
+              initialFlashDealOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
+              onNavigate={handleNavigate}
+              onOpenQuickView={handleOpenQuickView}
+            />
+          </ErrorBoundary>
         )}
 
         {currentView === 'product-detail' && (
-          <ProductDetailView
-            productId={viewParams.productId || 'prod-portable-blender'}
-            onNavigate={handleNavigate}
-            onOpenQuickView={handleOpenQuickView}
-          />
+          <ErrorBoundary name="Product Detail">
+            <ProductDetailView
+              productId={viewParams.productId || 'prod-portable-blender'}
+              onNavigate={handleNavigate}
+              onOpenQuickView={handleOpenQuickView}
+            />
+          </ErrorBoundary>
         )}
 
         {currentView === 'cart' && (
-          <CartView onNavigate={handleNavigate} />
+          <ErrorBoundary name="Cart">
+            <CartView onNavigate={handleNavigate} />
+          </ErrorBoundary>
         )}
 
         {currentView === 'checkout' && (
-          <CheckoutView onNavigate={handleNavigate} />
+          <ErrorBoundary name="Checkout">
+            <CheckoutView onNavigate={handleNavigate} />
+          </ErrorBoundary>
         )}
 
         {currentView === 'order-confirmation' && (
-          <OrderConfirmationView
-            order={viewParams.order}
-            onNavigate={handleNavigate}
-          />
+          <ErrorBoundary name="Order Confirmation">
+            <OrderConfirmationView
+              order={viewParams.order}
+              onNavigate={handleNavigate}
+            />
+          </ErrorBoundary>
         )}
 
         {currentView === 'track-order' && (
-          <OrderTrackingView
-            initialOrderNumber={viewParams.orderNumber}
-            onNavigate={handleNavigate}
-          />
+          <ErrorBoundary name="Order Tracking">
+            <OrderTrackingView
+              initialOrderNumber={viewParams.orderNumber}
+              onNavigate={handleNavigate}
+            />
+          </ErrorBoundary>
         )}
 
         {currentView === 'account' && (
-          <CustomerDashboardView
-            initialTab={viewParams.tab || 'overview'}
-            onNavigate={handleNavigate}
-            onOpenQuickView={handleOpenQuickView}
-          />
+          <ErrorBoundary name="Account">
+            <CustomerDashboardView
+              initialTab={viewParams.tab || 'overview'}
+              onNavigate={handleNavigate}
+              onOpenQuickView={handleOpenQuickView}
+            />
+          </ErrorBoundary>
         )}
 
         {currentView === 'wishlist' && (
-          <WishlistView
-            onNavigate={handleNavigate}
-            onOpenQuickView={handleOpenQuickView}
-          />
+          <ErrorBoundary name="Wishlist">
+            <WishlistView
+              onNavigate={handleNavigate}
+              onOpenQuickView={handleOpenQuickView}
+            />
+          </ErrorBoundary>
         )}
 
         {(currentView === 'login' || currentView === 'register' || currentView === 'forgot-password') && (
-          <AuthViews
-            mode={currentView as any}
-            onNavigate={handleNavigate}
-          />
+          <ErrorBoundary name="Auth">
+            <AuthViews
+              mode={currentView as any}
+              onNavigate={handleNavigate}
+            />
+          </ErrorBoundary>
         )}
 
         {currentView === 'discovery-box' && (
-          <DiscoveryBoxView onNavigate={handleNavigate} />
+          <ErrorBoundary name="Discovery Box">
+            <DiscoveryBoxView onNavigate={handleNavigate} />
+          </ErrorBoundary>
         )}
 
         {currentView === 'become-seller' && (
-          <BecomeSellerView onNavigate={handleNavigate} />
+          <ErrorBoundary name="Become a Seller">
+            <BecomeSellerView onNavigate={handleNavigate} />
+          </ErrorBoundary>
         )}
 
         {currentView === 'vendor-store' && (
-          <VendorStoreView
-            vendorId={viewParams.vendorId || 'vend-kofi'}
-            onNavigate={handleNavigate}
-            onOpenQuickView={handleOpenQuickView}
-          />
+          <ErrorBoundary name="Vendor Store">
+            <VendorStoreView
+              vendorId={viewParams.vendorId || 'vend-kofi'}
+              onNavigate={handleNavigate}
+              onOpenQuickView={handleOpenQuickView}
+            />
+          </ErrorBoundary>
         )}
 
         {['about', 'contact', 'faq', 'terms', 'privacy', 'returns'].includes(currentView) && (
-          <StaticPages
-            page={currentView as any}
-            onNavigate={handleNavigate}
-          />
+          <ErrorBoundary name="Page">
+            <StaticPages
+              page={currentView as any}
+              onNavigate={handleNavigate}
+            />
+          </ErrorBoundary>
         )}
       </main>
 
@@ -373,24 +418,26 @@ import { FontSizeProvider } from './context/FontSizeContext';
 
 export default function App() {
   return (
-    <FontSizeProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <SettingsProvider>
-            <AuthProvider>
-              <RecentlyViewedProvider>
-                <WishlistProvider>
-                  <CompareProvider>
-                    <CartProvider>
-                      <MainApp />
-                    </CartProvider>
-                  </CompareProvider>
-                </WishlistProvider>
-              </RecentlyViewedProvider>
-            </AuthProvider>
-          </SettingsProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </FontSizeProvider>
+    <ErrorBoundary name="NovaMart App">
+      <FontSizeProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <SettingsProvider>
+              <AuthProvider>
+                <RecentlyViewedProvider>
+                  <WishlistProvider>
+                    <CompareProvider>
+                      <CartProvider>
+                        <MainApp />
+                      </CartProvider>
+                    </CompareProvider>
+                  </WishlistProvider>
+                </RecentlyViewedProvider>
+              </AuthProvider>
+            </SettingsProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </FontSizeProvider>
+    </ErrorBoundary>
   );
 }

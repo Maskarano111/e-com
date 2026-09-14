@@ -80,6 +80,9 @@ interface SettingsContextType {
   convertPrice: (amountInGHS: number) => number;
   refreshSettings: () => Promise<void>;
   isLoading: boolean;
+  darkMode: boolean;
+  toggleDarkMode: () => void;
+  setDarkMode: (value: boolean) => void;
 }
 
 const DEFAULT_STORE_SETTINGS: StoreSettings = {
@@ -112,6 +115,33 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
+
+  // ── Dark Mode — persisted to localStorage, applied to <html> ──
+  const [darkMode, setDarkModeState] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('novamart_dark_mode');
+      if (stored !== null) return stored === 'true';
+      // Fall back to OS preference
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('novamart_dark_mode', String(darkMode));
+    } catch {}
+  }, [darkMode]);
+
+  const setDarkMode = (value: boolean) => setDarkModeState(value);
+  const toggleDarkMode = () => setDarkModeState((prev) => !prev);
+
 
   const [country, setCountryState] = useState<SupportedCountry>(() => {
     // 1. Check URL parameters first (e.g. ?country=NG or ?market=nigeria)
@@ -262,7 +292,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         formatPrice,
         convertPrice,
         refreshSettings,
-        isLoading
+        isLoading,
+        darkMode,
+        toggleDarkMode,
+        setDarkMode
       }}
     >
       {children}

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { Order, OrderStatus } from '../../types/index';
+import { TableRowSkeleton } from '../../components/common/Skeletons';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useToast } from '../../context/ToastContext';
@@ -146,11 +147,11 @@ export const VendorOrdersView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    Loading your seller orders...
-                  </td>
-                </tr>
+                <>
+                  {[...Array(5)].map((_, i) => (
+                    <TableRowSkeleton key={i} cols={7} />
+                  ))}
+                </>
               ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">

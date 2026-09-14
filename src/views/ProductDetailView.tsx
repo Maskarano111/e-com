@@ -41,6 +41,7 @@ import { useToast } from '../context/ToastContext';
 import { ReviewModal } from '../components/common/ReviewModal';
 import { StoreChatModal } from '../components/common/StoreChatModal';
 import { ProductCard } from '../components/common/ProductCard';
+import { ProductDetailSkeleton } from '../components/common/Skeletons';
 import { api } from '../services/api';
 
 import { generateWhatsAppProductLink } from '../utils/whatsappHelper';
@@ -183,12 +184,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
 
   if (isLoadingProduct) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-20 flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
-        <p className="text-sm font-semibold text-slate-500">Loading product details & gallery...</p>
-      </div>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (!product) {

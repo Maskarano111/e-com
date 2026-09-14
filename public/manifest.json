@@ -1,0 +1,52 @@
+{
+  "name": "NovaMart Ghana",
+  "short_name": "NovaMart",
+  "description": "Ghana's Premier Online Superstore — Electronics, Fashion, Groceries & more. Fast Accra delivery.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#059669",
+  "lang": "en-GH",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%23059669'/><path d='M48 72 42 56h108l-12 80H54L48 72z' fill='none' stroke='white' stroke-width='10' stroke-linejoin='round'/><path d='M75 116a20 20 0 1 0 40 0' fill='none' stroke='white' stroke-width='10'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%23059669'/><path d='M128 192 112 150h288l-32 213H144L128 192z' fill='none' stroke='white' stroke-width='26' stroke-linejoin='round'/><path d='M200 308a56 56 0 1 0 112 0' fill='none' stroke='white' stroke-width='26'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1080&auto=format&fit=crop",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "label": "NovaMart Home — Ghana's Online Superstore"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Shop Now",
+      "short_name": "Shop",
+      "description": "Browse all products",
+      "url": "/?view=shop",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M20 7H4l1.5 10h13L20 7z' fill='%23059669'/></svg>", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Orders",
+      "short_name": "Orders",
+      "description": "Track your orders",
+      "url": "/?view=account",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='3' y='3' width='18' height='18' rx='2' fill='%23059669'/></svg>", "sizes": "96x96" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

@@ -388,3 +388,32 @@
   padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
 }
 
+/* ── Skeleton / Shimmer Loading Placeholder ── */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(203, 213, 225, 0.5) 25%,
+    rgba(226, 232, 240, 0.9) 50%,
+    rgba(203, 213, 225, 0.5) 75%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 41, 59, 0.8) 25%,
+    rgba(51, 65, 85, 0.9) 50%,
+    rgba(30, 41, 59, 0.8) 75%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+

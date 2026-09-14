@@ -22,6 +22,7 @@ import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { Product, Order, Vendor } from '../../types/index';
+import { DashboardSkeleton } from '../../components/common/Skeletons';
 
 interface VendorOverviewViewProps {
   onNavigateTab: (tab: string) => void;
@@ -80,6 +81,10 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
   }, [vendorId]);
 
   const lowStockProducts = products.filter((p) => p.stockQuantity <= 5);
+
+  if (isLoading) {
+    return <DashboardSkeleton statCount={4} />;
+  }
 
   return (
     <div className="space-y-8">

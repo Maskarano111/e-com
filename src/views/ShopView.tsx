@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Product, Category } from '../types/index';
 import { ProductCard } from '../components/common/ProductCard';
+import { ProductGridSkeleton } from '../components/common/Skeletons';
 import { useSettings } from '../context/SettingsContext';
 import { api } from '../services/api';
 
@@ -598,7 +599,9 @@ export const ShopView: React.FC<ShopViewProps> = ({
 
         {/* Products Grid */}
         <div className="lg:col-span-3">
-          {filteredProducts.length === 0 ? (
+          {isLoading ? (
+            <ProductGridSkeleton count={9} />
+          ) : filteredProducts.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-200/80 dark:border-slate-800 space-y-4">
               <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
                 <Search className="w-8 h-8" />
