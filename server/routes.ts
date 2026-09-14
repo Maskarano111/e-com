@@ -2,6 +2,13 @@ import { Router, Request, Response } from 'express';
 import { GoogleGenAI } from '@google/genai';
 import { db } from './db';
 import {
+  sendWelcomeEmail,
+  sendOrderConfirmationEmail,
+  sendOrderStatusUpdateEmail,
+  sendPasswordResetEmail,
+  sendVendorApplicationEmail
+} from './email';
+import {
   Product,
   Category,
   Order,
@@ -62,6 +69,9 @@ router.post('/auth/register', (req: Request, res: Response) => {
 
   users.push(newUser);
   db.set('users', users);
+
+  // Fire welcome email (async — don't await, never block response)
+  sendWelcomeEmail(newUser.email, newUser.firstName).catch(() => {});
 
   const { passwordHash, ...userWithoutPass } = newUser;
   res.status(201).json({ user: userWithoutPass, token: `jwt-demo-${newUser.id}` });
@@ -222,7 +232,13 @@ router.post('/auth/forgot-password', (req: Request, res: Response) => {
     return res.status(404).json({ error: 'No account found with this email address' });
   }
 
-  res.json({ message: `Password reset instructions sent to ${email}. (Demo reset token: RESET-${user.id})` });
+  // Generate a real reset token (in production use crypto.randomBytes)
+  const resetToken = `RESET-${user.id}-${Date.now().toString(36)}`;
+
+  // Send the actual password reset email
+  sendPasswordResetEmail(user.email, user.firstName || 'Customer', resetToken).catch(() => {});
+
+  res.json({ message: `Password reset instructions have been sent to ${email}.` });
 });
 
 router.post('/auth/reset-password', (req: Request, res: Response) => {
@@ -932,6 +948,29 @@ router.post('/orders', (req: Request, res: Response) => {
   });
   db.set('notifications', notifications);
 
+  // ── Fire Order Confirmation Email ──────────────────────────────────────────
+  sendOrderConfirmationEmail(customerEmail, {
+    orderNumber: newOrder.orderNumber,
+    customerName: newOrder.customerName,
+    customerEmail: newOrder.customerEmail,
+    items: newOrder.items.map((i: any) => ({
+      name: i.name || i.productName || 'Product',
+      quantity: i.quantity,
+      price: i.price,
+      variantName: i.variantName
+    })),
+    subtotal: newOrder.subtotal,
+    discount: newOrder.discount,
+    deliveryFee: newOrder.deliveryFee,
+    tax: newOrder.tax,
+    total: newOrder.total,
+    paymentMethod: newOrder.paymentMethod,
+    paymentReference: newOrder.paymentReference || '',
+    deliveryAddress: newOrder.deliveryAddress,
+    estimatedDeliveryDate: newOrder.estimatedDeliveryDate,
+    trackingNumber: newOrder.trackingNumber
+  }).catch(() => {});
+
   res.status(201).json(newOrder);
 });
 
@@ -1027,8 +1066,21 @@ router.put('/orders/:id/status', (req: Request, res: Response) => {
     db.set('notifications', notifications);
   }
 
+  // ── Fire Order Status Update Email ────────────────────────────────────────
+  if (currentOrder.customerEmail) {
+    sendOrderStatusUpdateEmail(
+      currentOrder.customerEmail,
+      currentOrder.customerName,
+      currentOrder.orderNumber,
+      currentOrder.trackingNumber,
+      status,
+      note
+    ).catch(() => {});
+  }
+
   res.json(currentOrder);
 });
+
 
 // ----------------------------------------------------
 // 6. REVIEWS
