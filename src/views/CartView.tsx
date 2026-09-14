@@ -104,7 +104,7 @@ export const CartView: React.FC<CartViewProps> = ({ onNavigate }) => {
         {/* Main Grid: Items Table Left, Summary Card Right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Items List (8 cols) */}
-          <div className="lg:col-span-8 space-y-4">
+          <div className="lg:col-span-8 space-y-4 animate-slide-up">
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
               {cart.map((item) => (
                 <div key={item.id} className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -132,23 +132,25 @@ export const CartView: React.FC<CartViewProps> = ({ onNavigate }) => {
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-6 pt-3 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
-                    {/* Stepper */}
+                    {/* Stepper — 44px touch targets */}
                     <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold"
+                        aria-label="Decrease quantity"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 active:scale-90 font-bold transition-all"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Minus className="w-3.5 h-3.5" />
                       </button>
-                      <span className="w-9 text-center font-bold text-xs text-slate-900 dark:text-white">
+                      <span className="w-9 text-center font-bold text-sm text-slate-900 dark:text-white">
                         {item.quantity}
                       </span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         disabled={item.quantity >= item.stockQuantity}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 font-bold disabled:opacity-30"
+                        aria-label="Increase quantity"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 active:scale-90 font-bold disabled:opacity-30 transition-all"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
@@ -255,6 +257,10 @@ export const CartView: React.FC<CartViewProps> = ({ onNavigate }) => {
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}
                       placeholder="Enter promo code"
+                      inputMode="text"
+                      autoCapitalize="characters"
+                      autoCorrect="off"
+                      spellCheck={false}
                       className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs uppercase text-slate-900 dark:text-white placeholder-slate-400 outline-hidden focus:border-emerald-500"
                     />
                     <button
@@ -320,22 +326,22 @@ export const CartView: React.FC<CartViewProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Sticky mobile checkout bar — shows only on small screens below lg */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center gap-3 safe-bottom shadow-2xl">
+      {/* Sticky mobile checkout bar — sits ABOVE MobileBottomNav (bottom-16 = 64px) */}
+      <div className="lg:hidden fixed bottom-16 left-0 right-0 z-40 bg-white/97 dark:bg-slate-900/97 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center gap-3 shadow-2xl">
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-slate-500 dark:text-slate-400">Total</p>
-          <p className="text-base font-black text-emerald-600 leading-tight">{formatPrice(total)}</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Total ({itemCount} {itemCount === 1 ? 'item' : 'items'})</p>
+          <p className="text-lg font-black text-emerald-600 leading-tight">{formatPrice(total)}</p>
         </div>
         <button
           onClick={() => onNavigate('checkout')}
-          className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition-all active:scale-95"
+          className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition-all active:scale-95"
         >
           <span>Checkout</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
-      {/* Spacer so content isn't hidden behind sticky bar on mobile */}
-      <div className="lg:hidden h-20" />
+      {/* Spacer: bottom-16 bar (64px) + MobileBottomNav (~64px) = 128px */}
+      <div className="lg:hidden h-36" />
     </>
   );
 };

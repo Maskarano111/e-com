@@ -99,7 +99,7 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col xs:flex-row flex-wrap items-start xs:items-center gap-3">
             <button
               onClick={onOpenAddProduct}
               className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-slate-900 font-bold text-xs shadow-lg hover:bg-amber-50 transition-all active:scale-95 cursor-pointer"
@@ -121,10 +121,13 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
       {/* 4 Primary KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Net Earnings */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
+        <div
+          onClick={() => onNavigateTab('payouts')}
+          className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2 cursor-pointer hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500">Net Take-Home Earnings</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
@@ -139,10 +142,13 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
         </div>
 
         {/* Available Wallet Balance */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
+        <div
+          onClick={() => onNavigateTab('payouts')}
+          className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2 cursor-pointer hover:shadow-md hover:border-amber-200 dark:hover:border-amber-800 transition-all group"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500">Available For Payout</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
               <Wallet className="w-5 h-5" />
             </div>
           </div>
@@ -156,10 +162,13 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
         </div>
 
         {/* Total Orders */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
+        <div
+          onClick={() => onNavigateTab('orders')}
+          className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2 cursor-pointer hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800 transition-all group"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500">Orders Fulfilled</span>
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
               <ShoppingBag className="w-5 h-5" />
             </div>
           </div>
@@ -170,10 +179,13 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
         </div>
 
         {/* Store Rating & Products */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
+        <div
+          onClick={() => onNavigateTab('products')}
+          className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2 cursor-pointer hover:shadow-md hover:border-rose-200 dark:hover:border-rose-800 transition-all group"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500">Products &amp; Rating</span>
-            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
               <Package className="w-5 h-5" />
             </div>
           </div>
@@ -210,8 +222,19 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
 
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
             {orders.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
-                No orders recorded yet. As customers purchase your items, they will appear here live.
+              <div className="p-10 text-center space-y-3">
+                <div className="text-4xl">📦</div>
+                <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No orders yet</p>
+                <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
+                  As customers purchase your products, orders will appear here in real-time.
+                </p>
+                <button
+                  onClick={onOpenAddProduct}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs mt-1 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  List a Product
+                </button>
               </div>
             ) : (
               orders.slice(0, 5).map((order) => (

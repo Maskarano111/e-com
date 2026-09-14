@@ -79,6 +79,22 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes strength-fill {
+  from { width: 0%; }
+  to   { width: var(--strength-width, 33%); }
+}
+
+@keyframes tab-pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
 /* ── Utility Classes ── */
 
 /* Shimmer loading skeleton */
@@ -299,3 +315,76 @@
   min-height: 44px;
   min-width: 44px;
 }
+
+/* ── Spinner ── */
+.animate-spin-btn {
+  animation: spin 0.7s linear infinite;
+}
+
+/* ── Password Strength Bar ── */
+.strength-bar-track {
+  height: 4px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.dark .strength-bar-track {
+  background: rgba(255,255,255,0.08);
+}
+.strength-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.35s ease, background-color 0.25s ease;
+}
+.strength-weak   { width: 33%; background: #ef4444; }
+.strength-fair   { width: 66%; background: #f59e0b; }
+.strength-strong { width: 100%; background: #10b981; }
+
+/* ── Mobile Bottom Tab Bar (Admin & Vendor) ── */
+.mobile-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 -4px 24px -4px rgba(0,0,0,0.06);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.dark .mobile-tab-bar {
+  background: rgba(15, 23, 42, 0.97);
+  border-top-color: rgba(30, 41, 59, 0.8);
+  box-shadow: 0 -4px 24px -4px rgba(0,0,0,0.3);
+}
+
+/* ── Active Nav Pill (Bottom Nav) ── */
+.nav-pill-active {
+  background: rgba(16, 185, 129, 0.12);
+  border-radius: 12px;
+  padding: 4px 10px;
+  transition: background 0.2s ease;
+}
+.dark .nav-pill-active {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+/* Tab pop animation on tap */
+.nav-tab-tap {
+  animation: tab-pop 0.2s ease;
+}
+
+/* ── Sticky Bar Stack Offset ── */
+/* Pushes mobile sticky bars above the bottom nav (h-16 = 64px) */
+.sticky-above-nav {
+  bottom: 4rem !important; /* 64px = h-16 */
+}
+
+/* Safe area helper for bars stacked above nav */
+.safe-bar-stack {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+}
+

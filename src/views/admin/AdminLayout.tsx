@@ -22,7 +22,8 @@ import {
   Warehouse,
   Image,
   CreditCard,
-  RotateCcw
+  RotateCcw,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -47,29 +48,34 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const NAV_ITEMS = [
-    { id: 'overview', label: 'Dashboard & Analytics', icon: LayoutDashboard, badge: 'Live' },
-    { id: 'vendors', label: 'Vendors & Merchants', icon: Store, badge: undefined },
-    { id: 'products', label: 'Products & Catalog', icon: Package, badge: undefined },
-    { id: 'inventory', label: 'Inventory & Stock', icon: Warehouse, badge: undefined },
-    { id: 'orders', label: 'Orders & Dispatch', icon: ShoppingBag, badge: undefined },
-    { id: 'returns', label: 'Returns & Refunds', icon: RotateCcw, badge: undefined },
-    { id: 'payments', label: 'Payments & Revenue', icon: CreditCard, badge: undefined },
-    { id: 'categories', label: 'Departments & Tags', icon: Layers, badge: undefined },
-    { id: 'coupons', label: 'Coupons & Vouchers', icon: Tag, badge: undefined },
-    { id: 'banners', label: 'Banners & Promos', icon: Image, badge: undefined },
-    { id: 'customers', label: 'VIP & Customer Base', icon: Users, badge: undefined },
-    { id: 'reviews', label: 'Review Moderation', icon: MessageSquare, badge: undefined },
-    { id: 'settings', label: 'Boutique Settings', icon: Settings, badge: undefined }
+    { id: 'overview',    label: 'Dashboard & Analytics', icon: LayoutDashboard, badge: 'Live' },
+    { id: 'vendors',     label: 'Vendors & Merchants',   icon: Store,            badge: undefined },
+    { id: 'products',    label: 'Products & Catalog',    icon: Package,          badge: undefined },
+    { id: 'inventory',   label: 'Inventory & Stock',     icon: Warehouse,        badge: undefined },
+    { id: 'orders',      label: 'Orders & Dispatch',     icon: ShoppingBag,      badge: undefined },
+    { id: 'returns',     label: 'Returns & Refunds',     icon: RotateCcw,        badge: undefined },
+    { id: 'payments',    label: 'Payments & Revenue',    icon: CreditCard,       badge: undefined },
+    { id: 'categories',  label: 'Departments & Tags',    icon: Layers,           badge: undefined },
+    { id: 'coupons',     label: 'Coupons & Vouchers',    icon: Tag,              badge: undefined },
+    { id: 'banners',     label: 'Banners & Promos',      icon: Image,            badge: undefined },
+    { id: 'customers',   label: 'VIP & Customer Base',   icon: Users,            badge: undefined },
+    { id: 'reviews',     label: 'Review Moderation',     icon: MessageSquare,    badge: undefined },
+    { id: 'settings',    label: 'Boutique Settings',     icon: Settings,         badge: undefined }
   ];
+
+  // Quick-access tabs shown in mobile bottom bar
+  const MOBILE_QUICK_TABS = ['overview', 'orders', 'products', 'vendors', 'settings'];
+  const mobileTabs = NAV_ITEMS.filter((i) => MOBILE_QUICK_TABS.includes(i.id));
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
-      {/* Top Admin Header */}
+      {/* ── Top Admin Header ── */}
       <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            className="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+            aria-label="Open navigation menu"
+            className="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
           >
             <Layers className="w-5 h-5" />
           </button>
@@ -88,27 +94,37 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   Accra Node
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 hidden sm:block">Executive Management & Commercial Operations</p>
+              <p className="text-[10px] text-slate-400 hidden sm:block">Executive Management &amp; Commercial Operations</p>
             </div>
           </div>
         </div>
 
         {/* Right Header Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Notification Bell */}
+          <button
+            className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Notifications"
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-white dark:border-slate-900" />
+          </button>
+
           {/* Live Storefront Button */}
           <button
             id="btn-admin-view-store"
             onClick={onNavigateToStore}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300 transition-colors shadow-2xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300 transition-colors shadow-2xs"
           >
             <Store className="w-3.5 h-3.5 text-emerald-600" />
             <span className="hidden sm:inline">View Boutique</span>
             <ExternalLink className="w-3 h-3 opacity-60" />
           </button>
 
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
+          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
 
-          {/* Admin User Info Card */}
+          {/* Admin User Info */}
           <div className="flex items-center gap-2.5 pl-1">
             <img
               src={user?.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
@@ -128,7 +144,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </div>
       </header>
 
-      {/* Main Body Layout */}
+      {/* ── Main Body Layout ── */}
       <div className="flex-1 flex overflow-hidden">
         {/* Desktop Sidebar */}
         <aside
@@ -146,6 +162,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   id={`admin-nav-${item.id}`}
                   onClick={() => onTabChange(item.id)}
                   title={item.label}
+                  aria-label={item.label}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all text-left ${
                     isActive
                       ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
@@ -178,6 +195,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Toggle sidebar"
+              aria-label="Toggle sidebar"
             >
               {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             </button>
@@ -194,71 +212,146 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
         </aside>
 
-        {/* Mobile Navigation Drawer */}
+        {/* ── Mobile Navigation Drawer ── */}
         <AnimatePresence>
           {mobileNavOpen && (
             <div className="fixed inset-0 z-40 lg:hidden flex">
+              {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
                 onClick={() => setMobileNavOpen(false)}
               />
+
+              {/* Drawer panel */}
               <motion.div
-                initial={{ x: -260 }}
+                initial={{ x: '-100%' }}
                 animate={{ x: 0 }}
-                exit={{ x: -260 }}
-                className="relative bg-white dark:bg-slate-900 w-64 p-4 flex flex-col space-y-1 shadow-2xl z-10"
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', stiffness: 380, damping: 38 }}
+                className="relative bg-white dark:bg-slate-900 w-72 flex flex-col shadow-2xl z-10"
+                style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
               >
-                <div className="pb-3 mb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <span className="font-bold text-sm">Navigation</span>
-                  <button onClick={() => setMobileNavOpen(false)} className="text-slate-400 text-xs font-bold p-1">
-                    ✕
+                {/* Drawer header */}
+                <div className="flex items-center justify-between p-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center">
+                      <ShieldCheck className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-bold text-sm text-slate-900 dark:text-white">Admin Navigation</span>
+                  </div>
+                  <button
+                    onClick={() => setMobileNavOpen(false)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    aria-label="Close navigation menu"
+                  >
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {NAV_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = currentTab === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        onTabChange(item.id);
-                        setMobileNavOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-left ${
-                        isActive
-                          ? 'bg-emerald-600 text-white shadow-md'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon className="w-4 h-4 shrink-0" />
-                        <span>{item.label}</span>
-                      </div>
-                      {item.badge && (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-800">
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                {/* Nav items (scrollable) */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                  {NAV_ITEMS.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = currentTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => { onTabChange(item.id); setMobileNavOpen(false); }}
+                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left min-h-[48px] transition-all ${
+                          isActive
+                            ? 'bg-emerald-600 text-white shadow-md'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-4 h-4 shrink-0" />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
+                            isActive
+                              ? 'bg-emerald-700 text-white'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Drawer footer */}
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <button
+                    onClick={onNavigateToStore}
+                    className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:underline"
+                  >
+                    <Store className="w-3.5 h-3.5" />
+                    <span>View Boutique</span>
+                    <ExternalLink className="w-3 h-3 opacity-70" />
+                  </button>
+                  <button onClick={logout} className="text-xs text-rose-600 font-bold hover:underline flex items-center gap-1">
+                    <LogOut className="w-3.5 h-3.5" />
+                    Sign Out
+                  </button>
+                </div>
               </motion.div>
             </div>
           )}
         </AnimatePresence>
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        {/* ── Main Content Area ── */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
           <div className="max-w-7xl mx-auto space-y-6">
             {children}
           </div>
         </main>
       </div>
+
+      {/* ── Mobile Bottom Tab Strip (Admin Quick Nav) ── */}
+      <nav
+        aria-label="Admin Quick Navigation"
+        className="mobile-tab-bar lg:hidden"
+      >
+        <div className="grid grid-cols-5 px-1 pt-1.5 pb-[max(env(safe-area-inset-bottom,6px),6px)]">
+          {mobileTabs.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onTabChange(item.id)}
+                aria-label={item.label}
+                className={`relative flex flex-col items-center justify-center min-h-[48px] px-1 py-1 rounded-xl transition-colors duration-150 ${
+                  isActive
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId="adminMobileActivePill"
+                    className="absolute inset-x-1 top-0.5 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <Icon
+                  className="w-5 h-5 relative z-10"
+                  strokeWidth={isActive ? 2.5 : 1.8}
+                />
+                <span className={`relative z-10 text-[10px] mt-0.5 leading-none ${isActive ? 'font-black' : 'font-medium'}`}>
+                  {item.id === 'overview' ? 'Dashboard' : item.id.charAt(0).toUpperCase() + item.id.slice(1)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 };
-

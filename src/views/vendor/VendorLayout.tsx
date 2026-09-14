@@ -19,7 +19,8 @@ import {
   Wallet,
   Percent,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  User
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -61,23 +62,28 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
   }, [user]);
 
   const NAV_ITEMS = [
-    { id: 'overview', label: 'Dashboard & Analytics', icon: LayoutDashboard, badge: 'Live' },
-    { id: 'products', label: 'My Products & Catalog', icon: Package, badge: undefined },
-    { id: 'orders', label: 'Orders & Fulfillment', icon: ShoppingBag, badge: 'Active' },
-    { id: 'payouts', label: 'Wallet & Payouts', icon: CreditCard, badge: undefined },
-    { id: 'profile', label: 'Storefront Profile', icon: Store, badge: undefined },
-    { id: 'reviews', label: 'Customer Reviews', icon: MessageSquare, badge: undefined }
+    { id: 'overview',  label: 'Dashboard & Analytics',  icon: LayoutDashboard, badge: 'Live' },
+    { id: 'products',  label: 'My Products & Catalog',  icon: Package,         badge: undefined },
+    { id: 'orders',    label: 'Orders & Fulfillment',   icon: ShoppingBag,     badge: 'Active' },
+    { id: 'payouts',   label: 'Wallet & Payouts',       icon: CreditCard,      badge: undefined },
+    { id: 'profile',   label: 'Storefront Profile',     icon: Store,           badge: undefined },
+    { id: 'reviews',   label: 'Customer Reviews',       icon: MessageSquare,   badge: undefined }
   ];
+
+  // Mobile quick-access tabs
+  const MOBILE_QUICK = ['overview', 'products', 'orders', 'payouts', 'profile'];
+  const mobileTabs = NAV_ITEMS.filter((i) => MOBILE_QUICK.includes(i.id));
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
-      {/* Top Seller Bar */}
+      {/* ── Top Seller Bar ── */}
       <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
         <div className="flex items-center gap-3">
           {/* Mobile drawer toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+            aria-label="Open navigation menu"
+            className="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -105,7 +111,18 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
         </div>
 
         {/* Right header actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Notification Bell — pending orders badge */}
+          <button
+            className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Notifications"
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            {/* Badge: pending orders indicator */}
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900" />
+          </button>
+
           {/* Wallet Balance Badge */}
           <div
             onClick={() => onTabChange('payouts')}
@@ -118,7 +135,7 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
           {/* View Live Boutique */}
           <button
             onClick={onNavigateToStore}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors"
           >
             <Store className="w-3.5 h-3.5 text-emerald-600" />
             <span className="hidden sm:inline">Storefront</span>
@@ -130,13 +147,14 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
             onClick={logout}
             className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
             title="Sign Out"
+            aria-label="Sign Out"
           >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
       </header>
 
-      {/* Main Content Area: Sidebar + Body */}
+      {/* ── Main Content Area: Sidebar + Body ── */}
       <div className="flex-1 flex overflow-hidden">
         {/* Desktop Sidebar */}
         <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 hidden lg:flex flex-col justify-between p-4 shrink-0 shadow-xs">
@@ -215,64 +233,103 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
           </div>
         </aside>
 
-        {/* Mobile Navigation Drawer */}
+        {/* ── Mobile Navigation Drawer ── */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <div className="fixed inset-0 z-50 lg:hidden">
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
+              {/* Backdrop */}
               <motion.div
-                initial={{ x: -280 }}
-                animate={{ x: 0 }}
-                exit={{ x: -280 }}
-                className="fixed top-0 bottom-0 left-0 w-72 bg-white dark:bg-slate-900 p-6 flex flex-col justify-between shadow-2xl z-50"
-              >
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2">
-                      <Store className="w-5 h-5 text-amber-500" />
-                      <span className="font-black text-sm text-slate-900 dark:text-white">Seller Portal</span>
-                    </div>
-                    <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-lg text-slate-400">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={() => setMobileMenuOpen(false)}
+              />
 
-                  <nav className="space-y-1">
-                    {NAV_ITEMS.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = currentTab === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            onTabChange(item.id);
-                            setMobileMenuOpen(false);
-                          }}
-                          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all ${
-                            isActive
-                              ? 'bg-amber-500 text-white shadow-md'
-                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Icon className="w-4 h-4" />
-                            <span>{item.label}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </nav>
+              {/* Drawer panel */}
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', stiffness: 380, damping: 38 }}
+                className="fixed top-0 bottom-0 left-0 w-72 bg-white dark:bg-slate-900 flex flex-col shadow-2xl z-50"
+                style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+              >
+                {/* Drawer header */}
+                <div className="flex items-center justify-between p-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center">
+                      <Store className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-black text-sm text-slate-900 dark:text-white">Seller Portal</span>
+                  </div>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    aria-label="Close navigation menu"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                {/* Vendor mini profile */}
+                <div className="px-4 py-3 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800">
+                  <img
+                    src={vendor?.logo || user?.profileImage || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80'}
+                    alt="Store logo"
+                    className="w-9 h-9 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                      {vendor?.storeName || 'Kofi Tech & Audio'}
+                    </p>
+                    <p className="text-[11px] text-amber-600 font-semibold">Balance: {formatPrice(vendor?.balance || 3450)}</p>
+                  </div>
+                </div>
+
+                {/* Nav items */}
+                <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+                  {NAV_ITEMS.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = currentTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => { onTabChange(item.id); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all min-h-[48px] ${
+                          isActive
+                            ? 'bg-amber-500 text-white shadow-md'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-4 h-4" />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                            isActive ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                {/* Drawer footer */}
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                   <button
                     onClick={onNavigateToStore}
-                    className="flex items-center gap-1 text-xs font-bold text-emerald-600"
+                    className="flex items-center gap-1 text-xs font-bold text-emerald-600 hover:underline"
                   >
                     <span>View Storefront</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={logout} className="text-xs text-rose-600 font-bold">
+                  <button onClick={logout} className="text-xs text-rose-600 font-bold flex items-center gap-1 hover:underline">
+                    <LogOut className="w-3.5 h-3.5" />
                     Sign Out
                   </button>
                 </div>
@@ -281,9 +338,54 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Content View Body */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">{children}</main>
+        {/* ── Content View Body ── */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto w-full">
+          {children}
+        </main>
       </div>
+
+      {/* ── Mobile Bottom Tab Strip (Vendor Quick Nav) ── */}
+      <nav
+        aria-label="Vendor Quick Navigation"
+        className="mobile-tab-bar lg:hidden"
+      >
+        <div className="grid grid-cols-5 px-1 pt-1.5 pb-[max(env(safe-area-inset-bottom,6px),6px)]">
+          {mobileTabs.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onTabChange(item.id)}
+                aria-label={item.label}
+                className={`relative flex flex-col items-center justify-center min-h-[48px] px-1 py-1 rounded-xl transition-colors duration-150 ${
+                  isActive
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId="vendorMobileActivePill"
+                    className="absolute inset-x-1 top-0.5 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <Icon
+                  className="w-5 h-5 relative z-10"
+                  strokeWidth={isActive ? 2.5 : 1.8}
+                />
+                <span className={`relative z-10 text-[10px] mt-0.5 leading-none ${isActive ? 'font-black' : 'font-medium'}`}>
+                  {item.id === 'overview' ? 'Dashboard' :
+                   item.id === 'products' ? 'Products' :
+                   item.id === 'orders' ? 'Orders' :
+                   item.id === 'payouts' ? 'Payouts' : 'Profile'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 };
