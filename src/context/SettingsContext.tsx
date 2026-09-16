@@ -111,7 +111,24 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   }
 };
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+const DEFAULT_SETTINGS_CONTEXT: SettingsContextType = {
+  settings: DEFAULT_STORE_SETTINGS,
+  currency: 'GHS',
+  setCurrency: () => {},
+  currencyConfig: CURRENCY_MAP.GHS,
+  country: 'GH',
+  setCountry: () => {},
+  countryConfig: COUNTRY_MAP.GH,
+  formatPrice: (amt: number) => `GH₵ ${(Number(amt) || 0).toFixed(2)}`,
+  convertPrice: (amt: number) => Number(amt) || 0,
+  refreshSettings: async () => {},
+  isLoading: false,
+  darkMode: false,
+  toggleDarkMode: () => {},
+  setDarkMode: () => {}
+};
+
+const SettingsContext = createContext<SettingsContextType>(DEFAULT_SETTINGS_CONTEXT);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
@@ -305,6 +322,5 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
 export const useSettings = () => {
   const context = useContext(SettingsContext);
-  if (!context) throw new Error('useSettings must be used within SettingsProvider');
-  return context;
+  return context || DEFAULT_SETTINGS_CONTEXT;
 };

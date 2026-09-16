@@ -14,11 +14,17 @@ export interface Toast {
 
 interface ToastContextType {
   toasts: Toast[];
-  showToast: (type: ToastType, title: string, message?: string, duration?: number) => void;
+  showToast: (typeOrMessage: ToastType | string, titleOrType?: string | ToastType, message?: string, duration?: number) => void;
   removeToast: (id: string) => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+const DEFAULT_TOAST_CONTEXT: ToastContextType = {
+  toasts: [],
+  showToast: () => {},
+  removeToast: () => {}
+};
+
+const ToastContext = createContext<ToastContextType>(DEFAULT_TOAST_CONTEXT);
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -27,9 +33,32 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const showToast = useCallback((type: ToastType, title: string, message?: string, duration = 4000) => {
+  const showToast = useCallback((
+    typeOrMessage: ToastType | string,
+    titleOrType?: string | ToastType,
+    message?: string,
+    duration = 4000
+  ) => {
+    let type: ToastType = 'info';
+    let title = '';
+    let msg = message;
+
+    const validTypes: ToastType[] = ['success', 'error', 'info', 'warning'];
+    if (validTypes.includes(typeOrMessage as ToastType)) {
+      type = typeOrMessage as ToastType;
+      title = (titleOrType as string) || '';
+    } else {
+      title = typeOrMessage;
+      if (titleOrType && validTypes.includes(titleOrType as ToastType)) {
+        type = titleOrType as ToastType;
+      } else {
+        type = 'info';
+        msg = titleOrType as string;
+      }
+    }
+
     const id = `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    const newToast: Toast = { id, type, title, message, duration };
+    const newToast: Toast = { id, type, title, message: msg, duration };
 
     setToasts((prev) => [...prev, newToast]);
 
@@ -104,6 +133,5 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useToast = () => {
   const context = useContext(ToastContext);
-  if (!context) throw new Error('useToast must be used within ToastProvider');
-  return context;
+  return context || DEFAULT_TOAST_CONTEXT;
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Scale,
@@ -35,6 +35,20 @@ export const ProductCompareModal: React.FC<ProductCompareModalProps> = ({ onNavi
 
   const { addToCart, setIsCartDrawerOpen } = useCart();
   const { formatPrice } = useSettings();
+
+  useEffect(() => {
+    if (!isCompareModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsCompareModalOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isCompareModalOpen, setIsCompareModalOpen]);
 
   if (compareCount === 0) return null;
 
@@ -127,11 +141,18 @@ export const ProductCompareModal: React.FC<ProductCompareModalProps> = ({ onNavi
       {/* 2. Full Side-by-Side Comparison Modal */}
       <AnimatePresence>
         {isCompareModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md">
+          <div
+            onClick={() => setIsCompareModalOpen(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Product Comparison Matrix"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md"
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
               className="relative w-full max-w-6xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden"
             >
               {/* Header */}
@@ -162,6 +183,7 @@ export const ProductCompareModal: React.FC<ProductCompareModalProps> = ({ onNavi
                   </button>
                   <button
                     onClick={() => setIsCompareModalOpen(false)}
+                    aria-label="Close comparison matrix"
                     className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                   >
                     <X className="w-5 h-5" />
@@ -243,7 +265,7 @@ export const ProductCompareModal: React.FC<ProductCompareModalProps> = ({ onNavi
                         {/* Direct Add to Cart */}
                         <button
                           onClick={() => {
-                            addToCart(product, 1);
+                            addToCart(product, undefined, 1);
                             setIsCartDrawerOpen(true);
                           }}
                           className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm"

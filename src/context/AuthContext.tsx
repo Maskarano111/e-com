@@ -20,17 +20,54 @@ interface AuthContextType {
   switchDemoRole: (role: 'admin' | 'vendor' | 'customer') => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const DEFAULT_AUTH_CONTEXT: AuthContextType = {
+  user: null,
+  token: null,
+  isAdmin: false,
+  isStoreManager: false,
+  isVendor: false,
+  isLoading: false,
+  login: async () => false,
+  adminLogin: async () => false,
+  vendorLogin: async () => false,
+  register: async () => false,
+  logout: () => {},
+  updateProfile: async () => false,
+  changePassword: async () => false,
+  switchDemoRole: async () => {}
+};
+
+const AuthContext = createContext<AuthContextType>(DEFAULT_AUTH_CONTEXT);
+
+const getStoredToken = (): string | null => {
+  try {
+    return localStorage.getItem('novamart_auth_token');
+  } catch {
+    return null;
+  }
+};
+
+const setStoredToken = (token: string): void => {
+  try {
+    localStorage.setItem('novamart_auth_token', token);
+  } catch {}
+};
+
+const removeStoredToken = (): void => {
+  try {
+    localStorage.removeItem('novamart_auth_token');
+  } catch {}
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('novamart_auth_token'));
+  const [token, setToken] = useState<string | null>(getStoredToken);
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
 
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem('novamart_auth_token');
+      const storedToken = getStoredToken();
       if (storedToken) {
         try {
           const res = await api.getMe(storedToken);
@@ -38,10 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(res.user);
             setToken(storedToken);
           } else {
-            localStorage.removeItem('novamart_auth_token');
+            removeStoredToken();
           }
         } catch {
-          localStorage.removeItem('novamart_auth_token');
+          removeStoredToken();
           setUser(null);
           setToken(null);
         }
@@ -57,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await api.login({ email, password: pass });
       setUser(res.user);
       setToken(res.token);
-      localStorage.setItem('novamart_auth_token', res.token);
+      setStoredToken(res.token);
       showToast('success', `Welcome back, ${res.user.firstName}!`, 'You are logged in.');
       return true;
     } catch (err: any) {
@@ -71,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await api.adminLogin({ email, password: pass });
       setUser(res.user);
       setToken(res.token);
-      localStorage.setItem('novamart_auth_token', res.token);
+      setStoredToken(res.token);
       showToast('success', 'Admin Access Granted', `Logged in as ${res.user.firstName} (${res.user.role})`);
       return true;
     } catch (err: any) {
@@ -104,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(vendorUser);
       const token = `mock-vendor-token-${vendorUser.id}`;
       setToken(token);
-      localStorage.setItem('novamart_auth_token', token);
+      setStoredToken(token);
       showToast('success', 'Vendor Portal Access', `Welcome back, ${vendorUser.firstName} (${vendorUser.vendorStoreName})!`);
       return true;
     } catch (err: any) {
@@ -118,7 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await api.register(data);
       setUser(res.user);
       setToken(res.token);
-      localStorage.setItem('novamart_auth_token', res.token);
+      setStoredToken(res.token);
       showToast('success', 'Account Created Successfully!', `Welcome to NovaMart, ${res.user.firstName}!`);
       return true;
     } catch (err: any) {
@@ -130,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('novamart_auth_token');
+    removeStoredToken();
     showToast('info', 'Logged Out', 'You have been safely signed out.');
   };
 
@@ -200,6 +237,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
+  return context || DEFAULT_AUTH_CONTEXT;
 };

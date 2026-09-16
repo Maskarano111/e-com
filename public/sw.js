@@ -6,22 +6,20 @@
  *   - Images → Cache-First with background refresh
  */
 
-const CACHE_VERSION = 'novamart-v1';
+const CACHE_VERSION = 'novamart-v2';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 const API_CACHE   = `${CACHE_VERSION}-api`;
 
 const SHELL_URLS = [
   '/',
-  '/src/main.tsx',
-  '/src/index.css',
+  '/index.html',
 ];
 
 // ── Install: pre-cache the app shell ─────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE).then((cache) => {
-      // Best-effort shell pre-cache
       return Promise.allSettled(SHELL_URLS.map((url) => cache.add(url).catch(() => {})));
     }).then(() => self.skipWaiting())
   );
@@ -65,7 +63,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell (HTML, JS, CSS, fonts) → Cache-First
+  // App navigation (HTML) & scripts → Network-First with cached fallback
+  // This prevents Safari/mobile from serving stale, broken cached JS bundles
+  if (request.mode === 'navigate' || request.destination === 'script') {
+    event.respondWith(networkFirst(request, SHELL_CACHE));
+    return;
+  }
+
+  // Other static assets (fonts, icons, css) → Cache-First
   event.respondWith(cacheFirst(request, SHELL_CACHE));
 });
 

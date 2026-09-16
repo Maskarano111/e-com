@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Props {
@@ -16,10 +16,16 @@ interface State {
   showDetails: boolean;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
+  state: State = {
+    hasError: false,
+    error: null,
+    errorInfo: null,
+    showDetails: false
+  };
+
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null, showDetails: false };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -33,14 +39,21 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
+    try {
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        });
+      }
+    } catch {}
     this.setState({ hasError: false, error: null, errorInfo: null, showDetails: false });
+    window.location.reload();
   };
 
   render() {
     if (!this.state.hasError) return this.props.children;
 
     const { name = 'This section', inline = false } = this.props;
-    const isDev = import.meta.env.DEV;
 
     // ── Inline / compact fallback (for widgets, cards, etc.)
     if (inline) {
@@ -106,20 +119,22 @@ export class ErrorBoundary extends Component<Props, State> {
               </button>
             </div>
 
-            {/* Dev-only error details */}
-            {isDev && this.state.error && (
+            {/* Error details */}
+            {this.state.error && (
               <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
                 <button
                   onClick={() => this.setState((s) => ({ showDetails: !s.showDetails }))}
                   className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors w-full"
                 >
                   {this.state.showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  {this.state.showDetails ? 'Hide' : 'Show'} error details (dev only)
+                  {this.state.showDetails ? 'Hide' : 'Show'} error details
                 </button>
                 {this.state.showDetails && (
                   <div className="mt-3 p-3 rounded-xl bg-slate-950 text-slate-300 text-xs font-mono overflow-auto max-h-48 leading-relaxed">
                     <p className="text-rose-400 font-bold mb-1">{this.state.error.name}: {this.state.error.message}</p>
-                    <pre className="whitespace-pre-wrap opacity-70">{this.state.errorInfo?.componentStack}</pre>
+                    {this.state.errorInfo?.componentStack && (
+                      <pre className="whitespace-pre-wrap opacity-70">{this.state.errorInfo.componentStack}</pre>
+                    )}
                   </div>
                 )}
               </div>

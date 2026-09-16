@@ -110,7 +110,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({ or
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-bold">Payment Status</span>
             <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-              order.paymentStatus === 'paid'
+              order.paymentStatus === 'successful'
                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                 : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
             }`}>
@@ -120,13 +120,13 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({ or
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-bold">Payment Method</span>
             <span className="font-bold text-slate-900 dark:text-white capitalize">
-              {order.paymentMethod === 'momo' ? 'Mobile Money (MoMo)' : order.paymentMethod}
+              {order.paymentMethod === 'mtn_momo' ? 'Mobile Money (MoMo)' : order.paymentMethod}
             </span>
           </div>
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-bold">Estimated Delivery</span>
             <span className="font-bold text-emerald-600">
-              {new Date(order.estimatedDelivery).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {new Date(order.estimatedDeliveryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
             </span>
           </div>
         </div>
@@ -138,10 +138,10 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({ or
               <MapPin className="w-3.5 h-3.5 text-emerald-600" />
               <span>Delivery Address</span>
             </h4>
-            <p className="text-slate-700 dark:text-slate-300 font-semibold">{order.shippingAddress.fullName}</p>
-            <p className="text-slate-500">{order.shippingAddress.street}</p>
-            <p className="text-slate-500">{order.shippingAddress.city}, {order.shippingAddress.region} Region</p>
-            <p className="text-slate-500">Contact: {order.shippingAddress.phoneNumber}</p>
+            <p className="text-slate-700 dark:text-slate-300 font-semibold">{order.deliveryAddress?.name || order.customerName}</p>
+            <p className="text-slate-500">{order.deliveryAddress?.address}</p>
+            <p className="text-slate-500">{order.deliveryAddress?.city}, {order.deliveryAddress?.region} Region</p>
+            <p className="text-slate-500">Contact: {order.deliveryAddress?.phone}</p>
           </div>
 
           <div className="space-y-1">
@@ -165,19 +165,20 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({ or
               <div key={item.id} className="py-3 flex items-center justify-between gap-4 text-xs">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
-                    src={item.image}
-                    alt={item.name}
+                    src={item.productImage}
+                    alt={item.productName}
                     className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                    loading="lazy"
                   />
                   <div className="min-w-0">
-                    <p className="font-bold text-slate-900 dark:text-white truncate">{item.name}</p>
+                    <p className="font-bold text-slate-900 dark:text-white truncate">{item.productName}</p>
                     <p className="text-[11px] text-slate-400">
                       Qty: {item.quantity} {item.variationName && `• ${item.variationName}`}
                     </p>
                   </div>
                 </div>
                 <span className="font-bold text-slate-900 dark:text-white shrink-0">
-                  {formatPrice(item.price * item.quantity)}
+                  {formatPrice(item.unitPrice * item.quantity)}
                 </span>
               </div>
             ))}

@@ -13,44 +13,52 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { useToast } from '../../context/ToastContext';
+import { api } from '../../services/api';
 
 export const AdminSettingsView: React.FC = () => {
-  const { settings, updateSettings, formatPrice } = useSettings();
+  const { settings, refreshSettings, formatPrice } = useSettings();
   const { showToast } = useToast();
 
   const [storeName, setStoreName] = useState(settings.storeName);
   const [storeEmail, setStoreEmail] = useState(settings.storeEmail);
   const [storePhone, setStorePhone] = useState(settings.storePhone);
-  const [storeAddress, setStoreAddress] = useState(settings.storeAddress);
+  const [storeAddress, setStoreAddress] = useState(settings.businessAddress);
   const [currency, setCurrency] = useState(settings.currency);
   const [currencySymbol, setCurrencySymbol] = useState(settings.currencySymbol);
   const [standardDeliveryFee, setStandardDeliveryFee] = useState(settings.standardDeliveryFee);
   const [expressDeliveryFee, setExpressDeliveryFee] = useState(settings.expressDeliveryFee);
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(settings.freeDeliveryThreshold);
-  const [momoEnabled, setMomoEnabled] = useState(settings.momoEnabled);
-  const [cardEnabled, setCardEnabled] = useState(settings.cardEnabled);
-  const [codEnabled, setCodEnabled] = useState(settings.codEnabled);
+  const [momoEnabled, setMomoEnabled] = useState(settings.enableMoMo);
+  const [cardEnabled, setCardEnabled] = useState(settings.enableCard);
+  const [codEnabled, setCodEnabled] = useState(settings.enableCOD);
 
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    await updateSettings({
-      storeName,
-      storeEmail,
-      storePhone,
-      storeAddress,
-      currency,
-      currencySymbol,
-      standardDeliveryFee: Number(standardDeliveryFee),
-      expressDeliveryFee: Number(expressDeliveryFee),
-      freeDeliveryThreshold: Number(freeDeliveryThreshold),
-      momoEnabled,
-      cardEnabled,
-      codEnabled
-    });
-    setIsSaving(false);
+    try {
+      await api.updateSettings({
+        storeName,
+        storeEmail,
+        storePhone,
+        businessAddress: storeAddress,
+        currency,
+        currencySymbol,
+        standardDeliveryFee: Number(standardDeliveryFee),
+        expressDeliveryFee: Number(expressDeliveryFee),
+        freeDeliveryThreshold: Number(freeDeliveryThreshold),
+        enableMoMo: momoEnabled,
+        enableCard: cardEnabled,
+        enableCOD: codEnabled
+      });
+      await refreshSettings();
+      showToast('success', 'Settings Saved', 'Store configuration updated successfully.');
+    } catch {
+      showToast('error', 'Save Failed', 'Could not save settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (

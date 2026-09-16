@@ -517,7 +517,7 @@ export const NovaAICopilot: React.FC<NovaAICopilotProps> = ({ onNavigate, onOpen
 
       if (foundOrder) {
         orderInfo = foundOrder;
-        replyText = `📦 **Live Order Status Found:**\n\n• Order Number: **#${foundOrder.orderNumber}**\n• Status: **${(foundOrder.orderStatus || 'in_transit').toUpperCase().replace('_', ' ')}**\n• Total: **${formatPrice(foundOrder.total)}**\n• Dispatch Hub: **${country === 'NG' ? 'Ikeja Depot, Lagos Hub' : 'Airport City Hub, Accra'}**\n• Estimated Delivery: **${foundOrder.estimatedDelivery || '1–2 Business Days'}**`;
+        replyText = `📦 **Live Order Status Found:**\n\n• Order Number: **#${foundOrder.orderNumber}**\n• Status: **${(foundOrder.orderStatus || 'in_transit').toUpperCase().replace('_', ' ')}**\n• Total: **${formatPrice(foundOrder.total)}**\n• Dispatch Hub: **${country === 'NG' ? 'Ikeja Depot, Lagos Hub' : 'Airport City Hub, Accra'}**\n• Estimated Delivery: **${foundOrder.estimatedDeliveryDate || '1–2 Business Days'}**`;
         actionLinks = [{ label: '🗺️ Open Full GPS Live Map', view: 'track-order', params: { orderNumber: foundOrder.orderNumber } }];
       } else {
         replyText = `📦 You can track any active order in real-time! Please enter your **Order Number** or click below:`;

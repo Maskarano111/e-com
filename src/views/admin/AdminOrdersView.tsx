@@ -240,7 +240,7 @@ export const AdminOrdersView: React.FC = () => {
 
                   <td className="py-3 px-4">
                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                      o.paymentStatus === 'paid'
+                      o.paymentStatus === 'successful'
                         ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                         : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                     }`}>
@@ -405,14 +405,14 @@ export const AdminOrdersView: React.FC = () => {
                   {selectedOrder.items.map((it) => (
                     <div key={it.id} className="py-2.5 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <img src={it.image} alt={it.name} className="w-10 h-10 rounded-lg object-cover" />
+                        <img src={it.productImage} alt={it.productName} className="w-10 h-10 rounded-lg object-cover" loading="lazy" />
                         <div>
-                          <p className="font-bold text-slate-900 dark:text-white">{it.name}</p>
-                          <p className="text-[10px] text-slate-400">Qty: {it.quantity} • {formatPrice(it.price)}</p>
+                          <p className="font-bold text-slate-900 dark:text-white">{it.productName}</p>
+                          <p className="text-[10px] text-slate-400">Qty: {it.quantity} • {formatPrice(it.unitPrice)}</p>
                         </div>
                       </div>
                       <span className="font-bold text-slate-900 dark:text-white">
-                        {formatPrice(it.price * it.quantity)}
+                        {formatPrice(it.unitPrice * it.quantity)}
                       </span>
                     </div>
                   ))}

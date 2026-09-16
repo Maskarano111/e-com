@@ -130,7 +130,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
       order.items.forEach((item, index) => {
         doc.setFontSize(10);
         doc.text(`${index + 1}. ${item.productName} (x${item.quantity})`, 14, yPos);
-        doc.text(`GH₵ ${(item.price * item.quantity).toFixed(2)}`, 160, yPos);
+        doc.text(`GH₵ ${(item.unitPrice * item.quantity).toFixed(2)}`, 160, yPos);
         yPos += 8;
       });
 
@@ -139,7 +139,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
 
       doc.setFontSize(12);
       doc.setTextColor(5, 150, 105);
-      doc.text(`Grand Total Paid: GH₵ ${order.totalAmount.toFixed(2)}`, 14, yPos);
+      doc.text(`Grand Total Paid: GH₵ ${order.total.toFixed(2)}`, 14, yPos);
 
       doc.setFontSize(9);
       doc.setTextColor(140);
@@ -424,7 +424,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
                   <span>Payment & Invoice</span>
                 </p>
                 <p className="text-slate-700 dark:text-slate-300 font-semibold">
-                  Total: {formatPrice(order.totalAmount)}
+                  Total: {formatPrice(order.total)}
                 </p>
                 <p className="text-slate-500">Method: <strong>{order.paymentMethod?.toUpperCase()}</strong> ({order.paymentStatus})</p>
                 <p className="text-slate-500">Tracking Code: <strong>{order.trackingNumber || 'GH-TRK-77402'}</strong></p>

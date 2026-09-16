@@ -51,6 +51,7 @@ export const AdminProductsView: React.FC = () => {
   const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
   const [isFlashDeal, setIsFlashDeal] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const handleAIGenerate = () => {

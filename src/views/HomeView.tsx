@@ -141,6 +141,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const activeBanner = activeBannersList[currentBannerIndex] || activeBannersList[0];
 
+  // Dynamically localize banner text according to active country (Nigeria vs Ghana)
+  const localizeText = (text?: string): string => {
+    if (!text) return '';
+    if (country === 'NG') {
+      return text
+        .replace(/Ghana's Premier Online Superstore/gi, "Nigeria's Premier Online Superstore")
+        .replace(/across Accra & all 16 regions/gi, "across Lagos & all 36 states")
+        .replace(/in Accra & all 16 regions/gi, "in Lagos & all 36 states")
+        .replace(/across Accra/gi, "across Lagos & Abuja")
+        .replace(/in Accra/gi, "in Lagos")
+        .replace(/Ghana/g, "Nigeria")
+        .replace(/Accra/g, "Lagos");
+    }
+    return text;
+  };
+
   // Touch swipe support for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
@@ -220,7 +236,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 transition={{ duration: 0.4 }}
                 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.12] tracking-tight text-white drop-shadow-sm"
               >
-                {activeBanner.title}
+                {localizeText(activeBanner.title)}
               </motion.h1>
             </AnimatePresence>
 
@@ -233,7 +249,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 transition={{ duration: 0.4, delay: 0.1 }}
                 className="text-xs sm:text-sm md:text-base text-slate-300 leading-relaxed max-w-lg"
               >
-                {activeBanner.message || activeBanner.subtitle}
+                {localizeText(activeBanner.message || activeBanner.subtitle)}
               </motion.p>
             </AnimatePresence>
 

@@ -1,12 +1,39 @@
 import "dotenv/config";
 import express from "express";
 import path from "path";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { createServer as createViteServer } from "vite";
 import apiRouter from "./server/routes";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  // Security headers via helmet
+  app.use(helmet({
+    contentSecurityPolicy: false, // Disabled for dev/Vite inline scripts compatibility
+    crossOriginEmbedderPolicy: false
+  }));
+
+  // Rate limiting for auth routes (prevents credential brute-forcing)
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 30, // 30 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many authentication attempts. Please try again in 15 minutes.' }
+  });
+  app.use('/api/auth/', authLimiter);
+
+  // General API rate limiter
+  const generalApiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 300, // 300 requests per minute
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+  app.use('/api/', generalApiLimiter);
 
   // Middlewares for body parsing
   app.use(express.json({ limit: "10mb" }));

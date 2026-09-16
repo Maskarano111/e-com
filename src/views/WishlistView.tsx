@@ -13,25 +13,15 @@ interface WishlistViewProps {
 }
 
 export const WishlistView: React.FC<WishlistViewProps> = ({ onNavigate, onOpenQuickView }) => {
-  const { wishlistItems, removeFromWishlist, clearWishlist } = useWishlist();
-  const { addItem } = useCart();
+  const { wishlist, removeFromWishlist, clearWishlist } = useWishlist();
+  const { addToCart } = useCart();
   const { formatPrice } = useSettings();
   const { showToast } = useToast();
 
   const handleMoveToCart = (product: Product) => {
-    addItem({
-      id: product.id,
-      productId: product.id,
-      name: product.name,
-      price: product.discountPrice || product.price,
-      image: product.featuredImage,
-      quantity: 1,
-      stockQuantity: product.stockQuantity,
-      vendorId: product.vendorId,
-      vendorName: product.vendorName
-    });
+    addToCart(product);
     removeFromWishlist(product.id);
-    showToast(`"${product.name}" moved to cart!`, 'success');
+    showToast('success', 'Moved to Cart', `"${product.name}" moved to your shopping bag.`);
   };
 
   const handleShare = () => {
@@ -39,7 +29,7 @@ export const WishlistView: React.FC<WishlistViewProps> = ({ onNavigate, onOpenQu
       navigator.share({ title: 'My NovaMart Wishlist', text: 'Check out my wishlist on NovaMart!', url: window.location.href });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      showToast('Wishlist link copied!', 'success');
+      showToast('success', 'Link Copied', 'Wishlist link copied to clipboard!');
     }
   };
 
@@ -56,18 +46,18 @@ export const WishlistView: React.FC<WishlistViewProps> = ({ onNavigate, onOpenQu
               <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <Heart className="w-6 h-6 text-rose-500 fill-rose-500" />
                 My Wishlist
-                <span className="text-base font-medium text-slate-500 dark:text-slate-400">({wishlistItems.length})</span>
+                <span className="text-base font-medium text-slate-500 dark:text-slate-400">({wishlist.length})</span>
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">Items you've saved for later</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {wishlistItems.length > 0 && (
+            {wishlist.length > 0 && (
               <>
                 <button onClick={handleShare} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                   <Share2 className="w-4 h-4" />Share
                 </button>
-                <button onClick={() => { clearWishlist(); showToast('Wishlist cleared', 'info'); }} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-sm font-bold hover:bg-rose-100 transition-colors">
+                <button onClick={() => { clearWishlist(); showToast('info', 'Wishlist Cleared', 'All items removed from your wishlist.'); }} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-sm font-bold hover:bg-rose-100 transition-colors">
                   <Trash2 className="w-4 h-4" />Clear All
                 </button>
               </>
@@ -76,7 +66,7 @@ export const WishlistView: React.FC<WishlistViewProps> = ({ onNavigate, onOpenQu
         </div>
 
         {/* Empty State */}
-        {wishlistItems.length === 0 && (
+        {wishlist.length === 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-24">
             <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center">
               <Heart className="w-12 h-12 text-rose-300 dark:text-rose-700" />
@@ -90,10 +80,10 @@ export const WishlistView: React.FC<WishlistViewProps> = ({ onNavigate, onOpenQu
         )}
 
         {/* Wishlist Grid */}
-        {wishlistItems.length > 0 && (
+        {wishlist.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             <AnimatePresence>
-              {wishlistItems.map((product, i) => (
+              {wishlist.map((product, i) => (
                 <motion.div
                   key={product.id}
                   layout

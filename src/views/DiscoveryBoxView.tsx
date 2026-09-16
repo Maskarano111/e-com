@@ -23,7 +23,7 @@ interface DiscoveryBoxViewProps {
 }
 
 export const DiscoveryBoxView: React.FC<DiscoveryBoxViewProps> = ({ onNavigate }) => {
-  const { addItem } = useCart();
+  const { addToCart } = useCart();
   const { showToast } = useToast();
   const { formatPrice, settings } = useSettings();
 
@@ -59,11 +59,11 @@ export const DiscoveryBoxView: React.FC<DiscoveryBoxViewProps> = ({ onNavigate }
       return;
     }
     if (selectedDecants.length >= boxSize) {
-      showToast(`Your ${boxSize}-piece box is already full! Remove a scent first.`, 'info');
+      showToast('info', 'Box Full', `Your ${boxSize}-piece box is already full! Remove a scent first.`);
       return;
     }
     setSelectedDecants([...selectedDecants, product]);
-    showToast(`Added ${product.name} 10ml Decant to your box!`, 'success');
+    showToast('success', 'Scent Added', `${product.name} 10ml decant added to your box!`);
   };
 
   const handleRemoveDecant = (productId: string) => {
@@ -72,7 +72,7 @@ export const DiscoveryBoxView: React.FC<DiscoveryBoxViewProps> = ({ onNavigate }
 
   const handleAddToCart = () => {
     if (selectedDecants.length < boxSize) {
-      showToast(`Please select ${boxSize - selectedDecants.length} more scent(s) to complete your box.`, 'error');
+      showToast('error', 'Box Incomplete', `Please select ${boxSize - selectedDecants.length} more scent(s) to complete your box.`);
       return;
     }
 
@@ -103,14 +103,14 @@ export const DiscoveryBoxView: React.FC<DiscoveryBoxViewProps> = ({ onNavigate }
       updatedAt: new Date().toISOString()
     };
 
-    addItem(boxProduct, 1);
-    showToast('Custom Discovery Box added to cart!', 'success');
+    addToCart(boxProduct, undefined, 1);
+    showToast('success', 'Box Added to Cart!', 'Your custom discovery box is ready for checkout.');
     onNavigate('cart');
   };
 
   const handleWhatsAppOrder = () => {
     if (selectedDecants.length < boxSize) {
-      showToast(`Please select ${boxSize - selectedDecants.length} more scent(s) to complete your box.`, 'error');
+      showToast('error', 'Box Incomplete', `Please select ${boxSize - selectedDecants.length} more scent(s) to complete your box.`);
       return;
     }
 

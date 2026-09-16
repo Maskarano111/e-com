@@ -368,3 +368,66 @@ export interface VendorPayoutRequest {
   processedAt?: string;
 }
 
+// ─── Navigation Types ─────────────────────────────────────────────────────────
+
+/** All valid view identifiers in the app */
+export type AppView =
+  | 'home'
+  | 'shop'
+  | 'product-detail'
+  | 'cart'
+  | 'checkout'
+  | 'order-confirmation'
+  | 'track-order'
+  | 'account'
+  | 'wishlist'
+  | 'login'
+  | 'register'
+  | 'forgot-password'
+  | 'discovery-box'
+  | 'become-seller'
+  | 'vendor-store'
+  | 'scent-quiz'
+  | 'admin'
+  | 'vendor'
+  | 'about'
+  | 'contact'
+  | 'faq'
+  | 'terms'
+  | 'privacy'
+  | 'returns';
+
+/** Per-route param shapes — ensures correct params are passed for each view */
+export type NavigationParams =
+  | { view: 'home' }
+  | { view: 'shop'; category?: string; search?: string; dealsOnly?: boolean; isFlashDeal?: boolean }
+  | { view: 'product-detail'; productId: string }
+  | { view: 'cart' }
+  | { view: 'checkout' }
+  | { view: 'order-confirmation'; order: Order }
+  | { view: 'track-order'; orderNumber?: string }
+  | { view: 'account'; tab?: string }
+  | { view: 'wishlist' }
+  | { view: 'login' }
+  | { view: 'register' }
+  | { view: 'forgot-password' }
+  | { view: 'discovery-box' }
+  | { view: 'become-seller' }
+  | { view: 'vendor-store'; vendorId: string }
+  | { view: 'scent-quiz' }
+  | { view: 'admin' }
+  | { view: 'vendor' }
+  | { view: 'about' }
+  | { view: 'contact' }
+  | { view: 'faq' }
+  | { view: 'terms' }
+  | { view: 'privacy' }
+  | { view: 'returns' };
+
+/**
+ * Shared navigate function signature used across the app.
+ * Compatible with the existing (view: string, param?: any) pattern
+ * so all call sites continue to work without changes.
+ */
+export type NavigateFn = (view: AppView | string, param?: Record<string, any>) => void;
+

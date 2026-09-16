@@ -17,19 +17,14 @@ import { useSettings } from '../../context/SettingsContext';
 interface CartDrawerProps {
   isOpen?: boolean;
   onClose?: () => void;
-  onNavigate?: (view: string, param?: any) => void;
-  onNavigateToCart?: () => void;
-  onNavigateToCheckout?: () => void;
-  onNavigateToShop?: () => void;
+  /** Single navigate function — replaces the old onNavigateToCart/Checkout/Shop props */
+  onNavigate?: (view: string, param?: Record<string, any>) => void;
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
   isOpen,
   onClose,
   onNavigate,
-  onNavigateToCart,
-  onNavigateToCheckout,
-  onNavigateToShop
 }) => {
   const {
     cart,
@@ -60,20 +55,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const handleGoToShop = () => {
     handleClose();
-    if (onNavigate) onNavigate('shop');
-    else if (onNavigateToShop) onNavigateToShop();
+    onNavigate?.('shop');
   };
 
   const handleGoToCheckout = () => {
     handleClose();
-    if (onNavigate) onNavigate('checkout');
-    else if (onNavigateToCheckout) onNavigateToCheckout();
+    onNavigate?.('checkout');
   };
 
   const handleGoToCart = () => {
     handleClose();
-    if (onNavigate) onNavigate('cart');
-    else if (onNavigateToCart) onNavigateToCart();
+    onNavigate?.('cart');
   };
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
@@ -101,6 +93,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
         <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Shopping Cart"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
@@ -121,6 +116,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <button
                 id="btn-close-cart-drawer"
                 onClick={handleClose}
+                aria-label="Close cart"
                 className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -173,15 +169,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{item.name}</h4>
                           <button
                             onClick={() => removeFromCart(item.id)}
+                            aria-label={`Remove ${item.name} from cart`}
                             className="text-slate-400 hover:text-rose-500 transition-colors p-1 cursor-pointer"
-                            title="Remove item"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        {item.selectedVariation && (
+                        {item.variationName && (
                           <span className="inline-block mt-0.5 text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                            {item.selectedVariation.name}
+                            {item.variationName}
                           </span>
                         )}
                         <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1">
@@ -194,16 +190,22 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         <div className="flex items-center gap-2 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 bg-slate-50 dark:bg-slate-800">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            aria-label={`Decrease quantity of ${item.name}`}
                             className="w-6 h-6 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="text-xs font-bold text-slate-900 dark:text-white px-1">
+                          <span
+                            aria-live="polite"
+                            aria-label={`Quantity: ${item.quantity}`}
+                            className="text-xs font-bold text-slate-900 dark:text-white px-1"
+                          >
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             disabled={item.quantity >= item.stockQuantity}
+                            aria-label={`Increase quantity of ${item.name}`}
                             className="w-6 h-6 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 cursor-pointer"
                           >
                             <Plus className="w-3 h-3" />

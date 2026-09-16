@@ -13,7 +13,18 @@ interface CompareContextType {
   compareCount: number;
 }
 
-const CompareContext = createContext<CompareContextType | undefined>(undefined);
+const DEFAULT_COMPARE_CONTEXT: CompareContextType = {
+  compareItems: [],
+  addToCompare: () => {},
+  removeFromCompare: () => {},
+  clearCompare: () => {},
+  isInCompare: () => false,
+  isCompareModalOpen: false,
+  setIsCompareModalOpen: () => {},
+  compareCount: 0
+};
+
+const CompareContext = createContext<CompareContextType>(DEFAULT_COMPARE_CONTEXT);
 
 const MAX_COMPARE_ITEMS = 4;
 const STORAGE_KEY = 'novamart_compare_items';
@@ -91,8 +102,5 @@ export const CompareProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 export const useCompare = () => {
   const context = useContext(CompareContext);
-  if (!context) {
-    throw new Error('useCompare must be used within CompareProvider');
-  }
-  return context;
+  return context || DEFAULT_COMPARE_CONTEXT;
 };

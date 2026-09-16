@@ -18,7 +18,14 @@ const FONT_SIZE_MAP: Record<FontSizeLevel, string> = {
   xl:     '22px',
 };
 
-const FontSizeContext = createContext<FontSizeContextType | undefined>(undefined);
+const DEFAULT_FONT_SIZE_CONTEXT: FontSizeContextType = {
+  fontSize: 'normal',
+  setFontSize: () => {},
+  increaseFontSize: () => {},
+  decreaseFontSize: () => {}
+};
+
+const FontSizeContext = createContext<FontSizeContextType>(DEFAULT_FONT_SIZE_CONTEXT);
 
 export const FontSizeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [fontSize, setFontSizeState] = useState<FontSizeLevel>(() => {
@@ -65,6 +72,5 @@ export const FontSizeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
 export const useFontSize = () => {
   const ctx = useContext(FontSizeContext);
-  if (!ctx) throw new Error('useFontSize must be used within FontSizeProvider');
-  return ctx;
+  return ctx || DEFAULT_FONT_SIZE_CONTEXT;
 };

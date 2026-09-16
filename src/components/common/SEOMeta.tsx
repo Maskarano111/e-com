@@ -5,6 +5,7 @@
  */
 
 import { useEffect } from 'react';
+import { useSettings } from '../../context/SettingsContext';
 
 interface SEOMetaProps {
   title?: string;
@@ -19,10 +20,10 @@ interface SEOMetaProps {
   jsonLd?: object | null;
 }
 
-const SITE_NAME = 'NovaMart Ghana';
-const DEFAULT_TITLE = "NovaMart | Ghana's Premier Online Superstore & Marketplace";
+const SITE_NAME = 'NovaMart';
+const DEFAULT_TITLE = "NovaMart | Premier Online Superstore & Marketplace";
 const DEFAULT_DESC =
-  'Shop electronics, phones, fashion, beauty, home appliances & groceries online at NovaMart Ghana. Fast nationwide delivery & secure MTN MoMo / Telecel / card checkout.';
+  'Shop electronics, phones, fashion, beauty, home appliances & groceries online at NovaMart. Fast nationwide delivery & secure checkout.';
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&auto=format&fit=crop&q=80';
 const SITE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://novamart.com.gh';
 
@@ -50,40 +51,60 @@ function setJsonLd(data: object) {
 }
 
 export function SEOMeta({
-  title = DEFAULT_TITLE,
-  description = DEFAULT_DESC,
+  title,
+  description,
   image = DEFAULT_IMAGE,
   url,
   type = 'website',
   jsonLd = null,
 }: SEOMetaProps) {
+  const { country } = useSettings();
+
+  const siteName = country === 'NG' ? 'NovaMart Nigeria' : 'NovaMart Ghana';
+  const defaultTitle = country === 'NG'
+    ? "NovaMart | Nigeria's Premier Online Superstore & Marketplace"
+    : "NovaMart | Ghana's Premier Online Superstore & Marketplace";
+  const defaultDesc = country === 'NG'
+    ? 'Shop electronics, phones, fashion, beauty, home appliances & groceries online at NovaMart Nigeria. Fast nationwide delivery across Lagos & all 36 states & secure checkout.'
+    : 'Shop electronics, phones, fashion, beauty, home appliances & groceries online at NovaMart Ghana. Fast nationwide delivery & secure MTN MoMo / Telecel / card checkout.';
+
+  const resolvedTitle = title
+    ? (country === 'NG' ? title.replace(/Ghana/g, 'Nigeria').replace(/Accra/g, 'Lagos') : title)
+    : defaultTitle;
+  const resolvedDesc = description
+    ? (country === 'NG' ? description.replace(/Ghana/g, 'Nigeria').replace(/Accra/g, 'Lagos') : description)
+    : defaultDesc;
+
   useEffect(() => {
-    const fullTitle = title === DEFAULT_TITLE ? title : `${title} | ${SITE_NAME}`;
-    const pageUrl = url || SITE_URL;
+    const fullTitle = resolvedTitle === defaultTitle ? resolvedTitle : `${resolvedTitle} | ${siteName}`;
+    const siteUrl = typeof window !== 'undefined'
+      ? window.location.origin
+      : (country === 'NG' ? 'https://novamart.ng' : 'https://novamart.com.gh');
+    const pageUrl = url || siteUrl;
 
     // ── Document title
     document.title = fullTitle;
 
     // ── Standard
-    setMeta('description', description);
+    setMeta('description', resolvedDesc);
     setMeta('robots', 'index, follow');
     setMeta('theme-color', '#059669');
 
     // ── Open Graph
     setMeta('og:title', fullTitle, 'property');
-    setMeta('og:description', description, 'property');
+    setMeta('og:description', resolvedDesc, 'property');
     setMeta('og:image', image, 'property');
     setMeta('og:url', pageUrl, 'property');
     setMeta('og:type', type, 'property');
-    setMeta('og:site_name', SITE_NAME, 'property');
-    setMeta('og:locale', 'en_GH', 'property');
+    setMeta('og:site_name', siteName, 'property');
+    setMeta('og:locale', country === 'NG' ? 'en_NG' : 'en_GH', 'property');
 
     // ── Twitter Card
     setMeta('twitter:card', 'summary_large_image');
     setMeta('twitter:title', fullTitle);
-    setMeta('twitter:description', description);
+    setMeta('twitter:description', resolvedDesc);
     setMeta('twitter:image', image);
-    setMeta('twitter:site', '@novamartgh');
+    setMeta('twitter:site', country === 'NG' ? '@novamartng' : '@novamartgh');
 
     // ── Canonical link
     let canonicalEl = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;

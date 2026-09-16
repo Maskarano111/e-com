@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Sparkles,
@@ -37,7 +37,7 @@ export const ScentQuizModal: React.FC<ScentQuizModalProps> = ({
   onNavigateToProduct,
   onNavigateToDiscovery
 }) => {
-  const { addItem } = useCart();
+  const { addToCart } = useCart();
   const { showToast } = useToast();
   const { formatPrice, settings } = useSettings();
 
@@ -47,17 +47,80 @@ export const ScentQuizModal: React.FC<ScentQuizModalProps> = ({
   const [occasion, setOccasion] = useState<string>('evening');
   const [intensity, setIntensity] = useState<'beastmode' | 'moderate'>('beastmode');
 
-  if (!isOpen) return null;
+  // Handle keyboard Escape and lock body scroll
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
 
-  // Compute recommendation
-  const getMatchedProducts = () => {
-    return products.filter((p) => {
-      // Prioritize perfume categories
-      return p.categoryId === 'cat-perfumes' || p.categoryId === 'cat-oud' || p.categoryId === 'cat-mists';
-    }).slice(0, 3);
-  };
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, onClose]);
 
-  const matches = getMatchedProducts();
+  // Compute intelligent recommendations based on user answers
+  const matches = useMemo(() => {
+    if (!products || products.length === 0) return [];
+
+    const familyKeywords: Record<string, string[]> = {
+      oud_amber: ['oud', 'amber', 'saffron', 'oriental', 'leather', 'wood', 'resinous'],
+      gourmand: ['vanilla', 'sweet', 'cinnamon', 'praline', 'chocolate', 'caramel', 'coffee'],
+      fresh_citrus: ['citrus', 'bergamot', 'lemon', 'fresh', 'pineapple', 'birch', 'aquatic'],
+      floral_musk: ['rose', 'jasmine', 'musk', 'floral', 'white musk', 'neroli', 'bloom']
+    };
+
+    const targetKeywords = familyKeywords[family] || [];
+
+    const scored = products.map((product) => {
+      let score = 0;
+      const text = `${product.name} ${product.description || ''} ${product.shortDescription || ''} ${(product.tags || []).join(' ')}`.toLowerCase();
+
+      // Category match
+      if (product.categoryId === 'cat-perfumes' || product.categoryId === 'cat-oud' || product.categoryId === 'cat-mists') {
+        score += 20;
+      }
+
+      // Gender preference match
+      if (gender === 'men') {
+        if (text.includes('him') || text.includes('men') || text.includes('homme') || text.includes('masculine')) score += 15;
+      } else if (gender === 'women') {
+        if (text.includes('her') || text.includes('women') || text.includes('femme') || text.includes('feminine')) score += 15;
+      } else {
+        if (text.includes('unisex') || (!text.includes('for men') && !text.includes('for women'))) score += 10;
+      }
+
+      // Aroma family keywords match
+      for (const kw of targetKeywords) {
+        if (text.includes(kw)) score += 10;
+      }
+
+      // Occasion match
+      if (occasion === 'evening' && (text.includes('night') || text.includes('evening') || text.includes('dark') || text.includes('black') || text.includes('noir'))) {
+        score += 8;
+      } else if (occasion === 'daily' && (text.includes('daily') || text.includes('fresh') || text.includes('clean') || text.includes('light'))) {
+        score += 8;
+      } else if (occasion === 'special' && (text.includes('luxury') || text.includes('royal') || text.includes('grand') || text.includes('gold') || text.includes('crown'))) {
+        score += 8;
+      }
+
+      // Intensity match
+      if (intensity === 'beastmode' && (text.includes('extrait') || text.includes('intense') || text.includes('parfum') || text.includes('elixir'))) {
+        score += 6;
+      }
+
+      return { product, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    const topMatches = scored.slice(0, 3).map((item) => item.product);
+
+    if (topMatches.length > 0) return topMatches;
+    return products.slice(0, 3);
+  }, [products, gender, family, occasion, intensity]);
 
   const handleReset = () => {
     setStep(1);
@@ -68,42 +131,54 @@ export const ScentQuizModal: React.FC<ScentQuizModalProps> = ({
   };
 
   const handleAddToCart = (product: Product) => {
-    addItem(product, 1);
-    showToast(`Added ${product.name} to cart!`, 'success');
+    addToCart(product, undefined, 1);
+    showToast('success', 'Added to Cart', `${product.name} added to your shopping bag.`);
   };
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      {isOpen && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Signature Scent Concierge"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                <Sparkles className="w-4 h-4" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                    Signature Scent Concierge
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Find your bespoke fragrance in 4 quick questions
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                  Signature Scent Concierge
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Find your bespoke fragrance in 4 quick questions
-                </p>
-              </div>
-            </div>
 
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+              <button
+                onClick={onClose}
+                aria-label="Close modal"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
           {/* Body */}
           <div className="p-6 overflow-y-auto flex-1 space-y-6">
@@ -380,7 +455,8 @@ export const ScentQuizModal: React.FC<ScentQuizModalProps> = ({
             </button>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
+      )}
     </AnimatePresence>
   );
 };

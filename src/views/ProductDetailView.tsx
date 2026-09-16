@@ -1267,11 +1267,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
       {/* Review Modal */}
       {isReviewModalOpen && (
         <ReviewModal
-          productId={product.id}
-          productName={product.name}
+          product={product}
           isOpen={isReviewModalOpen}
           onClose={() => setIsReviewModalOpen(false)}
-          onSuccess={() => {
+          onReviewSubmitted={() => {
             api.getProductReviews(product.id).then((res) => setReviewsList(res || []));
           }}
         />

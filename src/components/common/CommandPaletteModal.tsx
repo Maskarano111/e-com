@@ -386,7 +386,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
                       <FolderTree className="w-3.5 h-3.5 text-emerald-500" />
                       <span>{cat.name}</span>
                       <span className="text-[10px] text-slate-400 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">
-                        {cat.itemCount || 10}+
+                        {cat.productCount || 10}+
                       </span>
                     </button>
                   ))}

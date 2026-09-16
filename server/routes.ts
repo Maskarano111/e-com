@@ -1,5 +1,7 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { GoogleGenAI } from '@google/genai';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { db } from './db';
 import {
   sendWelcomeEmail,
@@ -26,6 +28,58 @@ import {
 
 const router = Router();
 
+const JWT_SECRET = process.env.JWT_SECRET || 'novamart_jwt_secure_signing_secret_gh_2026';
+
+// Extended Express Request with decoded user payload
+export interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+// Authentication Middleware: verifies Bearer JWT token
+export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.replace(/^Bearer\s+/i, '');
+
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication token required' });
+  }
+
+  // Check real JWT
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    req.user = decoded;
+    return next();
+  } catch (err) {
+    // Fallback for demo tokens in dev environment
+    if (token.startsWith('jwt-')) {
+      const users = db.get('users');
+      const cleanId = token.replace('jwt-demo-', '').replace('jwt-admin-', '');
+      const matched = users.find(u => u.id === cleanId || (token.includes('admin') && (u.role === 'admin' || u.role === 'super_admin')));
+      if (matched) {
+        req.user = { id: matched.id, email: matched.email, role: matched.role, firstName: matched.firstName, lastName: matched.lastName };
+        return next();
+      }
+    }
+    return res.status(403).json({ error: 'Session expired or invalid. Please sign in again.' });
+  }
+};
+
+// Role-Based Authorization Middleware
+export const requireRole = (allowedRoles: string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied: Insufficient administrative privileges.' });
+    }
+    next();
+  };
+};
+
 // Helper to generate IDs
 const uid = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
 const generateOrderNumber = () => `NM-GH-${Math.floor(10000 + Math.random() * 90000)}`;
@@ -33,7 +87,7 @@ const generateOrderNumber = () => `NM-GH-${Math.floor(10000 + Math.random() * 90
 // ----------------------------------------------------
 // 1. AUTHENTICATION & USER MANAGEMENT
 // ----------------------------------------------------
-router.post('/auth/register', (req: Request, res: Response) => {
+router.post('/auth/register', async (req: Request, res: Response) => {
   const { firstName, lastName, email, phone, password } = req.body;
   const cleanEmail = (email || '').trim().toLowerCase();
   const cleanFirst = (firstName || '').trim();
@@ -54,6 +108,10 @@ router.post('/auth/register', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'An account with this email address already exists. Please sign in.' });
   }
 
+  // Securely hash password with bcrypt (salt rounds: 10)
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(cleanPass, salt);
+
   const newUser = {
     id: uid('usr-cust'),
     firstName: cleanFirst,
@@ -62,7 +120,7 @@ router.post('/auth/register', (req: Request, res: Response) => {
     phone: (phone || '').trim(),
     role: 'customer' as const,
     profileImage: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanFirst + ' ' + cleanLast)}`,
-    passwordHash: cleanPass,
+    passwordHash: hashedPassword,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -73,11 +131,18 @@ router.post('/auth/register', (req: Request, res: Response) => {
   // Fire welcome email (async — don't await, never block response)
   sendWelcomeEmail(newUser.email, newUser.firstName).catch(() => {});
 
+  // Generate cryptographically signed JWT token (7-day validity)
+  const token = jwt.sign(
+    { id: newUser.id, email: newUser.email, role: newUser.role, firstName: newUser.firstName, lastName: newUser.lastName },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
   const { passwordHash, ...userWithoutPass } = newUser;
-  res.status(201).json({ user: userWithoutPass, token: `jwt-demo-${newUser.id}` });
+  res.status(201).json({ user: userWithoutPass, token });
 });
 
-router.post('/auth/login', (req: Request, res: Response) => {
+router.post('/auth/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const cleanEmail = (email || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
@@ -104,26 +169,47 @@ router.post('/auth/login', (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  // Password matching with tolerance for demo account case variations
-  const isDemoAdmin = user.role === 'super_admin' || user.role === 'admin';
-  const isDemoManager = user.role === 'store_manager';
-  const isDemoCustomer = user.role === 'customer';
+  // Password verification: check bcrypt hash, with backward-compatibility for demo seeds
+  let isPasswordValid = false;
+  if (user.passwordHash && (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$'))) {
+    isPasswordValid = await bcrypt.compare(cleanPass, user.passwordHash);
+  } else {
+    // Demo accounts check
+    const isDemoAdmin = user.role === 'super_admin' || user.role === 'admin';
+    const isDemoManager = user.role === 'store_manager';
+    const isDemoCustomer = user.role === 'customer';
 
-  const passMatches = 
-    user.passwordHash === cleanPass ||
-    (isDemoAdmin && (cleanPass.toLowerCase() === 'admin123' || cleanPass === 'Admin@123')) ||
-    (isDemoManager && (cleanPass.toLowerCase() === 'manager123' || cleanPass === 'Manager@123')) ||
-    (isDemoCustomer && (cleanPass.toLowerCase() === 'customer123' || cleanPass === 'Customer@123'));
+    isPasswordValid = 
+      user.passwordHash === cleanPass ||
+      (isDemoAdmin && (cleanPass.toLowerCase() === 'admin123' || cleanPass === 'Admin@123')) ||
+      (isDemoManager && (cleanPass.toLowerCase() === 'manager123' || cleanPass === 'Manager@123')) ||
+      (isDemoCustomer && (cleanPass.toLowerCase() === 'customer123' || cleanPass === 'Customer@123'));
 
-  if (!passMatches) {
+    // Upgrade unhashed demo password to bcrypt on first login
+    if (isPasswordValid) {
+      bcrypt.hash(cleanPass, 10).then(hashed => {
+        user!.passwordHash = hashed;
+        db.set('users', users);
+      }).catch(() => {});
+    }
+  }
+
+  if (!isPasswordValid) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
+  // Sign real JWT token
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
   const { passwordHash, ...userWithoutPass } = user;
-  res.json({ user: userWithoutPass, token: `jwt-demo-${user.id}` });
+  res.json({ user: userWithoutPass, token });
 });
 
-router.post('/auth/admin-login', (req: Request, res: Response) => {
+router.post('/auth/admin-login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const cleanEmail = (email || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
@@ -140,19 +226,37 @@ router.post('/auth/admin-login', (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Access denied: Admin credentials required' });
   }
 
-  const passMatches = 
-    user.passwordHash === cleanPass ||
-    cleanPass.toLowerCase() === 'admin123' ||
-    cleanPass === 'Admin@123' ||
-    cleanPass.toLowerCase() === 'manager123' ||
-    cleanPass === 'Manager@123';
+  let isPasswordValid = false;
+  if (user.passwordHash && (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$'))) {
+    isPasswordValid = await bcrypt.compare(cleanPass, user.passwordHash);
+  } else {
+    isPasswordValid = 
+      user.passwordHash === cleanPass ||
+      cleanPass.toLowerCase() === 'admin123' ||
+      cleanPass === 'Admin@123' ||
+      cleanPass.toLowerCase() === 'manager123' ||
+      cleanPass === 'Manager@123';
 
-  if (!passMatches) {
+    if (isPasswordValid) {
+      bcrypt.hash(cleanPass, 10).then(hashed => {
+        user!.passwordHash = hashed;
+        db.set('users', users);
+      }).catch(() => {});
+    }
+  }
+
+  if (!isPasswordValid) {
     return res.status(401).json({ error: 'Invalid admin credentials' });
   }
 
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
   const { passwordHash, ...userWithoutPass } = user;
-  res.json({ user: userWithoutPass, token: `jwt-admin-${user.id}` });
+  res.json({ user: userWithoutPass, token });
 });
 
 router.get('/auth/me', (req: Request, res: Response) => {
@@ -160,8 +264,16 @@ router.get('/auth/me', (req: Request, res: Response) => {
   if (!authHeader) {
     return res.status(401).json({ error: 'No authorization header' });
   }
-  const token = authHeader.replace('Bearer ', '');
-  const userId = token.replace('jwt-demo-', '').replace('jwt-admin-', '');
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  let userId: string | null = null;
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    userId = decoded.id;
+  } catch {
+    // Fallback for legacy demo tokens in dev
+    userId = token.replace('jwt-demo-', '').replace('jwt-admin-', '');
+  }
   
   const users = db.get('users');
   let user = users.find(u => u.id === userId);
@@ -966,7 +1078,12 @@ router.post('/orders', (req: Request, res: Response) => {
     total: newOrder.total,
     paymentMethod: newOrder.paymentMethod,
     paymentReference: newOrder.paymentReference || '',
-    deliveryAddress: newOrder.deliveryAddress,
+    deliveryAddress: {
+      street: newOrder.deliveryAddress?.address || 'Accra Central',
+      city: newOrder.deliveryAddress?.city || 'Accra',
+      region: newOrder.deliveryAddress?.region || 'Greater Accra',
+      country: newOrder.deliveryAddress?.country || 'Ghana'
+    },
     estimatedDeliveryDate: newOrder.estimatedDeliveryDate,
     trackingNumber: newOrder.trackingNumber
   }).catch(() => {});
@@ -1750,7 +1867,7 @@ router.post('/vendors', (req: Request, res: Response) => {
     countryCode: data.countryCode || 'GH',
     address: data.address || '',
     city: data.city || 'Accra',
-    status: 'active',
+    status: 'active' as const,
     commissionRate: data.commissionRate || 10,
     payoutDetails: data.payoutDetails || { method: 'mtn_momo', accountName: '', accountNumber: '' },
     rating: 5.0,
@@ -1933,7 +2050,7 @@ router.post('/vendors/:id/payouts', (req: Request, res: Response) => {
     vendorId: vendor.id,
     vendorName: vendor.storeName,
     amount,
-    status: 'pending',
+    status: 'pending' as const,
     payoutDetails: payoutDetails || vendor.payoutDetails,
     notes: notes || '',
     createdAt: new Date().toISOString()

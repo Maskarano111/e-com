@@ -7,7 +7,13 @@ interface RecentlyViewedContextType {
   clearRecentlyViewed: () => void;
 }
 
-const RecentlyViewedContext = createContext<RecentlyViewedContextType | undefined>(undefined);
+const DEFAULT_RECENTLY_VIEWED_CONTEXT: RecentlyViewedContextType = {
+  recentlyViewed: [],
+  addRecentlyViewed: () => {},
+  clearRecentlyViewed: () => {}
+};
+
+const RecentlyViewedContext = createContext<RecentlyViewedContextType>(DEFAULT_RECENTLY_VIEWED_CONTEXT);
 
 const MAX_RECENT_ITEMS = 12;
 const STORAGE_KEY = 'novamart_recently_viewed';
@@ -60,8 +66,5 @@ export const RecentlyViewedProvider: React.FC<{ children: React.ReactNode }> = (
 
 export const useRecentlyViewed = () => {
   const context = useContext(RecentlyViewedContext);
-  if (!context) {
-    throw new Error('useRecentlyViewed must be used within RecentlyViewedProvider');
-  }
-  return context;
+  return context || DEFAULT_RECENTLY_VIEWED_CONTEXT;
 };
