@@ -35,7 +35,17 @@ export const AdminPromotionsView: React.FC = () => {
   const { showToast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [overview, setOverview] = useState<AdminSubscriptionOverviewResponse | null>(null);
+  const [overview, setOverview] = useState<AdminSubscriptionOverviewResponse>({
+    success: true,
+    mrrGH: 0,
+    mrrNG: 0,
+    activeCount: 0,
+    expiredCount: 0,
+    totalPlatformImpressions: 0,
+    totalPlatformClicks: 0,
+    plans: [],
+    subscribedVendors: []
+  });
   const [activityLogs, setActivityLogs] = useState<string[]>([
     'Automated Billing Daemon initialized and monitoring vendor wallet balances.'
   ]);
@@ -179,7 +189,23 @@ export const AdminPromotionsView: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
-  const primaryVendor = overview?.subscribedVendors[0];
+  const subscribedVendors = overview?.subscribedVendors || [];
+  const plans = overview?.plans || [];
+  const primaryVendor = subscribedVendors[0] || null;
+
+  if (isLoading && plans.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-3xl bg-slate-900 border border-slate-800 p-12 text-white flex flex-col items-center justify-center min-h-[360px] space-y-4">
+          <div className="w-10 h-10 rounded-full border-3 border-emerald-400 border-t-transparent animate-spin" />
+          <div className="text-center space-y-1">
+            <h3 className="font-bold text-base text-white">Loading Ads & Subscriptions Manager</h3>
+            <p className="text-xs text-slate-400">Fetching live revenue metrics, subscription quotas, and billing status...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -405,14 +431,14 @@ export const AdminPromotionsView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {overview?.subscribedVendors.length === 0 ? (
+              {subscribedVendors.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
                     No subscribed vendors found.
                   </td>
                 </tr>
               ) : (
-                overview?.subscribedVendors.map((vendor) => {
+                subscribedVendors.map((vendor) => {
                   const sub = vendor.subscription;
                   const daysLeft = sub?.expiresAt
                     ? Math.max(0, Math.ceil((new Date(sub.expiresAt).getTime() - Date.now()) / 86400000))
@@ -524,7 +550,7 @@ export const AdminPromotionsView: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {overview?.plans.map((p) => (
+          {plans.map((p) => (
             <div
               key={p.id}
               className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex flex-col justify-between space-y-4"

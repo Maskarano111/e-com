@@ -234,6 +234,7 @@ export function accountSEO() {
 export function adminSEO(tab: string) {
   const labels: Record<string, string> = {
     overview: 'Dashboard & Analytics',
+    promotions: 'Ads & Subscriptions',
     orders: 'Orders & Dispatch',
     products: 'Products & Catalog',
     vendors: 'Vendors & Merchants',

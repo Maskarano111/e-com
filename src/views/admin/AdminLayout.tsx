@@ -310,7 +310,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         {/* ── Main Content Area ── */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
           <div className="max-w-7xl mx-auto space-y-6">
-            {children}
+            <React.Suspense fallback={
+              <div className="min-h-[350px] flex flex-col items-center justify-center space-y-4 py-16">
+                <div className="w-9 h-9 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-semibold text-slate-400">Loading section...</p>
+              </div>
+            }>
+              {children}
+            </React.Suspense>
           </div>
         </main>
       </div>

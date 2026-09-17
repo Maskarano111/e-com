@@ -8,7 +8,7 @@
       "phone": "+233 24 555 0199",
       "role": "super_admin",
       "profileImage": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      "passwordHash": "admin123",
+      "passwordHash": "$2b$10$5LRziwdwoGcoQrZBOt3ICu4Az2fB0NgmuysDFHI3vcoibZScLe6ia",
       "createdAt": "2026-01-01T00:00:00.000Z",
       "updatedAt": "2026-08-19T00:00:00.000Z"
     },
@@ -158,11 +158,11 @@
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
       "vendorName": "Kofi Tech & Audio Hub",
-      "isPromoted": true,
+      "isPromoted": false,
       "promotionTier": "growth",
       "promotedUntil": "2026-10-07T16:16:25.840Z",
-      "promotionImpressions": 4850,
-      "promotionClicks": 342
+      "promotionImpressions": 0,
+      "promotionClicks": 0
     },
     {
       "id": "prod-bp-monitor",
@@ -296,10 +296,7 @@
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
       "vendorName": "Kofi Tech & Audio Hub",
-      "isPromoted": true,
-      "promotionTier": "growth",
-      "promotionImpressions": 4850,
-      "promotionClicks": 342
+      "isPromoted": false
     },
     {
       "id": "prod-tummy-wrap",
@@ -421,10 +418,7 @@
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
       "vendorName": "Kofi Tech & Audio Hub",
-      "isPromoted": true,
-      "promotionTier": "growth",
-      "promotionImpressions": 4850,
-      "promotionClicks": 342
+      "isPromoted": false
     },
     {
       "id": "prod-mini-atomizers",
@@ -1729,7 +1723,7 @@
       "totalProducts": 12,
       "totalSales": 48,
       "totalRevenue": 18450,
-      "balance": 3450,
+      "balance": 0,
       "pendingBalance": 1200,
       "createdAt": "2026-01-10T10:00:00Z",
       "updatedAt": "2026-02-15T14:30:00Z",
@@ -1740,9 +1734,9 @@
         "price": 249,
         "currency": "GHS",
         "startedAt": "2026-09-17T16:39:37.554Z",
-        "expiresAt": "2026-10-12T16:39:37.573Z",
+        "expiresAt": "2026-10-17T16:39:37.554Z",
         "slotsTotal": 10,
-        "slotsUsed": 3,
+        "slotsUsed": 0,
         "autoRenew": true,
         "paymentMethod": "vendor_balance",
         "transactionRef": "BOOST-MU5R8XN6-0QI7"
