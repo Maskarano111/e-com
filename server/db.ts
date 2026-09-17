@@ -13,7 +13,8 @@ import {
   StoreSettings,
   DeliveryAddress,
   Vendor,
-  VendorPayoutRequest
+  VendorPayoutRequest,
+  PromotionPlan
 } from '../src/types/index';
 import {
   initialCategories,
@@ -40,6 +41,7 @@ export interface DatabaseSchema {
   settings: StoreSettings;
   vendors: Vendor[];
   payouts: VendorPayoutRequest[];
+  promotionPlans: PromotionPlan[];
   returnRequests: any[];
   loyalty: any[];
   auditLog: any[];
@@ -327,6 +329,74 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   }
 ];
 
+export const DEFAULT_PROMOTION_PLANS: PromotionPlan[] = [
+  {
+    id: 'plan-starter',
+    tier: 'starter',
+    name: 'Starter Boost',
+    badge: 'Promoted',
+    description: 'Essential product spotlight to accelerate catalog traction and initial orders.',
+    priceGH: 99,
+    priceNG: 9500,
+    billingCycle: 'monthly',
+    maxSlots: 3,
+    searchBoostMultiplier: 1.5,
+    features: [
+      '3 Promoted Product Slots',
+      "Standard 'Promoted' Pill Badge",
+      '1.5x Search Ranking Priority',
+      'Daily Impressions & Click Tracking',
+      'Email Support'
+    ],
+    isPopular: false,
+    colorGradient: 'from-emerald-500 to-teal-600'
+  },
+  {
+    id: 'plan-growth',
+    tier: 'growth',
+    name: 'Growth Accelerator',
+    badge: 'Sponsored',
+    description: 'High-velocity sales driver featuring homepage spotlights and priority ranking.',
+    priceGH: 249,
+    priceNG: 24000,
+    billingCycle: 'monthly',
+    maxSlots: 10,
+    searchBoostMultiplier: 3.0,
+    features: [
+      '10 Promoted Product Slots',
+      "Featured Gold 'Sponsored' Badge",
+      '3.0x Catalog Search Multiplier',
+      "Homepage 'Sponsored Spotlight' Showcase",
+      'Real-time ROI & Conversion Analytics',
+      'Priority Seller Support'
+    ],
+    isPopular: true,
+    colorGradient: 'from-amber-500 to-orange-600'
+  },
+  {
+    id: 'plan-enterprise',
+    tier: 'enterprise',
+    name: 'Enterprise Dominance',
+    badge: 'VIP Sponsored',
+    description: 'Category domination package for leading brands requiring maximum visibility.',
+    priceGH: 599,
+    priceNG: 59000,
+    billingCycle: 'monthly',
+    maxSlots: 999,
+    searchBoostMultiplier: 5.0,
+    features: [
+      'Unlimited Promoted Product Slots',
+      "Glowing VIP 'Official Partner' Badge",
+      'Sticky Top-of-Category Header Placement',
+      'Guaranteed Daily Deals & Flash Inclusion',
+      'Dedicated Account Growth Manager',
+      '24/7 Phone & WhatsApp Concierge'
+    ],
+    isPopular: false,
+    colorGradient: 'from-purple-600 to-indigo-600'
+  }
+];
+
 class Database {
   private data: DatabaseSchema;
 
@@ -342,16 +412,29 @@ class Database {
       if (fs.existsSync(DATA_FILE)) {
         const raw = fs.readFileSync(DATA_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
-        // Force refresh categories, products, banners, and settings to general superstore
+        // Force refresh categories, banners, and settings to general superstore
         parsed.categories = initialCategories;
-        parsed.products = initialProducts;
         parsed.banners = initialBanners;
         parsed.coupons = initialCoupons;
         parsed.settings = DEFAULT_SETTINGS;
+        if (!parsed.products || parsed.products.length === 0) {
+          parsed.products = initialProducts.map((p, i) => ({
+            ...p,
+            vendorId: p.vendorId || (i % 2 === 0 ? 'vend-kofi' : 'vend-ama'),
+            vendorName: p.vendorName || (i % 2 === 0 ? 'Kofi Tech & Audio Hub' : 'Ama Organic & Beauty')
+          }));
+        } else {
+          parsed.products = parsed.products.map((p: Product, i: number) => ({
+            ...p,
+            vendorId: p.vendorId || (i % 2 === 0 ? 'vend-kofi' : 'vend-ama'),
+            vendorName: p.vendorName || (i % 2 === 0 ? 'Kofi Tech & Audio Hub' : 'Ama Organic & Beauty')
+          }));
+        }
         if (!parsed.orders || parsed.orders.length === 0) parsed.orders = DEFAULT_ORDERS;
         if (!parsed.reviews || parsed.reviews.length === 0) parsed.reviews = DEFAULT_REVIEWS;
         if (!parsed.vendors) parsed.vendors = initialVendors;
         if (!parsed.payouts) parsed.payouts = [];
+        if (!parsed.promotionPlans) parsed.promotionPlans = DEFAULT_PROMOTION_PLANS;
         if (!parsed.returnRequests) parsed.returnRequests = [];
         if (!parsed.loyalty) parsed.loyalty = [];
         if (!parsed.auditLog) parsed.auditLog = [];
@@ -364,7 +447,11 @@ class Database {
 
     const initial: DatabaseSchema = {
       users: DEFAULT_USERS,
-      products: initialProducts,
+      products: initialProducts.map((p, i) => ({
+        ...p,
+        vendorId: p.vendorId || (i % 2 === 0 ? 'vend-kofi' : 'vend-ama'),
+        vendorName: p.vendorName || (i % 2 === 0 ? 'Kofi Tech & Audio Hub' : 'Ama Organic & Beauty')
+      })),
       categories: initialCategories,
       orders: DEFAULT_ORDERS,
       payments: DEFAULT_PAYMENTS,
@@ -376,6 +463,7 @@ class Database {
       settings: DEFAULT_SETTINGS,
       vendors: initialVendors,
       payouts: [],
+      promotionPlans: DEFAULT_PROMOTION_PLANS,
       returnRequests: [],
       loyalty: [],
       auditLog: []

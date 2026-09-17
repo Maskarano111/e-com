@@ -61,6 +61,11 @@ export interface Product {
   isNewArrival?: boolean;
   isBestSeller?: boolean;
   salesCount?: number;
+  isPromoted?: boolean;
+  promotionTier?: 'starter' | 'growth' | 'enterprise';
+  promotedUntil?: string;
+  promotionImpressions?: number;
+  promotionClicks?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -350,10 +355,51 @@ export interface Vendor {
   totalRevenue?: number;
   balance?: number; // Available payout balance
   pendingBalance?: number;
+  subscription?: VendorPromotionSubscription;
   createdAt: string;
   updatedAt: string;
 }
 
+export type PromotionPlanTier = 'starter' | 'growth' | 'enterprise';
+
+export interface VendorPromotionSubscription {
+  tier: PromotionPlanTier;
+  planName: string;
+  status: 'active' | 'expired' | 'cancelled';
+  price: number;
+  currency: string;
+  startedAt: string;
+  expiresAt: string;
+  slotsTotal: number;
+  slotsUsed: number;
+  autoRenew: boolean;
+  paymentMethod?: string;
+  transactionRef?: string;
+}
+
+export interface PromotionPlan {
+  id: string;
+  tier: PromotionPlanTier;
+  name: string;
+  badge: string;
+  description: string;
+  priceGH: number;
+  priceNG: number;
+  billingCycle: 'monthly';
+  maxSlots: number;
+  searchBoostMultiplier: number;
+  features: string[];
+  isPopular?: boolean;
+  colorGradient: string;
+}
+
+export interface PromotionAnalytics {
+  impressions: number;
+  clicks: number;
+  ctr: number; // percentage e.g. 4.2
+  attributedSales: number;
+  revenueGenerated: number;
+}
 
 export interface VendorPayoutRequest {
   id: string;

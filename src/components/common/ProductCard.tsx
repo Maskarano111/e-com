@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Star, Heart, Eye, ShoppingBag, Check, Zap, Scale, Bell, BellOff, Loader2 } from 'lucide-react';
+import { Star, Heart, Eye, ShoppingBag, Check, Zap, Scale, Bell, BellOff, Loader2, Sparkles } from 'lucide-react';
 import { Product } from '../../types/index';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -8,6 +8,7 @@ import { useCompare } from '../../context/CompareContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useStockAlert } from '../../context/StockAlertContext';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
 
 interface ProductCardProps {
   product: Product;
@@ -62,11 +63,22 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
       id={`product-card-${product.id}`}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
-      onClick={() => onNavigateToDetail(product.id)}
+      onClick={() => {
+        if (product.isPromoted) {
+          api.recordPromotionClick(product.id);
+        }
+        onNavigateToDetail(product.id);
+      }}
       className="group relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden cursor-pointer"
     >
       {/* Top Badges */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
+        {product.isPromoted && (
+          <span className="px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white text-[10px] font-black tracking-wider uppercase shadow-md flex items-center gap-1 ring-1 ring-amber-300/40">
+            <Sparkles className="w-3 h-3 fill-white" />
+            <span>Sponsored</span>
+          </span>
+        )}
         {discountPercent && (
           <span className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-black tracking-wide shadow-sm flex items-center gap-1">
             <Zap className="w-3 h-3 fill-white" />

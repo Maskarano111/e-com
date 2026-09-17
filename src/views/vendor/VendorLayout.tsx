@@ -20,7 +20,8 @@ import {
   Percent,
   CheckCircle2,
   AlertTriangle,
-  User
+  User,
+  Flame
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -62,16 +63,17 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
   }, [user]);
 
   const NAV_ITEMS = [
-    { id: 'overview',  label: 'Dashboard & Analytics',  icon: LayoutDashboard, badge: 'Live' },
-    { id: 'products',  label: 'My Products & Catalog',  icon: Package,         badge: undefined },
-    { id: 'orders',    label: 'Orders & Fulfillment',   icon: ShoppingBag,     badge: 'Active' },
-    { id: 'payouts',   label: 'Wallet & Payouts',       icon: CreditCard,      badge: undefined },
-    { id: 'profile',   label: 'Storefront Profile',     icon: Store,           badge: undefined },
-    { id: 'reviews',   label: 'Customer Reviews',       icon: MessageSquare,   badge: undefined }
+    { id: 'overview',   label: 'Dashboard & Analytics',  icon: LayoutDashboard, badge: 'Live' },
+    { id: 'promotions', label: 'Promote & Boost (Ads)',  icon: Flame,           badge: 'Hot' },
+    { id: 'products',   label: 'My Products & Catalog',  icon: Package,         badge: undefined },
+    { id: 'orders',     label: 'Orders & Fulfillment',   icon: ShoppingBag,     badge: 'Active' },
+    { id: 'payouts',    label: 'Wallet & Payouts',       icon: CreditCard,      badge: undefined },
+    { id: 'profile',    label: 'Storefront Profile',     icon: Store,           badge: undefined },
+    { id: 'reviews',    label: 'Customer Reviews',       icon: MessageSquare,   badge: undefined }
   ];
 
   // Mobile quick-access tabs
-  const MOBILE_QUICK = ['overview', 'products', 'orders', 'payouts', 'profile'];
+  const MOBILE_QUICK = ['overview', 'promotions', 'products', 'orders', 'payouts'];
   const mobileTabs = NAV_ITEMS.filter((i) => MOBILE_QUICK.includes(i.id));
 
   return (

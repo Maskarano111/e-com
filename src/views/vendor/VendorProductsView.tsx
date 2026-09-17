@@ -16,7 +16,8 @@ import {
   Upload,
   RefreshCw,
   ExternalLink,
-  Star
+  Star,
+  Flame
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { Product, Category, Vendor } from '../../types/index';
@@ -193,6 +194,20 @@ export const VendorProductsView: React.FC<VendorProductsViewProps> = ({ initialO
     }
   };
 
+  const handleToggleBoost = async (product: Product) => {
+    try {
+      const res = await api.toggleProductPromotion(product.id, vendorId);
+      if (res?.success) {
+        showToast('success', res.isPromoted ? 'Product Boosted! ⚡' : 'Boost Paused', res.message);
+        loadData();
+      } else {
+        showToast('error', 'NovaBoost', res?.message || 'Could not boost product. Check subscription.');
+      }
+    } catch {
+      showToast('error', 'Error', 'Failed to update product boost status.');
+    }
+  };
+
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -351,15 +366,34 @@ export const VendorProductsView: React.FC<VendorProductsViewProps> = ({ initialO
 
                       {/* Status */}
                       <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Active</span>
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Active</span>
+                          </span>
+                          {product.isPromoted && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs">
+                              <Flame className="w-2.5 h-2.5 fill-current" />
+                              <span>Boosted</span>
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleToggleBoost(product)}
+                            className={`p-1.5 rounded-lg transition-all border ${
+                              product.isPromoted
+                                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 border-amber-300 dark:border-amber-800 hover:bg-amber-200'
+                                : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700'
+                            }`}
+                            title={product.isPromoted ? 'Pause NovaBoost' : 'Boost with NovaBoost'}
+                          >
+                            <Flame className={`w-3.5 h-3.5 ${product.isPromoted ? 'fill-current' : ''}`} />
+                          </button>
                           <button
                             onClick={() => handleOpenEdit(product)}
                             className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors border border-slate-200 dark:border-slate-700"

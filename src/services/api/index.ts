@@ -7,6 +7,7 @@ import { vendorsApi } from './vendors';
 import { marketingApi } from './marketing';
 import { settingsApi } from './settings';
 import { analyticsApi } from './analytics';
+import { promotionsApi } from './promotions';
 
 export * from './storage';
 export * from './auth';
@@ -18,6 +19,7 @@ export * from './vendors';
 export * from './marketing';
 export * from './settings';
 export * from './analytics';
+export * from './promotions';
 
 /**
  * Unified NovaMart API Service
@@ -32,7 +34,8 @@ export const api = {
   ...vendorsApi,
   ...marketingApi,
   ...settingsApi,
-  ...analyticsApi
+  ...analyticsApi,
+  ...promotionsApi
 };
 
 export default api;

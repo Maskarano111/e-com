@@ -192,6 +192,12 @@ export const ShopView: React.FC<ShopViewProps> = ({
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       if (sortBy === 'popularity') return (b.reviewCount || 0) - (a.reviewCount || 0);
 
+      // 1. NovaBoost Sponsored Products Priority (Top placement for subscribed vendors)
+      if (sortBy === 'popular' || sortBy === 'featured' || !sortBy) {
+        if (a.isPromoted && !b.isPromoted) return -1;
+        if (!a.isPromoted && b.isPromoted) return 1;
+      }
+
       // Smart Market Prioritization (Local warehouse items shown first)
       const aIsLocal = a.originCountry === country || (!a.originCountry && country === 'GH');
       const bIsLocal = b.originCountry === country || (!b.originCountry && country === 'GH');

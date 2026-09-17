@@ -23,7 +23,9 @@ import {
   DeliveryAddress,
   User,
   OrderStatus,
-  PaymentStatus
+  PaymentStatus,
+  VendorPromotionSubscription,
+  PromotionPlan
 } from '../src/types/index';
 
 const router = Router();
@@ -2586,5 +2588,195 @@ Format responses with crisp markdown, bullet points, and emojis. Always be welco
   });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// VENDOR PRODUCT PROMOTION & SUBSCRIPTION SYSTEM (NovaBoost Ads)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Get all available subscription plans
+router.get('/vendor/promotion-plans', (req, res) => {
+  const plans = (db.get('promotionPlans') || []) as PromotionPlan[];
+  return res.json({ success: true, plans });
+});
+
+// Get vendor's active promotion subscription status & analytics
+router.get('/vendor/:id/promotion-status', (req, res) => {
+  const vendorId = req.params.id;
+  const vendors = db.get('vendors') || [];
+  const products = db.get('products') || [];
+
+  const vendor = vendors.find(v => v.id === vendorId || v.userId === vendorId);
+  if (!vendor) {
+    return res.status(404).json({ success: false, message: 'Vendor not found' });
+  }
+
+  // Get vendor's promoted products
+  const vendorProducts = products.filter(p => p.vendorId === vendor.id);
+  const promotedProducts = vendorProducts.filter(p => p.isPromoted);
+
+  // Compute aggregated campaign analytics
+  let totalImpressions = 0;
+  let totalClicks = 0;
+  promotedProducts.forEach(p => {
+    totalImpressions += p.promotionImpressions || 0;
+    totalClicks += p.promotionClicks || 0;
+  });
+
+  const ctr = totalImpressions > 0 ? Number(((totalClicks / totalImpressions) * 100).toFixed(1)) : 0;
+  const attributedSales = Math.round(totalClicks * 0.12);
+  const revenueGenerated = Math.round(attributedSales * 450);
+
+  return res.json({
+    success: true,
+    subscription: vendor.subscription || null,
+    slotsTotal: vendor.subscription?.slotsTotal || 0,
+    slotsUsed: promotedProducts.length,
+    promotedProducts,
+    allVendorProducts: vendorProducts,
+    analytics: {
+      impressions: totalImpressions,
+      clicks: totalClicks,
+      ctr,
+      attributedSales,
+      revenueGenerated
+    }
+  });
+});
+
+// Subscribe to or upgrade a promotion plan
+router.post('/vendor/subscribe-plan', (req, res) => {
+  const { vendorId, planId, paymentMethod } = req.body;
+  const vendors = db.get('vendors') || [];
+  const plans = (db.get('promotionPlans') || []) as PromotionPlan[];
+
+  const vendorIndex = vendors.findIndex(v => v.id === vendorId || v.userId === vendorId);
+  if (vendorIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Vendor not found' });
+  }
+
+  const selectedPlan = plans.find(p => p.id === planId || p.tier === planId);
+  if (!selectedPlan) {
+    return res.status(400).json({ success: false, message: 'Invalid promotion plan selected' });
+  }
+
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 30 * 86400000); // 30-day billing cycle
+  const ref = `BOOST-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+  const currentProducts = db.get('products') || [];
+  const activePromoted = currentProducts.filter(p => p.vendorId === vendors[vendorIndex].id && p.isPromoted);
+
+  const newSubscription: VendorPromotionSubscription = {
+    tier: selectedPlan.tier,
+    planName: selectedPlan.name,
+    status: 'active',
+    price: selectedPlan.priceGH,
+    currency: 'GHS',
+    startedAt: now.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+    slotsTotal: selectedPlan.maxSlots,
+    slotsUsed: activePromoted.length,
+    autoRenew: true,
+    paymentMethod: paymentMethod || 'vendor_balance',
+    transactionRef: ref
+  };
+
+  vendors[vendorIndex].subscription = newSubscription;
+
+  // If vendor paid from wallet balance, deduct fee
+  if (paymentMethod === 'vendor_balance' && (vendors[vendorIndex].balance || 0) >= selectedPlan.priceGH) {
+    vendors[vendorIndex].balance = Math.max(0, (vendors[vendorIndex].balance || 0) - selectedPlan.priceGH);
+  }
+
+  db.set('vendors', vendors);
+
+  return res.json({
+    success: true,
+    message: `Successfully activated ${selectedPlan.name}!`,
+    subscription: newSubscription
+  });
+});
+
+// Toggle promotion for a specific product
+router.post('/vendor/products/:id/toggle-promotion', (req, res) => {
+  const productId = req.params.id;
+  const { vendorId } = req.body;
+  const products = db.get('products') || [];
+  const vendors = db.get('vendors') || [];
+
+  const productIndex = products.findIndex(p => p.id === productId);
+  if (productIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Product not found' });
+  }
+
+  const product = products[productIndex];
+  const targetVendorId = vendorId || product.vendorId;
+  const vendor = vendors.find(v => v.id === targetVendorId || v.userId === targetVendorId);
+
+  const currentlyPromoted = !!product.isPromoted;
+
+  if (!currentlyPromoted) {
+    // Check if vendor has an active subscription with slots remaining
+    if (!vendor?.subscription || vendor.subscription.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: 'Active NovaBoost subscription required. Please choose a promotion plan first.'
+      });
+    }
+
+    const promotedCount = products.filter(p => p.vendorId === vendor.id && p.isPromoted).length;
+    if (promotedCount >= vendor.subscription.slotsTotal) {
+      return res.status(400).json({
+        success: false,
+        message: `Plan slot limit reached (${vendor.subscription.slotsTotal} slots). Upgrade your plan or unpromote another product.`
+      });
+    }
+
+    product.isPromoted = true;
+    product.promotionTier = vendor.subscription.tier;
+    product.promotedUntil = vendor.subscription.expiresAt;
+    product.promotionImpressions = product.promotionImpressions || 0;
+    product.promotionClicks = product.promotionClicks || 0;
+  } else {
+    // Turn off promotion
+    product.isPromoted = false;
+  }
+
+  products[productIndex] = product;
+  db.set('products', products);
+
+  // Recalculate slotsUsed
+  if (vendor) {
+    const vIndex = vendors.findIndex(v => v.id === vendor.id);
+    if (vIndex !== -1 && vendors[vIndex].subscription) {
+      vendors[vIndex].subscription.slotsUsed = products.filter(p => p.vendorId === vendor.id && p.isPromoted).length;
+      db.set('vendors', vendors);
+    }
+  }
+
+  return res.json({
+    success: true,
+    isPromoted: product.isPromoted,
+    product,
+    message: product.isPromoted
+      ? `"${product.name}" is now boosted with ${vendor?.subscription?.tier || 'starter'} priority!`
+      : `Promotion paused for "${product.name}".`
+  });
+});
+
+// Record customer click on a promoted product
+router.post('/promotions/click', (req, res) => {
+  const { productId } = req.body;
+  if (!productId) return res.status(400).json({ success: false });
+
+  const products = db.get('products') || [];
+  const product = products.find(p => p.id === productId);
+  if (product && product.isPromoted) {
+    product.promotionClicks = (product.promotionClicks || 0) + 1;
+    db.set('products', products);
+  }
+
+  return res.json({ success: true });
+});
 
 export default router;
+

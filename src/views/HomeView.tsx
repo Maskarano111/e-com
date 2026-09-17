@@ -87,6 +87,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const filteredDeals = useMemo(() => deals.filter(marketFilter), [deals, marketFilter]);
   const filteredNewArrivals = useMemo(() => newArrivals.filter(marketFilter), [newArrivals, marketFilter]);
   const filteredBestSellers = useMemo(() => bestSellers.filter(marketFilter), [bestSellers, marketFilter]);
+  const filteredPromoted = useMemo(
+    () => filteredProducts.filter((p) => p.isPromoted),
+    [filteredProducts]
+  );
   const filteredRecentlyViewed = useMemo(
     () => recentlyViewed.filter(marketFilter).slice(0, 8),
     [recentlyViewed, marketFilter]
@@ -433,6 +437,46 @@ export const HomeView: React.FC<HomeViewProps> = ({
           ))}
         </div>
       </section>
+
+      {/* 3B. NOVA-BOOST SPONSORED SPOTLIGHT (FEATURED SUBSCRIBED VENDORS) */}
+      {filteredPromoted.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent dark:from-slate-900/90 dark:to-slate-950 border border-amber-500/30 dark:border-amber-500/20 p-6 sm:p-8 shadow-sm">
+            <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider mb-2">
+                  <Sparkles className="w-3.5 h-3.5 fill-amber-500" />
+                  Sponsored Spotlight
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Featured Partner Products
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Hand-picked selections promoted directly by certified marketplace sellers.
+                </p>
+              </div>
+              <button
+                onClick={() => onNavigate('shop')}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+              >
+                <span>View All Sponsored Offers</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+              {filteredPromoted.slice(0, 4).map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onOpenQuickView={onOpenQuickView}
+                  onNavigateToDetail={(id) => onNavigate('product-detail', { productId: id })}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 4. LIVE DEAL TIMER & FLASH SALES CAROUSEL */}
       {filteredDeals.length > 0 && (

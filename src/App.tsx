@@ -71,6 +71,7 @@ const VendorOrdersView = React.lazy(() => import('./views/vendor/VendorOrdersVie
 const VendorPayoutsView = React.lazy(() => import('./views/vendor/VendorPayoutsView').then(m => ({ default: m.VendorPayoutsView })));
 const VendorProfileView = React.lazy(() => import('./views/vendor/VendorProfileView').then(m => ({ default: m.VendorProfileView })));
 const VendorReviewsView = React.lazy(() => import('./views/vendor/VendorReviewsView').then(m => ({ default: m.VendorReviewsView })));
+const VendorPromotionsView = React.lazy(() => import('./views/vendor/VendorPromotionsView').then(m => ({ default: m.VendorPromotionsView })));
 
 // -----------------------------------------------------------------------------
 // MainApp -- renders the active view and wires up global overlays.
@@ -167,6 +168,7 @@ const MainApp: React.FC = () => {
                 />
               </ErrorBoundary>
             )}
+            {vendorTab === 'promotions' && <ErrorBoundary name="Vendor Promotions" inline><VendorPromotionsView /></ErrorBoundary>}
             {vendorTab === 'products' && <ErrorBoundary name="Vendor Products" inline><VendorProductsView initialOpenAdd={isVendorAddOpen} /></ErrorBoundary>}
             {vendorTab === 'orders'   && <ErrorBoundary name="Vendor Orders" inline><VendorOrdersView /></ErrorBoundary>}
             {vendorTab === 'payouts'  && <ErrorBoundary name="Vendor Payouts" inline><VendorPayoutsView /></ErrorBoundary>}
