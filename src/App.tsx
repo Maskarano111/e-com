@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { AppProviders } from './components/AppProviders';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -26,6 +26,7 @@ import { ProductCompareModal } from './components/common/ProductCompareModal';
 import { NovaAICopilot } from './components/common/NovaAICopilot';
 import { MobileBottomNav } from './components/common/MobileBottomNav';
 import { ScentQuizModal } from './components/common/ScentQuizModal';
+import { WhatsAppButton } from './components/common/WhatsAppButton';
 
 import { HomeView } from './views/HomeView';
 import { ShopView } from './views/ShopView';
@@ -221,7 +222,7 @@ const MainApp: React.FC = () => {
         {currentView === 'product-detail' && (
           <ErrorBoundary name="Product Detail">
             <ProductDetailView
-              productId={viewParams.productId || 'prod-portable-blender'}
+              productId={viewParams.productId || viewParams.id || 'prod-portable-blender'}
               onNavigate={handleNavigate}
               onOpenQuickView={handleOpenQuickView}
             />
@@ -249,7 +250,7 @@ const MainApp: React.FC = () => {
         {currentView === 'track-order' && (
           <ErrorBoundary name="Order Tracking">
             <React.Suspense fallback={<PageSkeleton />}>
-              <OrderTrackingView initialOrderNumber={viewParams.orderNumber} onNavigate={handleNavigate} />
+              <OrderTrackingView initialOrderNumber={viewParams.orderNumber || viewParams.orderId} onNavigate={handleNavigate} />
             </React.Suspense>
           </ErrorBoundary>
         )}
@@ -367,6 +368,9 @@ const MainApp: React.FC = () => {
 
       {/* NovaAI Intelligent Shopping Copilot and Stylist */}
       <NovaAICopilot onNavigate={handleNavigate} onOpenQuickView={handleOpenQuickView} />
+
+      {/* WhatsApp Floating Chat Widget */}
+      <WhatsAppButton />
 
       {/* Sticky Mobile App Bottom Navigation Dock */}
       <MobileBottomNav

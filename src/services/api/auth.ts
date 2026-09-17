@@ -79,6 +79,33 @@ export const authApi = {
     );
   },
 
+  async vendorLogin(data: { email: string; password: string }) {
+    return safeFetch<{ user: User; token: string; vendor?: any }>(
+      `${API_BASE}/auth/vendor-login`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      },
+      () => {
+        const vendorUser: User = {
+          id: 'usr-kofi-seller',
+          firstName: 'Kofi',
+          lastName: 'Boateng',
+          email: data.email,
+          phone: '+233 24 888 1234',
+          role: 'vendor',
+          vendorId: 'vend-kofi',
+          vendorStoreName: 'Kofi Tech & Audio Hub',
+          profileImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        return { user: vendorUser, token: `mock-vendor-token-${vendorUser.id}` };
+      }
+    );
+  },
+
   async getMe(token: string) {
     return safeFetch<{ user: User }>(
       `${API_BASE}/auth/me`,

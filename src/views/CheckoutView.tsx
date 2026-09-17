@@ -101,6 +101,12 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
   const [momoProvider, setMomoProvider] = useState<'mtn' | 'telecel' | 'at'>('mtn');
   const [momoNumber, setMomoNumber] = useState(user?.phone || '0245550199');
 
+  // NovaPoints Loyalty State
+  const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
+  const userLoyaltyPoints = user ? 350 : 150;
+  const loyaltyDiscount = useLoyaltyPoints ? Math.min(userLoyaltyPoints * 0.1, subtotal * 0.2) : 0;
+  const payableTotal = Math.max(0, total - loyaltyDiscount);
+
   // Card State
   const [cardNumber, setCardNumber] = useState('5399 4123 5678 9010');
   const [cardExpiry, setCardExpiry] = useState('12/28');
@@ -192,12 +198,12 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
         customerPhone: phone,
         items: cart,
         subtotal,
-        discount,
+        discount: discount + loyaltyDiscount,
         couponCode: appliedCoupon?.code,
         deliveryFee,
         deliveryMethod: deliveryMethod || 'standard',
         tax,
-        total,
+        total: payableTotal,
         paymentMethod: mappedMethod,
         paymentStatus: confirmedPaymentStatus === 'paid' ? 'successful' as const : 'pending' as const,
         paymentReference: transactionId || `PAY-${country}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
@@ -797,6 +803,32 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
 
               {/* Pricing breakdown */}
               <div className="space-y-2 text-xs pt-3 border-t border-slate-100 dark:border-slate-800">
+                {/* NovaPoints Loyalty Rewards Toggle */}
+                <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex items-center justify-between gap-3 text-xs mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900 dark:text-white leading-tight">Redeem NovaPoints</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Balance: {userLoyaltyPoints} pts (Save {formatPrice(userLoyaltyPoints * 0.1)})
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUseLoyaltyPoints(!useLoyaltyPoints)}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer shadow-xs ${
+                      useLoyaltyPoints
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:border-amber-400'
+                    }`}
+                  >
+                    {useLoyaltyPoints ? 'Applied ✓' : 'Redeem'}
+                  </button>
+                </div>
+
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>Subtotal</span>
                   <span className="font-bold text-slate-900 dark:text-white">{formatPrice(subtotal)}</span>
@@ -807,13 +839,19 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                     <span>-{formatPrice(discount)}</span>
                   </div>
                 )}
+                {loyaltyDiscount > 0 && (
+                  <div className="flex justify-between text-amber-600 dark:text-amber-400 font-bold">
+                    <span>NovaPoints Discount</span>
+                    <span>-{formatPrice(loyaltyDiscount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>Delivery ({countryConfig.name})</span>
                   <span className="font-bold">{deliveryFee === 0 ? 'FREE' : formatPrice(deliveryFee)}</span>
                 </div>
                 <div className="flex justify-between text-base font-black text-slate-900 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
                   <span>Grand Total</span>
-                  <span className="text-emerald-600 dark:text-emerald-400">{formatPrice(total)}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">{formatPrice(payableTotal)}</span>
                 </div>
               </div>
 
@@ -828,7 +866,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                   <span>Processing Secure Payment...</span>
                 ) : (
                   <>
-                    <span>Confirm & Pay {formatPrice(total)}</span>
+                    <span>Confirm &amp; Pay {formatPrice(payableTotal)}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

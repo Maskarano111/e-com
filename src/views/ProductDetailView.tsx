@@ -28,7 +28,10 @@ import {
   Scale,
   Bot,
   Send,
-  ThumbsUp
+  ThumbsUp,
+  Ruler,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 
 import { Product, ProductVariation, Review, Vendor } from '../types/index';
@@ -42,6 +45,7 @@ import { ReviewModal } from '../components/common/ReviewModal';
 import { StoreChatModal } from '../components/common/StoreChatModal';
 import { ProductCard } from '../components/common/ProductCard';
 import { ProductDetailSkeleton } from '../components/common/Skeletons';
+import { SizeGuideModal } from '../components/common/SizeGuideModal';
 import { api } from '../services/api';
 
 import { generateWhatsAppProductLink } from '../utils/whatsappHelper';
@@ -72,6 +76,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxZoom, setLightboxZoom] = useState<number>(1);
+  const [zoomPos, setZoomPos] = useState<{ x: number; y: number } | null>(null);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+  const [isBnplModalOpen, setIsBnplModalOpen] = useState(false);
+  const [reviewPhotoUrl, setReviewPhotoUrl] = useState<string | null>(null);
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'box' | 'faq' | 'shipping' | 'reviews' | 'ai_assistant'>('description');
   const [aiQuestion, setAiQuestion] = useState('');
@@ -84,6 +93,20 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsLightboxOpen(false);
+        setLightboxZoom(1);
+      }
+    };
+    if (isLightboxOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen]);
 
 
   // Load product data (stable, no infinite loop)
@@ -280,7 +303,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32 md:pb-8 space-y-12">
       {/* 1. BREADCRUMB */}
       <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 flex-wrap">
         <button onClick={() => onNavigate('home')} className="hover:text-emerald-600 transition-colors cursor-pointer">
@@ -344,14 +367,40 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               </button>
             </div>
 
-            {/* Main Image (Stable, smooth transition, no jitter) */}
-            <img
-              key={currentImage}
-              src={currentImage}
-              alt={`${product.name} - View ${selectedImageIndex + 1}`}
-              onClick={() => setIsLightboxOpen(true)}
-              className="w-full h-full object-cover cursor-zoom-in transition-opacity duration-300"
-            />
+            {/* Main Image with Hover Zoom Lens */}
+            <div
+              className="w-full h-full relative overflow-hidden cursor-zoom-in"
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                setZoomPos({ x, y });
+              }}
+              onMouseLeave={() => setZoomPos(null)}
+              onClick={() => {
+                setLightboxZoom(1);
+                setIsLightboxOpen(true);
+              }}
+            >
+              <img
+                key={currentImage}
+                src={currentImage}
+                alt={`${product.name} - View ${selectedImageIndex + 1}`}
+                style={
+                  zoomPos
+                    ? {
+                        transform: 'scale(1.75)',
+                        transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                        transition: 'transform 0.1s ease-out',
+                      }
+                    : {
+                        transform: 'scale(1)',
+                        transition: 'transform 0.25s ease-out',
+                      }
+                }
+                className="w-full h-full object-cover select-none"
+              />
+            </div>
 
             {/* Previous / Next Arrows Overlay */}
             {imagesList.length > 1 && (
@@ -506,6 +555,30 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             </div>
           </div>
 
+          {/* Buy Now Pay Later (BNPL) Installment Card */}
+          <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                3x
+              </div>
+              <div>
+                <p className="font-bold text-slate-900 dark:text-white leading-tight">
+                  Pay as low as <span className="text-indigo-600 dark:text-indigo-400 font-black">{formatPrice(Math.ceil(currentPrice / 3))}</span>/month
+                </p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                  0% Interest in 3 monthly installments with NovaFlex &amp; MoMo PayLater
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsBnplModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 text-[11px] font-bold hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer shadow-xs"
+            >
+              See Schedule
+            </button>
+          </div>
+
           {/* Verified Seller / Vendor Card */}
           <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div
@@ -619,9 +692,19 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           {/* Variations selector */}
           {product.variations && product.variations.length > 0 && (
             <div className="space-y-3 pt-2">
-              <label className="block text-xs font-bold text-slate-900 dark:text-white">
-                Select Option / Model:
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-900 dark:text-white">
+                  Select Option / Model:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsSizeGuideOpen(true)}
+                  className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-bold cursor-pointer"
+                >
+                  <Ruler className="w-3.5 h-3.5" />
+                  <span>Size &amp; Fit Guide</span>
+                </button>
+              </div>
               <div className="flex flex-wrap gap-2.5">
                 {product.variations.map((v) => (
                   <button
@@ -1142,9 +1225,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                           {rev.images.map((img, imgIdx) => (
                             <div
                               key={imgIdx}
-                              onClick={() => {
-                                setIsLightboxOpen(true);
-                              }}
+                              onClick={() => setReviewPhotoUrl(img)}
                               className="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-emerald-500 cursor-pointer shadow-xs transition-transform hover:scale-105"
                             >
                               <img src={img} alt="Customer review photo" className="w-full h-full object-cover" />
@@ -1196,7 +1277,86 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         </div>
       )}
 
-      {/* 5. FULLSCREEN LIGHTBOX ZOOM MODAL */}
+      {/* 4B. FREQUENTLY BOUGHT TOGETHER */}
+      {relatedProducts.length >= 2 && (
+        <div className="pt-12 border-t border-slate-200 dark:border-slate-800 space-y-6">
+          <div>
+            <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-1">⚡ Bundle &amp; Save</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Frequently Bought Together</h2>
+            <p className="text-xs text-slate-500 mt-1">Customers who viewed {product.name} also bought:</p>
+          </div>
+
+          <div className="p-5 sm:p-6 rounded-3xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              {/* Main product */}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-800 shrink-0 bg-white">
+                  <img src={product.featuredImage} alt={product.name} loading="lazy" className="w-full h-full object-cover" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-0.5">This Item</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2">{product.name}</p>
+                  <p className="text-xs font-black text-emerald-700 dark:text-emerald-300 mt-1">
+                    {formatPrice(currentPrice)}
+                  </p>
+                </div>
+              </div>
+
+              <span className="text-2xl font-black text-amber-500 shrink-0 hidden sm:block">+</span>
+
+              {/* Bundle item 1 */}
+              {relatedProducts[0] && (
+                <>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-800 shrink-0 bg-white">
+                      <img src={relatedProducts[0].featuredImage} alt={relatedProducts[0].name} loading="lazy" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Often Paired</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2">{relatedProducts[0].name}</p>
+                      <p className="text-xs font-black text-emerald-700 dark:text-emerald-300 mt-1">
+                        {formatPrice(relatedProducts[0].discountPrice || relatedProducts[0].price)}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Bundle Price + CTA */}
+            <div className="mt-5 pt-5 border-t border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] text-slate-500 font-semibold mb-1">Bundle Price (5% off when bought together)</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-black text-slate-900 dark:text-white">
+                    {formatPrice(
+                      (currentPrice + (relatedProducts[0]?.discountPrice || relatedProducts[0]?.price || 0)) * 0.95
+                    )}
+                  </span>
+                  <span className="text-sm text-slate-400 line-through">
+                    {formatPrice(currentPrice + (relatedProducts[0]?.discountPrice || relatedProducts[0]?.price || 0))}
+                  </span>
+                  <span className="text-xs font-black text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full">SAVE 5%</span>
+                </div>
+              </div>
+              <button
+                id="btn-add-bundle-to-cart"
+                onClick={() => {
+                  addToCart(product, selectedVariation, 1);
+                  if (relatedProducts[0]) addToCart(relatedProducts[0] as any, undefined, 1);
+                  setIsCartDrawerOpen(true);
+                }}
+                className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-white font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Add Bundle to Cart</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. RELATED PRODUCTS */}
       <AnimatePresence>
         {isLightboxOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
@@ -1344,6 +1504,242 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* FULLSCREEN LIGHTBOX MODAL */}
+      <AnimatePresence>
+        {isLightboxOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-4 sm:p-8">
+            {/* Top Toolbar */}
+            <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between text-white">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
+                  {selectedImageIndex + 1} / {imagesList.length}
+                </span>
+                <span className="text-xs font-semibold text-slate-300 hidden sm:inline truncate max-w-sm">
+                  {product.name}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setLightboxZoom((prev) => (prev === 1 ? 2 : 1))}
+                  className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                  title={lightboxZoom === 1 ? 'Zoom In (2x)' : 'Reset Zoom'}
+                >
+                  {lightboxZoom === 1 ? <ZoomIn className="w-5 h-5" /> : <ZoomOut className="w-5 h-5" />}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsLightboxOpen(false);
+                    setLightboxZoom(1);
+                  }}
+                  className="p-2.5 rounded-full bg-white/10 hover:bg-rose-600 text-white transition-colors cursor-pointer"
+                  title="Close (Esc)"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Central Zoomable Image View */}
+            <div
+              className="relative max-w-4xl max-h-[75vh] w-full h-full flex items-center justify-center overflow-hidden"
+              onClick={() => setLightboxZoom((prev) => (prev === 1 ? 2 : 1))}
+            >
+              <motion.img
+                key={currentImage}
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: lightboxZoom }}
+                transition={{ duration: 0.2 }}
+                src={currentImage}
+                alt={product.name}
+                className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl transition-transform duration-200 cursor-zoom-in select-none"
+              />
+            </div>
+
+            {/* Prev / Next Arrows */}
+            {imagesList.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    prevImage();
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-emerald-600 text-white backdrop-blur-md transition-all hover:scale-110 cursor-pointer z-20"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nextImage();
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-emerald-600 text-white backdrop-blur-md transition-all hover:scale-110 cursor-pointer z-20"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+
+            {/* Bottom Thumbnails */}
+            {imagesList.length > 1 && (
+              <div className="absolute bottom-4 left-0 right-0 z-20 flex justify-center px-4">
+                <div className="flex items-center gap-2 p-2 rounded-2xl bg-black/50 backdrop-blur-md overflow-x-auto max-w-md">
+                  {imagesList.map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImageIndex(i);
+                        setLightboxZoom(1);
+                      }}
+                      className={`w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
+                        selectedImageIndex === i ? 'border-emerald-500 scale-105' : 'border-transparent opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* SIZE GUIDE MODAL */}
+      <SizeGuideModal
+        isOpen={isSizeGuideOpen}
+        onClose={() => setIsSizeGuideOpen(false)}
+      />
+
+      {/* BNPL INSTALLMENT BREAKDOWN MODAL */}
+      <AnimatePresence>
+        {isBnplModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsBnplModalOpen(false)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 z-10 p-6 sm:p-7 space-y-5"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center font-black text-sm">
+                    3x
+                  </div>
+                  <div>
+                    <h3 className="font-black text-slate-900 dark:text-white text-base">NovaFlex PayLater</h3>
+                    <p className="text-[11px] text-slate-500">3 monthly interest-free payments</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsBnplModalOpen(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Spread the cost of <strong>{product.name}</strong> over 3 equal monthly payments with <strong>zero interest</strong>:
+                </p>
+
+                <div className="space-y-2">
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-slate-900 dark:text-white">Payment 1 (Today)</p>
+                      <p className="text-[10px] text-slate-500">Charged immediately at checkout</p>
+                    </div>
+                    <span className="font-black text-indigo-600 dark:text-indigo-400 text-sm">
+                      {formatPrice(Math.round(currentPrice * 0.33))}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-slate-900 dark:text-white">Payment 2 (In 30 Days)</p>
+                      <p className="text-[10px] text-slate-500">Automatic debit from selected payment</p>
+                    </div>
+                    <span className="font-black text-indigo-600 dark:text-indigo-400 text-sm">
+                      {formatPrice(Math.round(currentPrice * 0.33))}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-slate-900 dark:text-white">Payment 3 (In 60 Days)</p>
+                      <p className="text-[10px] text-slate-500">Final installment completion</p>
+                    </div>
+                    <span className="font-black text-indigo-600 dark:text-indigo-400 text-sm">
+                      {formatPrice(currentPrice - 2 * Math.round(currentPrice * 0.33))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-1">
+                <p className="font-bold flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5" />
+                  Instant Approval Requirements:
+                </p>
+                <p className="text-slate-600 dark:text-slate-400 text-[10px] leading-relaxed">
+                  Valid MTN/Vodafone MoMo account or Debit Card with at least 1 previous successful order.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setIsBnplModalOpen(false);
+                  handleAddToCart();
+                  setIsCartDrawerOpen(true);
+                }}
+                className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+              >
+                Add with NovaFlex to Bag
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CUSTOMER REVIEW PHOTO LIGHTBOX */}
+      <AnimatePresence>
+        {reviewPhotoUrl && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4"
+            onClick={() => setReviewPhotoUrl(null)}
+          >
+            <div className="relative max-w-2xl max-h-[85vh] w-full" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setReviewPhotoUrl(null)}
+                className="absolute -top-12 right-0 p-2 text-white/80 hover:text-white rounded-full bg-white/10 hover:bg-rose-600 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={reviewPhotoUrl}
+                alt="Verified Buyer Photo"
+                className="w-full h-auto max-h-[80vh] object-contain rounded-2xl shadow-2xl"
+              />
+              <div className="mt-3 text-center">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Verified Buyer Photo
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

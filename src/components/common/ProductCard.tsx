@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Star, Heart, Eye, ShoppingBag, Check, Zap, Scale } from 'lucide-react';
+import { Star, Heart, Eye, ShoppingBag, Check, Zap, Scale, Bell, BellOff, Loader2 } from 'lucide-react';
 import { Product } from '../../types/index';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCompare } from '../../context/CompareContext';
 import { useSettings } from '../../context/SettingsContext';
+import { useStockAlert } from '../../context/StockAlertContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface ProductCardProps {
   product: Product;
@@ -13,7 +15,7 @@ interface ProductCardProps {
   onNavigateToDetail: (productId: string) => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({
+const ProductCardComponent: React.FC<ProductCardProps> = ({
   product,
   onOpenQuickView,
   onNavigateToDetail
@@ -22,6 +24,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isInCompare, addToCompare } = useCompare();
   const { formatPrice, country } = useSettings();
+  const { addAlert, isAlerted } = useStockAlert();
+  const { user } = useAuth();
+  const [isNotifying, setIsNotifying] = useState(false);
 
   const isLiked = isInWishlist(product.id);
   const isCompared = isInCompare(product.id);
@@ -41,6 +46,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     } else {
       addToCart(product, undefined, 1);
     }
+  };
+
+  const handleNotifyMe = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsNotifying(true);
+    await new Promise((r) => setTimeout(r, 600)); // small UX delay
+    const email = user?.email || 'guest@novamart.com';
+    addAlert(product.id, email, product.name);
+    setIsNotifying(false);
   };
 
   return (
@@ -127,18 +141,36 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </button>
         </div>
 
-        {/* Out of stock badge */}
+        {/* Out of stock overlay */}
         {isOutOfStock && (
-          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center">
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
             <span className="px-3 py-1.5 rounded-xl bg-rose-900/90 text-white text-xs font-black uppercase tracking-wider border border-rose-700">
               Out of Stock
             </span>
+            <button
+              id={`btn-notify-${product.id}`}
+              onClick={handleNotifyMe}
+              aria-label={isAlerted(product.id) ? 'Already subscribed to stock alert' : 'Notify me when back in stock'}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                isAlerted(product.id)
+                  ? 'bg-emerald-600/90 text-white'
+                  : 'bg-white/95 text-slate-900 hover:bg-emerald-50'
+              }`}
+            >
+              {isNotifying ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : isAlerted(product.id) ? (
+                <><BellOff className="w-3.5 h-3.5" /><span>Subscribed ✓</span></>
+              ) : (
+                <><Bell className="w-3.5 h-3.5" /><span>Notify Me</span></>
+              )}
+            </button>
           </div>
         )}
       </div>
 
       {/* Card Body */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3">
+      <div className="p-3 sm:p-5 flex-1 flex flex-col justify-between gap-2.5 sm:gap-3">
         <div>
           {/* Category & Brand / Vendor */}
           <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
@@ -222,3 +254,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     </motion.div>
   );
 };
+
+/** Memoised export — prevents re-renders when parent state changes don't affect this card */
+export const ProductCard = React.memo(ProductCardComponent);

@@ -432,29 +432,64 @@ export const Navbar: React.FC<NavbarProps> = ({
                       exit={{ opacity: 0, scale: 0.95 }}
                       className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden"
                     >
-                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <span className="text-sm font-black text-slate-900 dark:text-white">Notifications</span>
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-slate-900 dark:text-white">Notifications</span>
+                          {unreadCount > 0 && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-full">
+                              {unreadCount} unread
+                            </span>
+                          )}
+                        </div>
                         {unreadCount > 0 && (
                           <button onClick={async () => {
                             for (const n of notifications.filter(n => !n.read)) {
                               await api.markNotificationRead(n.id);
                             }
                             setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                          }} className="text-xs text-emerald-600 font-bold hover:underline">
+                          }} className="text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer">
                             Mark all read
                           </button>
                         )}
                       </div>
                       <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
                         {notifications.length === 0 ? (
-                          <div className="py-8 text-center text-slate-400 text-sm">No notifications yet</div>
+                          <div className="py-8 text-center text-slate-400 text-sm">
+                            <Bell className="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400" />
+                            No notifications yet
+                          </div>
                         ) : notifications.slice(0, 8).map(n => (
-                          <div key={n.id} className={`p-3 ${!n.read ? 'bg-emerald-50/60 dark:bg-emerald-950/20' : ''}`}>
-                            <p className="text-xs font-bold text-slate-900 dark:text-white">{n.title}</p>
-                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>
+                          <div
+                            key={n.id}
+                            onClick={async () => {
+                              if (!n.read) {
+                                await api.markNotificationRead(n.id);
+                                setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item));
+                              }
+                            }}
+                            className={`p-3 transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 ${!n.read ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-l-2 border-emerald-500' : ''}`}
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{n.title}</p>
+                              {!n.read && (
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 mt-1" />
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{n.message}</p>
                             <p className="text-[10px] text-slate-400 mt-1">{new Date(n.createdAt).toLocaleDateString()}</p>
                           </div>
                         ))}
+                      </div>
+                      <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-center">
+                        <button
+                          onClick={() => {
+                            setIsNotifOpen(false);
+                            onNavigate('dashboard', { tab: 'notifications' });
+                          }}
+                          className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors w-full text-center cursor-pointer"
+                        >
+                          View All Notifications →
+                        </button>
                       </div>
                     </motion.div>
                   )}
@@ -949,6 +984,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 Track Order
               </button>
+              {user && (
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onNavigate('dashboard', { tab: 'notifications' });
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left"
+                >
+                  <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <Bell className="w-4 h-4 text-emerald-600" />
+                    <span>Notifications</span>
+                  </span>
+                  {unreadCount > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </button>
+              )}
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);

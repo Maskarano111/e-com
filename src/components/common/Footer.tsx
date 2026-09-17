@@ -37,7 +37,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   };
 
   return (
-    <footer className="bg-slate-950 text-slate-400 text-sm border-t border-slate-800 transition-colors">
+    <footer className="bg-slate-950 text-slate-400 text-sm border-t border-slate-800 transition-colors pb-24 lg:pb-0">
       {/* 1. BENEFIT VALUE PROPOSITIONS */}
       <div className="border-b border-slate-800/80 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

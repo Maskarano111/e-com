@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 import { User } from '../types/index';
 import { api } from '../services/api';
 import { useToast } from './ToastContext';
@@ -14,6 +16,7 @@ interface AuthContextType {
   adminLogin: (email: string, pass: string) => Promise<boolean>;
   vendorLogin: (email: string, pass: string) => Promise<boolean>;
   register: (data: { firstName: string; lastName: string; email: string; phone?: string; password: string }) => Promise<boolean>;
+  googleLogin: () => Promise<boolean>;
   logout: () => void;
   updateProfile: (data: { firstName?: string; lastName?: string; phone?: string; profileImage?: string }) => Promise<boolean>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
@@ -31,6 +34,7 @@ const DEFAULT_AUTH_CONTEXT: AuthContextType = {
   adminLogin: async () => false,
   vendorLogin: async () => false,
   register: async () => false,
+  googleLogin: async () => false,
   logout: () => {},
   updateProfile: async () => false,
   changePassword: async () => false,
@@ -119,30 +123,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const vendorLogin = async (email: string, pass: string): Promise<boolean> => {
     try {
-      const vendors = await api.getVendors();
-      const vendor = vendors.find(
-        (v) => v.email.toLowerCase() === email.toLowerCase() || v.ownerName.toLowerCase().includes(email.toLowerCase())
-      );
-
-      const vendorUser: User = {
-        id: vendor?.userId || 'usr-kofi-seller',
-        firstName: vendor ? vendor.ownerName.split(' ')[0] : 'Kofi',
-        lastName: vendor ? vendor.ownerName.split(' ')[1] || 'Seller' : 'Boateng',
-        email: email,
-        phone: vendor?.phone || '+233 24 888 1234',
-        role: 'vendor',
-        vendorId: vendor?.id || 'vend-kofi',
-        vendorStoreName: vendor?.storeName || 'Kofi Tech & Audio Hub',
-        profileImage: vendor?.logo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      setUser(vendorUser);
-      const token = `mock-vendor-token-${vendorUser.id}`;
-      setToken(token);
-      setStoredToken(token);
-      showToast('success', 'Vendor Portal Access', `Welcome back, ${vendorUser.firstName} (${vendorUser.vendorStoreName})!`);
+      const res = await api.vendorLogin({ email, password: pass });
+      setUser(res.user);
+      setToken(res.token);
+      setStoredToken(res.token);
+      showToast('success', 'Vendor Portal Access', `Welcome back, ${res.user.firstName} (${res.user.vendorStoreName || 'Official Vendor'})!`);
       return true;
     } catch (err: any) {
       showToast('error', 'Vendor Login Failed', err.message || 'Access denied');
@@ -160,6 +145,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (err: any) {
       showToast('error', 'Registration Failed', err.message || 'Please check your information');
+      return false;
+    }
+  };
+
+  const googleLogin = async (): Promise<boolean> => {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await signInWithPopup(auth, provider);
+      const fbUser = result.user;
+      const nameParts = (fbUser.displayName || 'Guest User').split(' ');
+      const googleUser: User = {
+        id: fbUser.uid,
+        firstName: nameParts[0] || 'Guest',
+        lastName: nameParts.slice(1).join(' ') || 'User',
+        email: fbUser.email || '',
+        phone: fbUser.phoneNumber || '',
+        role: 'customer',
+        profileImage: fbUser.photoURL || undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const token = await fbUser.getIdToken();
+      setUser(googleUser);
+      setToken(token);
+      setStoredToken(token);
+      showToast('success', `Welcome, ${googleUser.firstName}! 🎉`, 'You are signed in with Google.');
+      return true;
+    } catch (err: any) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        showToast('error', 'Google Sign-In Failed', err.message || 'Please try again.');
+      }
       return false;
     }
   };
@@ -224,6 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         adminLogin,
         vendorLogin,
         register,
+        googleLogin,
         logout,
         updateProfile,
         changePassword,

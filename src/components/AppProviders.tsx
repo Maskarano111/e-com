@@ -9,6 +9,7 @@ import { RecentlyViewedProvider } from '../context/RecentlyViewedContext';
 import { WishlistProvider } from '../context/WishlistContext';
 import { CompareProvider } from '../context/CompareContext';
 import { CartProvider } from '../context/CartContext';
+import { StockAlertProvider } from '../context/StockAlertContext';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -34,12 +35,14 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => (
           <SettingsProvider>
             <AuthProvider>
               <RecentlyViewedProvider>
-                <WishlistProvider>
-                  <CompareProvider>
-                    <CartProvider>
-                      {children}
-                    </CartProvider>
-                  </CompareProvider>
+              <WishlistProvider>
+                  <StockAlertProvider>
+                    <CompareProvider>
+                      <CartProvider>
+                        {children}
+                      </CartProvider>
+                    </CompareProvider>
+                  </StockAlertProvider>
                 </WishlistProvider>
               </RecentlyViewedProvider>
             </AuthProvider>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowRight,
@@ -19,12 +19,15 @@ import {
   HeartPulse,
   Sparkle,
   Laptop,
-  ShoppingCart
+  ShoppingCart,
+  Clock,
+  X
 } from 'lucide-react';
 import { Product, Category, Banner } from '../types/index';
 import { ProductCard } from '../components/common/ProductCard';
 import { FlashSalesSection } from '../components/common/FlashSalesSection';
 import { useSettings } from '../context/SettingsContext';
+import { useRecentlyViewed } from '../context/RecentlyViewedContext';
 import { api } from '../services/api';
 
 import { initialCategories, initialProducts, initialBanners } from '../data/initialData';
@@ -51,6 +54,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenQuickView
 }) => {
   const { formatPrice, country, countryConfig } = useSettings();
+  const { recentlyViewed, clearRecentlyViewed } = useRecentlyViewed();
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   const [banners, setBanners] = useState<Banner[]>(propBanners || initialBanners);
@@ -70,18 +74,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
     if (propBestSellers) setBestSellers(propBestSellers);
   }, [propBanners, propCategories, propProducts, propDeals, propNewArrivals, propBestSellers]);
 
-  // Strict country market filter
-  const marketFilter = (p: Product) => {
-    if (country === 'NG') {
-      return p.originCountry === 'NG';
-    }
-    return p.originCountry === 'GH' || !p.originCountry;
-  };
+  // Strict country market filter — memoised to avoid recomputation
+  const marketFilter = useMemo(
+    () => (p: Product) => {
+      if (country === 'NG') return p.originCountry === 'NG';
+      return p.originCountry === 'GH' || !p.originCountry;
+    },
+    [country]
+  );
 
-  const filteredProducts = products.filter(marketFilter);
-  const filteredDeals = deals.filter(marketFilter);
-  const filteredNewArrivals = newArrivals.filter(marketFilter);
-  const filteredBestSellers = bestSellers.filter(marketFilter);
+  const filteredProducts = useMemo(() => products.filter(marketFilter), [products, marketFilter]);
+  const filteredDeals = useMemo(() => deals.filter(marketFilter), [deals, marketFilter]);
+  const filteredNewArrivals = useMemo(() => newArrivals.filter(marketFilter), [newArrivals, marketFilter]);
+  const filteredBestSellers = useMemo(() => bestSellers.filter(marketFilter), [bestSellers, marketFilter]);
+  const filteredRecentlyViewed = useMemo(
+    () => recentlyViewed.filter(marketFilter).slice(0, 8),
+    [recentlyViewed, marketFilter]
+  );
 
   useEffect(() => {
     if (!propProducts || propProducts.length === 0) {
@@ -412,7 +421,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-3 border border-slate-200 dark:border-slate-700">
-                <img src={cat.image} alt={cat.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                <img src={cat.image} alt={cat.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
               </div>
               <h3 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2 leading-tight">
                 {cat.name}
@@ -510,7 +519,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
           {filteredProducts.filter((p) => p.featured).slice(0, 8).map((product) => (
             <ProductCard
               key={product.id}
@@ -590,8 +599,41 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </section>
 
 
+      {/* 9. RECENTLY VIEWED — "Continue Browsing" */}
+      {filteredRecentlyViewed.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
+            <div>
+              <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" /> Continue Browsing
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Recently Viewed
+              </h2>
+            </div>
+            <button
+              id="btn-clear-recently-viewed"
+              onClick={clearRecentlyViewed}
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-rose-600 transition-colors px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Clear History</span>
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-6">
+            {filteredRecentlyViewed.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onOpenQuickView={onOpenQuickView}
+                onNavigateToDetail={(id) => onNavigate('product-detail', { productId: id })}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* 8. CUSTOMER REVIEWS */}
+      {/* 10. CUSTOMER REVIEWS */}
       <section className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-900/60 dark:to-transparent py-16 border-y border-slate-200/60 dark:border-slate-800/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-xl mx-auto mb-12">
@@ -599,42 +641,55 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <Star className="w-3.5 h-3.5 fill-emerald-600" /> Verified Buyer Reviews
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Trusted by 50,000+ Shoppers in Ghana
+              {country === 'NG' ? 'Trusted by 50,000+ Shoppers in Nigeria' : 'Trusted by 50,000+ Shoppers in Ghana'}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
               Genuine reviews on electronics, fashion, appliances, and personal care.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote:
-                  '"Ordered the portable blender and digital blood pressure monitor. Both delivered to Airport Residential next day. Excellent quality!"',
-                name: 'Abena Osei',
-                location: 'East Legon, Accra',
-                avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
-                rating: 5,
-                product: 'Portable USB Blender'
-              },
-              {
-                quote:
-                  '"Purchased the iPhone 15 Pro Max. Checked Apple warranty online, 100% genuine and sealed box. Best online store in Ghana."',
-                name: 'Kwesi Mensah',
-                location: 'Kumasi, Ashanti Region',
-                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-                rating: 5,
-                product: 'iPhone 15 Pro Max'
-              },
-              {
-                quote:
-                  '"The 48V cordless pressure washer gun makes car washing at home effortless. Great battery life and powerful pressure spray."',
-                name: 'Eunice Addo',
-                location: 'Tema Community 6',
-                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-                rating: 5,
-                product: '48V Pressure Washer'
-              }
-            ].map((t, i) => (
+            {(country === 'NG'
+              ? [
+                  {
+                    quote: '"Ordered the portable blender and a blood pressure monitor. Both delivered to Lekki next day. Excellent quality!"',
+                    name: 'Chidinma Okafor', location: 'Lekki Phase 1, Lagos',
+                    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
+                    rating: 5
+                  },
+                  {
+                    quote: '"Purchased the iPhone 15 Pro Max. Checked Apple warranty — 100% genuine, sealed box. Best online store in Nigeria."',
+                    name: 'Emeka Nwosu', location: 'Ikeja, Lagos',
+                    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+                    rating: 5
+                  },
+                  {
+                    quote: '"The 48V cordless pressure washer gun makes car washing at home effortless. Great battery life and powerful spray."',
+                    name: 'Ngozi Adeyemi', location: 'Abuja, FCT',
+                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+                    rating: 5
+                  }
+                ]
+              : [
+                  {
+                    quote: '"Ordered the portable blender and digital blood pressure monitor. Both delivered to Airport Residential next day. Excellent quality!"',
+                    name: 'Abena Osei', location: 'East Legon, Accra',
+                    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
+                    rating: 5
+                  },
+                  {
+                    quote: '"Purchased the iPhone 15 Pro Max. Checked Apple warranty online, 100% genuine and sealed box. Best online store in Ghana."',
+                    name: 'Kwesi Mensah', location: 'Kumasi, Ashanti Region',
+                    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+                    rating: 5
+                  },
+                  {
+                    quote: '"The 48V cordless pressure washer gun makes car washing at home effortless. Great battery life and powerful pressure spray."',
+                    name: 'Eunice Addo', location: 'Tema Community 6',
+                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+                    rating: 5
+                  }
+                ]
+            ).map((t, i) => (
               <motion.div
                 key={t.name}
                 initial={{ opacity: 0, y: 20 }}
@@ -657,6 +712,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <img
                     src={t.avatar}
                     alt={t.name}
+                    loading="lazy"
                     className="w-10 h-10 rounded-full object-cover border-2 border-emerald-200 dark:border-emerald-800"
                   />
                   <div>

@@ -49,6 +49,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
   const [searchQuery, setSearchQuery] = useState(initialOrderNumber || 'NM-GH-10928');
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [etaMinutes, setEtaMinutes] = useState(24);
   const [courierLocation, setCourierLocation] = useState({ lat: 5.6037, lng: -0.1870, name: 'Airport Residential Area, Accra' });
@@ -72,6 +73,22 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
     }
   };
 
+  const handleManualRefresh = async () => {
+    if (!order) return;
+    setIsRefreshing(true);
+    try {
+      const latest = await api.getOrder(order.orderNumber);
+      if (latest) {
+        setOrder(latest);
+        showToast('info', 'Status Refreshed', `Tracking data updated for #${latest.orderNumber}.`);
+      }
+    } catch {
+      showToast('error', 'Update Failed', 'Could not refresh order tracking data.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     if (initialOrderNumber) {
       setSearchQuery(initialOrderNumber);
@@ -80,6 +97,29 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
       fetchOrder('NM-GH-10928');
     }
   }, [initialOrderNumber]);
+
+  // Real-time live order tracking polling (25s intervals)
+  useEffect(() => {
+    if (!order) return;
+    const isTerminal = order.orderStatus === 'Delivered' || order.orderStatus === 'Cancelled';
+    if (isTerminal) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const latest = await api.getOrder(order.orderNumber);
+        if (latest) {
+          if (latest.orderStatus !== order.orderStatus) {
+            showToast('success', 'Order Status Updated', `Your order #${latest.orderNumber} is now: ${latest.orderStatus}`);
+          }
+          setOrder(latest);
+        }
+      } catch (e) {
+        console.warn('Live order polling error:', e);
+      }
+    }, 25000);
+
+    return () => clearInterval(pollInterval);
+  }, [order?.orderNumber, order?.orderStatus]);
 
   // Simulated live ETA countdown
   useEffect(() => {
@@ -209,11 +249,22 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
 
             <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                    Live Dispatch Feed
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                      Live Dispatch Feed
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs border border-slate-700"
+                    title="Refresh status now"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+                    <span className="text-[10px]">Refresh</span>
+                  </button>
                 </div>
                 <h3 className="text-xl font-black mt-1">Order #{order.orderNumber}</h3>
                 <p className="text-xs text-slate-400">
