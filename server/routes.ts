@@ -2778,5 +2778,174 @@ router.post('/promotions/click', (req, res) => {
   return res.json({ success: true });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN ADS & SUBSCRIPTION MANAGEMENT + AUTOMATED BILLING LIFECYCLE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Get platform-wide subscription & ads overview
+router.get('/admin/subscriptions/overview', (req, res) => {
+  const vendors = db.get('vendors') || [];
+  const products = db.get('products') || [];
+  const plans = (db.get('promotionPlans') || []) as PromotionPlan[];
+
+  const subscribedVendors = vendors.filter(v => v.subscription);
+  const activeSubscribers = subscribedVendors.filter(v => v.subscription?.status === 'active');
+  const expiredSubscribers = subscribedVendors.filter(v => v.subscription?.status === 'expired');
+
+  // Compute MRR
+  let mrrGH = 0;
+  let mrrNG = 0;
+  activeSubscribers.forEach(v => {
+    const plan = plans.find(p => p.tier === v.subscription?.tier);
+    if (plan) {
+      mrrGH += plan.priceGH;
+      mrrNG += plan.priceNG;
+    }
+  });
+
+  // Total Platform-wide sponsored performance
+  let platformImpressions = 0;
+  let platformClicks = 0;
+  products.forEach(p => {
+    if (p.isPromoted || (p.promotionImpressions && p.promotionImpressions > 0)) {
+      platformImpressions += p.promotionImpressions || 0;
+      platformClicks += p.promotionClicks || 0;
+    }
+  });
+
+  return res.json({
+    success: true,
+    mrrGH,
+    mrrNG,
+    activeCount: activeSubscribers.length,
+    expiredCount: expiredSubscribers.length,
+    totalPlatformImpressions: platformImpressions,
+    totalPlatformClicks: platformClicks,
+    plans,
+    subscribedVendors: subscribedVendors.map(v => {
+      const plan = plans.find(p => p.tier === v.subscription?.tier);
+      const renewalFee = plan ? plan.priceGH : 99;
+      const hasSufficientFunds = (v.balance || 0) >= renewalFee;
+      const promotedCount = products.filter(p => p.vendorId === v.id && p.isPromoted).length;
+
+      return {
+        vendorId: v.id,
+        storeName: v.storeName,
+        email: v.email,
+        phone: v.phone,
+        balance: v.balance || 0,
+        renewalFee,
+        hasSufficientFunds,
+        subscription: v.subscription,
+        promotedProductCount: promotedCount
+      };
+    })
+  });
+});
+
+// Admin triggers immediate Auto-Deduct / Auto-Cancel lifecycle run
+router.post('/admin/subscriptions/process-renewals', (req, res) => {
+  const result = db.processSubscriptionLifecycle();
+  return res.json({
+    success: true,
+    message: `Processed ${result.processedCount} subscriptions: ${result.renewedCount} auto-deducted & renewed, ${result.cancelledCount} auto-cancelled due to insufficient balance.`,
+    result
+  });
+});
+
+// Admin simulation tool: Fast-forwards expiry date to test auto-deduct and auto-cancel
+router.post('/admin/subscriptions/simulate-expiry', (req, res) => {
+  const { vendorId, simulateShortBalance } = req.body;
+  const vendors = db.get('vendors') || [];
+
+  const vendor = vendors.find(v => v.id === vendorId || v.userId === vendorId);
+  if (!vendor || !vendor.subscription) {
+    return res.status(404).json({ success: false, message: 'Vendor or active subscription not found' });
+  }
+
+  // Fast forward expiry date to 1 hour ago
+  const pastDate = new Date(Date.now() - 3600 * 1000).toISOString();
+  vendor.subscription.expiresAt = pastDate;
+
+  // If user requested to simulate zero balance for cancellation testing
+  if (simulateShortBalance) {
+    vendor.balance = 0;
+  }
+
+  db.set('vendors', vendors);
+
+  // Now trigger lifecycle engine
+  const result = db.processSubscriptionLifecycle();
+
+  return res.json({
+    success: true,
+    message: simulateShortBalance
+      ? `Simulated expiration with ₵0 balance: subscription cancelled and products unboosted.`
+      : `Simulated expiration with ₵${vendor.balance} balance: auto-deducted renewal fee and extended validity.`,
+    result,
+    vendor
+  });
+});
+
+// Admin manual moderation on a vendor's subscription
+router.post('/admin/subscriptions/moderate-vendor', (req, res) => {
+  const { vendorId, action, daysToAdd } = req.body;
+  const vendors = db.get('vendors') || [];
+  const products = db.get('products') || [];
+
+  const vendor = vendors.find(v => v.id === vendorId || v.userId === vendorId);
+  if (!vendor || !vendor.subscription) {
+    return res.status(404).json({ success: false, message: 'Vendor has no active subscription' });
+  }
+
+  if (action === 'pause') {
+    vendor.subscription.status = 'cancelled';
+    products.forEach(p => {
+      if (p.vendorId === vendor.id) p.isPromoted = false;
+    });
+    vendor.subscription.slotsUsed = 0;
+  } else if (action === 'resume') {
+    vendor.subscription.status = 'active';
+  } else if (action === 'grant_days' && daysToAdd) {
+    const currentExpiry = new Date(vendor.subscription.expiresAt);
+    vendor.subscription.expiresAt = new Date(currentExpiry.getTime() + daysToAdd * 86400000).toISOString();
+    vendor.subscription.status = 'active';
+  }
+
+  db.set('vendors', vendors);
+  db.set('products', products);
+
+  return res.json({
+    success: true,
+    message: `Vendor subscription ${action} executed successfully.`,
+    vendor
+  });
+});
+
+// Admin updates plan pricing or quotas
+router.put('/admin/promotion-plans/:id', (req, res) => {
+  const planId = req.params.id;
+  const { priceGH, priceNG, maxSlots, searchBoostMultiplier } = req.body;
+  const plans = (db.get('promotionPlans') || []) as PromotionPlan[];
+
+  const planIndex = plans.findIndex(p => p.id === planId || p.tier === planId);
+  if (planIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Plan not found' });
+  }
+
+  if (priceGH !== undefined) plans[planIndex].priceGH = Number(priceGH);
+  if (priceNG !== undefined) plans[planIndex].priceNG = Number(priceNG);
+  if (maxSlots !== undefined) plans[planIndex].maxSlots = Number(maxSlots);
+  if (searchBoostMultiplier !== undefined) plans[planIndex].searchBoostMultiplier = Number(searchBoostMultiplier);
+
+  db.set('promotionPlans', plans);
+
+  return res.json({
+    success: true,
+    message: `Plan "${plans[planIndex].name}" updated successfully!`,
+    plan: plans[planIndex]
+  });
+});
+
 export default router;
 

@@ -62,6 +62,7 @@ const AdminBannersView = React.lazy(() => import('./views/admin/AdminBannersView
 const AdminCustomersView = React.lazy(() => import('./views/admin/AdminCustomersView').then(m => ({ default: m.AdminCustomersView })));
 const AdminReviewsView = React.lazy(() => import('./views/admin/AdminReviewsView').then(m => ({ default: m.AdminReviewsView })));
 const AdminSettingsView = React.lazy(() => import('./views/admin/AdminSettingsView').then(m => ({ default: m.AdminSettingsView })));
+const AdminPromotionsView = React.lazy(() => import('./views/admin/AdminPromotionsView').then(m => ({ default: m.AdminPromotionsView })));
 
 // Vendor / Seller Views (Code-Split)
 const VendorLayout = React.lazy(() => import('./views/vendor/VendorLayout').then(m => ({ default: m.VendorLayout })));
@@ -121,6 +122,7 @@ const MainApp: React.FC = () => {
             onNavigateToStore={() => handleNavigate('home')}
           >
             {adminTab === 'overview'   && <ErrorBoundary name="Admin Overview" inline><AdminOverviewView onNavigateTab={(tab) => setAdminTab(tab)} /></ErrorBoundary>}
+            {adminTab === 'promotions' && <ErrorBoundary name="Admin Promotions" inline><AdminPromotionsView /></ErrorBoundary>}
             {adminTab === 'vendors'    && <ErrorBoundary name="Vendors" inline><AdminVendorsView /></ErrorBoundary>}
             {adminTab === 'products'   && <ErrorBoundary name="Products" inline><AdminProductsView /></ErrorBoundary>}
             {adminTab === 'inventory'  && <ErrorBoundary name="Inventory" inline><AdminInventoryView /></ErrorBoundary>}

@@ -23,6 +23,7 @@ import {
   Image,
   CreditCard,
   RotateCcw,
+  Flame,
   X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -49,6 +50,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
   const NAV_ITEMS = [
     { id: 'overview',    label: 'Dashboard & Analytics', icon: LayoutDashboard, badge: 'Live' },
+    { id: 'promotions',  label: 'Ads & Subscriptions',   icon: Flame,           badge: 'MRR' },
     { id: 'vendors',     label: 'Vendors & Merchants',   icon: Store,            badge: undefined },
     { id: 'products',    label: 'Products & Catalog',    icon: Package,          badge: undefined },
     { id: 'inventory',   label: 'Inventory & Stock',     icon: Warehouse,        badge: undefined },

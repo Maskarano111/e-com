@@ -495,6 +495,175 @@ class Database {
   public commit() {
     this.saveData(this.data);
   }
+
+  /**
+   * Evaluates all vendor subscriptions against current date:
+   * 1. If expiresAt has elapsed and vendor balance >= plan price:
+   *    -> Auto-deducts renewal fee from vendor balance
+   *    -> Extends validity by 30 days
+   *    -> Creates a renewal payment transaction and notification
+   *    -> Keeps all products promoted
+   * 2. If expiresAt has elapsed and vendor balance < plan price:
+   *    -> Sets subscription status to 'expired'
+   *    -> Auto-pauses / unboosts all vendor's products (isPromoted = false)
+   *    -> Resets slotsUsed to 0
+   *    -> Creates an expiry notification
+   */
+  public processSubscriptionLifecycle(): {
+    processedCount: number;
+    renewedCount: number;
+    cancelledCount: number;
+    actions: Array<{
+      vendorId: string;
+      vendorName: string;
+      tier: string;
+      action: 'renewed' | 'cancelled_insufficient_funds';
+      amountDeducted?: number;
+      balanceRemaining?: number;
+      message: string;
+    }>;
+  } {
+    const now = new Date();
+    const vendors = this.get('vendors') || [];
+    const products = this.get('products') || [];
+    const plans = (this.get('promotionPlans') || []) as PromotionPlan[];
+    const payments = this.get('payments') || [];
+    const notifications = this.get('notifications') || [];
+
+    const actions: any[] = [];
+    let renewedCount = 0;
+    let cancelledCount = 0;
+    let modified = false;
+
+    for (const vendor of vendors) {
+      if (!vendor.subscription || vendor.subscription.status !== 'active') {
+        continue;
+      }
+
+      const expiryDate = new Date(vendor.subscription.expiresAt);
+      if (now >= expiryDate) {
+        // Subscription has reached expiry date!
+        const plan = plans.find((p) => p.tier === vendor.subscription?.tier) || plans[0];
+        const renewalFee = plan ? plan.priceGH : 99;
+        const currentBalance = vendor.balance || 0;
+
+        if (currentBalance >= renewalFee) {
+          // CASE A: AUTO-DEDUCT AND RENEW
+          vendor.balance = Math.max(0, currentBalance - renewalFee);
+          vendor.subscription.startedAt = now.toISOString();
+          vendor.subscription.expiresAt = new Date(now.getTime() + 30 * 86400000).toISOString();
+          vendor.subscription.status = 'active';
+
+          // Record payment invoice
+          const renewRef = `RENEW-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+          payments.unshift({
+            id: `pay-sub-${Date.now()}`,
+            orderId: `sub-${vendor.id}`,
+            orderNumber: renewRef,
+            transactionReference: renewRef,
+            customerName: vendor.storeName,
+            customerEmail: vendor.email,
+            amount: renewalFee,
+            currency: 'GHS',
+            paymentMethod: 'bank_transfer',
+            provider: 'NovaMart Wallet Auto-Deduct',
+            status: 'successful',
+            createdAt: now.toISOString()
+          });
+
+          // Add notification
+          notifications.unshift({
+            id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+            userId: vendor.userId,
+            target: 'customer',
+            title: `🔄 NovaBoost Auto-Renewed: ${vendor.subscription.planName}`,
+            message: `GH₵ ${renewalFee} was automatically deducted from your store wallet balance. Your listings remain boosted with ${vendor.subscription.tier} priority for the next 30 days.`,
+            type: 'promo',
+            read: false,
+            createdAt: now.toISOString()
+          });
+
+          actions.push({
+            vendorId: vendor.id,
+            vendorName: vendor.storeName,
+            tier: vendor.subscription.tier,
+            action: 'renewed',
+            amountDeducted: renewalFee,
+            balanceRemaining: vendor.balance,
+            message: `Auto-deducted GH₵ ${renewalFee}. Subscription extended by 30 days.`
+          });
+          renewedCount++;
+          modified = true;
+        } else {
+          // CASE B: INSUFFICIENT FUNDS -> AUTO-CANCEL AND UNBOOST ALL PRODUCTS
+          vendor.subscription.status = 'expired';
+          vendor.subscription.slotsUsed = 0;
+
+          // Unboost all products belonging to this vendor
+          products.forEach((p) => {
+            if (p.vendorId === vendor.id) {
+              p.isPromoted = false;
+            }
+          });
+
+          notifications.unshift({
+            id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+            userId: vendor.userId,
+            target: 'customer',
+            title: `⚠️ NovaBoost Subscription Expired`,
+            message: `Your ${vendor.subscription.planName} could not auto-renew due to insufficient wallet balance (Balance: GH₵ ${currentBalance}, Required: GH₵ ${renewalFee}). Promoted products have been paused. Please top up or re-subscribe.`,
+            type: 'promo',
+            read: false,
+            createdAt: now.toISOString()
+          });
+
+          actions.push({
+            vendorId: vendor.id,
+            vendorName: vendor.storeName,
+            tier: vendor.subscription.tier,
+            action: 'cancelled_insufficient_funds',
+            amountDeducted: 0,
+            balanceRemaining: vendor.balance,
+            message: `Insufficient balance (GH₵ ${currentBalance} < GH₵ ${renewalFee}). Subscription cancelled and products unboosted.`
+          });
+          cancelledCount++;
+          modified = true;
+        }
+      }
+    }
+
+    if (modified) {
+      this.set('vendors', vendors);
+      this.set('products', products);
+      this.set('payments', payments);
+      this.set('notifications', notifications);
+    }
+
+    return {
+      processedCount: vendors.filter((v) => v.subscription?.status === 'active').length,
+      renewedCount,
+      cancelledCount,
+      actions
+    };
+  }
 }
 
 export const db = new Database();
+
+// Run automated subscription check on server startup and hourly intervals
+setTimeout(() => {
+  try {
+    db.processSubscriptionLifecycle();
+  } catch (err) {
+    console.error('Subscription lifecycle check error:', err);
+  }
+}, 5000);
+
+setInterval(() => {
+  try {
+    db.processSubscriptionLifecycle();
+  } catch (err) {
+    console.error('Subscription lifecycle interval error:', err);
+  }
+}, 60 * 60 * 1000);
+

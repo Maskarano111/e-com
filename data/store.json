@@ -161,8 +161,8 @@
       "isPromoted": true,
       "promotionTier": "growth",
       "promotedUntil": "2026-10-07T16:16:25.840Z",
-      "promotionImpressions": 0,
-      "promotionClicks": 0
+      "promotionImpressions": 4850,
+      "promotionClicks": 342
     },
     {
       "id": "prod-bp-monitor",
@@ -295,7 +295,11 @@
       "createdAt": "2026-09-17T16:25:36.949Z",
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
-      "vendorName": "Kofi Tech & Audio Hub"
+      "vendorName": "Kofi Tech & Audio Hub",
+      "isPromoted": true,
+      "promotionTier": "growth",
+      "promotionImpressions": 4850,
+      "promotionClicks": 342
     },
     {
       "id": "prod-tummy-wrap",
@@ -416,7 +420,11 @@
       "createdAt": "2026-09-17T16:25:36.949Z",
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
-      "vendorName": "Kofi Tech & Audio Hub"
+      "vendorName": "Kofi Tech & Audio Hub",
+      "isPromoted": true,
+      "promotionTier": "growth",
+      "promotionImpressions": 4850,
+      "promotionClicks": 342
     },
     {
       "id": "prod-mini-atomizers",
@@ -563,7 +571,7 @@
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
       "vendorName": "Kofi Tech & Audio Hub",
-      "isPromoted": true,
+      "isPromoted": false,
       "promotionTier": "growth",
       "promotedUntil": "2026-10-07T16:16:25.840Z",
       "promotionImpressions": 0,
@@ -692,7 +700,7 @@
       "salesCount": 45,
       "createdAt": "2026-09-17T16:25:36.949Z",
       "updatedAt": "2026-09-17T16:25:36.949Z",
-      "isPromoted": true,
+      "isPromoted": false,
       "promotionTier": "growth",
       "promotedUntil": "2026-10-07T16:16:25.840Z",
       "promotionImpressions": 0,
@@ -857,7 +865,8 @@
       "createdAt": "2026-09-17T16:25:36.949Z",
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
-      "vendorName": "Kofi Tech & Audio Hub"
+      "vendorName": "Kofi Tech & Audio Hub",
+      "isPromoted": false
     },
     {
       "id": "prod-baccarat-rouge-540",
@@ -987,7 +996,8 @@
       "createdAt": "2026-09-17T16:25:36.949Z",
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
-      "vendorName": "Kofi Tech & Audio Hub"
+      "vendorName": "Kofi Tech & Audio Hub",
+      "isPromoted": false
     },
     {
       "id": "prod-ng-oraimo-freepods4",
@@ -1104,7 +1114,8 @@
       "createdAt": "2026-09-17T16:25:36.949Z",
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
-      "vendorName": "Kofi Tech & Audio Hub"
+      "vendorName": "Kofi Tech & Audio Hub",
+      "isPromoted": false
     },
     {
       "id": "prod-ng-yam-pounder",
@@ -1221,7 +1232,8 @@
       "createdAt": "2026-09-17T16:25:36.949Z",
       "updatedAt": "2026-09-17T16:25:36.949Z",
       "vendorId": "vend-kofi",
-      "vendorName": "Kofi Tech & Audio Hub"
+      "vendorName": "Kofi Tech & Audio Hub",
+      "isPromoted": false
     },
     {
       "id": "prod-ng-solar-power-station",
@@ -1454,6 +1466,20 @@
   ],
   "payments": [
     {
+      "id": "pay-sub-1789663156374",
+      "orderId": "sub-vend-kofi",
+      "orderNumber": "RENEW-MU5R8HAT-I9FY",
+      "transactionReference": "RENEW-MU5R8HAT-I9FY",
+      "customerName": "Kofi Tech & Audio Hub",
+      "customerEmail": "kofi.seller@novamart.com.gh",
+      "amount": 249,
+      "currency": "GHS",
+      "paymentMethod": "bank_transfer",
+      "provider": "NovaMart Wallet Auto-Deduct",
+      "status": "successful",
+      "createdAt": "2026-09-17T16:39:16.373Z"
+    },
+    {
       "id": "pay-101",
       "orderId": "ord-1001",
       "orderNumber": "NM-GH-94821",
@@ -1595,6 +1621,26 @@
   ],
   "notifications": [
     {
+      "id": "notif-1789663165580-5j4",
+      "userId": "usr-kofi-seller",
+      "target": "customer",
+      "title": "⚠️ NovaBoost Subscription Expired",
+      "message": "Your Growth Accelerator could not auto-renew due to insufficient wallet balance (Balance: GH₵ 0, Required: GH₵ 249). Promoted products have been paused. Please top up or re-subscribe.",
+      "type": "promo",
+      "read": false,
+      "createdAt": "2026-09-17T16:39:25.580Z"
+    },
+    {
+      "id": "notif-1789663156374-0wi",
+      "userId": "usr-kofi-seller",
+      "target": "customer",
+      "title": "🔄 NovaBoost Auto-Renewed: Growth Accelerator",
+      "message": "GH₵ 249 was automatically deducted from your store wallet balance. Your listings remain boosted with growth priority for the next 30 days.",
+      "type": "promo",
+      "read": false,
+      "createdAt": "2026-09-17T16:39:16.373Z"
+    },
+    {
       "id": "notif-1",
       "userId": "usr-cust-1",
       "target": "customer",
@@ -1693,13 +1739,13 @@
         "status": "active",
         "price": 249,
         "currency": "GHS",
-        "startedAt": "2026-09-07T16:16:25.828Z",
-        "expiresAt": "2026-10-07T16:16:25.840Z",
+        "startedAt": "2026-09-17T16:39:37.554Z",
+        "expiresAt": "2026-10-12T16:39:37.573Z",
         "slotsTotal": 10,
         "slotsUsed": 3,
         "autoRenew": true,
-        "paymentMethod": "mtn_momo",
-        "transactionRef": "SUB-MOMO-782194"
+        "paymentMethod": "vendor_balance",
+        "transactionRef": "BOOST-MU5R8XN6-0QI7"
       }
     },
     {
