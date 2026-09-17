@@ -1615,6 +1615,16 @@
   ],
   "notifications": [
     {
+      "id": "notif-1789664388706-5qs",
+      "userId": "usr-kofi-seller",
+      "target": "customer",
+      "title": "⚠️ NovaBoost Subscription Expired",
+      "message": "Your Growth Accelerator could not auto-renew due to insufficient wallet balance (Balance: GH₵ 0, Required: GH₵ 249). Promoted products have been paused. Please top up or re-subscribe.",
+      "type": "promo",
+      "read": false,
+      "createdAt": "2026-09-17T16:59:48.705Z"
+    },
+    {
       "id": "notif-1789663165580-5j4",
       "userId": "usr-kofi-seller",
       "target": "customer",
@@ -1730,11 +1740,11 @@
       "subscription": {
         "tier": "growth",
         "planName": "Growth Accelerator",
-        "status": "active",
+        "status": "expired",
         "price": 249,
         "currency": "GHS",
         "startedAt": "2026-09-17T16:39:37.554Z",
-        "expiresAt": "2026-10-17T16:39:37.554Z",
+        "expiresAt": "2026-09-17T15:59:48.702Z",
         "slotsTotal": 10,
         "slotsUsed": 0,
         "autoRenew": true,
