@@ -1,6 +1,16 @@
 # Deploy NovaMart with Netlify and Render
 
-Netlify hosts the frontend. The Express API and its JSON data store run as a separate Render web service.
+Netlify can host the frontend in browser-only demo mode, or connect to the Express API hosted as a separate Render web service.
+
+## Demo-only Netlify mode
+
+Leave `VITE_API_BASE_URL` unset in Netlify. Production builds without an API URL automatically use the app's local demo data, so guest browsing, demo personas, and supported shopping flows work without an API service. Demo changes are saved only in that browser and are not shared with other visitors. Online payments and any action that needs server-side services are unavailable in this mode.
+
+To reset the local demo data, clear this site's browser storage and reload.
+
+## Live API mode
+
+Follow the steps below when you want accounts and store changes backed by the Express API instead of local demo data.
 
 ## 1. Create the API service
 

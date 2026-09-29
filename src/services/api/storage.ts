@@ -1,5 +1,8 @@
 const configuredApiBase = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, '');
 export const API_BASE = configuredApiBase || '/api';
+// Static production deployments without a configured API run as a local demo.
+// Set VITE_API_BASE_URL to opt into the live Express API.
+export const isDemoMode = import.meta.env.PROD && !configuredApiBase;
 
 export const STORAGE_KEYS = {
   PRODUCTS: 'novamart_products',
@@ -40,6 +43,11 @@ export async function safeFetch<T>(
   options?: RequestInit,
   fallbackFn?: () => T | Promise<T>
 ): Promise<T> {
+  if (isDemoMode) {
+    if (fallbackFn) return await fallbackFn();
+    throw new Error('This action needs the live NovaMart API. Demo changes are saved only in this browser.');
+  }
+
   try {
     const headers = new Headers(options?.headers);
     if (!headers.has('Authorization')) {

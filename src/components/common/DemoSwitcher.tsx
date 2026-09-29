@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, User, ShieldCheck, Store, LogOut, ChevronDown, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { isDemoMode } from '../../services/api/storage';
 
 interface DemoSwitcherProps {
   onNavigateToAdmin?: () => void;
@@ -44,7 +45,9 @@ export const DemoSwitcher: React.FC<DemoSwitcherProps> = ({ onNavigateToAdmin, o
             >
               <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">1-Click Test Drive</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Switch persona instantly:</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isDemoMode ? 'Local preview · changes stay in this browser.' : 'Switch persona instantly:'}
+                </p>
               </div>
 
               <div className="space-y-1">

@@ -1,6 +1,14 @@
 import { User, DeliveryAddress } from '../../types/index';
 import { API_BASE, STORAGE_KEYS, getLocal, setLocal, safeFetch } from './storage';
 
+const saveDemoUser = (user: User) => {
+  const users = getLocal<User[]>(STORAGE_KEYS.USERS, []);
+  const index = users.findIndex((entry) => entry.id === user.id || entry.email.toLowerCase() === user.email.toLowerCase());
+  if (index >= 0) users[index] = { ...users[index], ...user };
+  else users.push(user);
+  setLocal(STORAGE_KEYS.USERS, users);
+};
+
 export const authApi = {
   async register(data: { firstName: string; lastName: string; email: string; phone?: string; password: string }) {
     return safeFetch<{ user: User; token: string }>(
@@ -22,7 +30,7 @@ export const authApi = {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        users.push({ ...newUser, passwordHash: data.password });
+        users.push(newUser);
         setLocal(STORAGE_KEYS.USERS, users);
         return { user: newUser, token: `mock-token-${newUser.id}` };
       }
@@ -50,6 +58,7 @@ export const authApi = {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
+        saveDemoUser(user);
         return { user, token: `mock-token-${user.id}` };
       }
     );
@@ -64,16 +73,18 @@ export const authApi = {
         body: JSON.stringify(data)
       },
       () => {
+        const isManager = data.email.toLowerCase() === 'manager@novamart.com.gh';
         const adminUser: User = {
-          id: 'usr-super-admin',
-          firstName: 'Kwame',
-          lastName: 'Mensah',
+          id: isManager ? 'usr-store-manager' : 'usr-super-admin',
+          firstName: isManager ? 'Ama' : 'Kwame',
+          lastName: isManager ? 'Boakye' : 'Mensah',
           email: data.email,
           phone: '+233 24 555 0199',
-          role: 'super_admin',
+          role: isManager ? 'store_manager' : 'super_admin',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
+        saveDemoUser(adminUser);
         return { user: adminUser, token: `mock-admin-token-${adminUser.id}` };
       }
     );
@@ -101,6 +112,7 @@ export const authApi = {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
+        saveDemoUser(vendorUser);
         return { user: vendorUser, token: `mock-vendor-token-${vendorUser.id}` };
       }
     );
@@ -111,16 +123,9 @@ export const authApi = {
       `${API_BASE}/auth/me`,
       { headers: { Authorization: `Bearer ${token}` } },
       () => {
-        const user: User = {
-          id: 'usr-current',
-          firstName: 'Kwame',
-          lastName: 'Mensah',
-          email: 'admin@novamart.com.gh',
-          phone: '+233 24 555 0199',
-          role: 'super_admin',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+        const userId = token.match(/(usr-[\w-]+)$/)?.[1];
+        const user = getLocal<User[]>(STORAGE_KEYS.USERS, []).find((entry) => entry.id === userId);
+        if (!user) throw new Error('Your demo session expired. Choose a demo profile again.');
         return { user };
       }
     );
