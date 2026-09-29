@@ -94,6 +94,40 @@ const ADMIN_ROLES = ['super_admin', 'admin', 'store_manager'];
 const isBcryptHash = (value?: string) => Boolean(value && (value.startsWith('$2a$') || value.startsWith('$2b$')));
 const isAdminUser = (user?: AuthRequest['user']) => Boolean(user && ADMIN_ROLES.includes(user.role));
 const getVendorForUser = (userId: string) => (db.get('vendors') || []).find((vendor: any) => vendor.userId === userId);
+const resolveVendorLink = (user: any) => {
+  if (!user || user.role !== 'vendor') return null;
+  const vendors = db.get('vendors') || [];
+  let vendor = vendors.find((item: any) => item.id === user.vendorId || item.userId === user.id);
+  if (!vendor) {
+    const emailMatches = vendors.filter((item: any) =>
+      (item.email || '').trim().toLowerCase() === (user.email || '').trim().toLowerCase()
+    );
+    if (emailMatches.length === 1 && (!emailMatches[0].userId || emailMatches[0].userId === user.id)) {
+      vendor = emailMatches[0];
+    }
+  }
+  if (!vendor) return null;
+
+  let usersChanged = false;
+  if (user.vendorId !== vendor.id) {
+    user.vendorId = vendor.id;
+    usersChanged = true;
+  }
+  if (user.vendorStoreName !== vendor.storeName) {
+    user.vendorStoreName = vendor.storeName;
+    usersChanged = true;
+  }
+  if (!user.profileImage && vendor.logo) {
+    user.profileImage = vendor.logo;
+    usersChanged = true;
+  }
+  if (usersChanged) db.set('users', db.get('users'));
+  if (!vendor.userId) {
+    vendor.userId = user.id;
+    db.set('vendors', vendors);
+  }
+  return vendor;
+};
 const vendorBelongsToUser = (vendorId: string, userId: string) => {
   const vendor = (db.get('vendors') || []).find((item: any) => item.id === vendorId || item.userId === vendorId);
   return Boolean(vendor && vendor.userId === userId);
@@ -356,6 +390,8 @@ router.post('/auth/login', async (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
+  resolveVendorLink(user);
+
   // Sign real JWT token
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName },
@@ -432,13 +468,20 @@ router.post('/auth/vendor-login', async (req: Request, res: Response) => {
   const vendors = db.get('vendors') || [];
   const users = db.get('users') || [];
 
-  // Match vendor by email or owner name
-  const vendor = vendors.find(v =>
-    v.email.toLowerCase() === cleanEmail ||
-    (process.env.NODE_ENV !== 'production' && (v.ownerName.toLowerCase().includes(cleanEmail) || cleanEmail.startsWith('vendor@') || cleanEmail.startsWith('kofi@')))
-  );
-
   let user = users.find(u => u.email.toLowerCase() === cleanEmail && u.role === 'vendor');
+  let vendor = user && vendors.find((item: any) => item.id === user!.vendorId || item.userId === user!.id);
+  if (!vendor) {
+    const emailMatches = vendors.filter((item: any) => (item.email || '').trim().toLowerCase() === cleanEmail);
+    if (emailMatches.length === 1 && (!emailMatches[0].userId || emailMatches[0].userId === user?.id)) {
+      vendor = emailMatches[0];
+    }
+  }
+  if (!vendor && process.env.NODE_ENV !== 'production') {
+    vendor = vendors.find((item: any) =>
+      item.ownerName?.toLowerCase().includes(cleanEmail) || cleanEmail.startsWith('vendor@') || cleanEmail.startsWith('kofi@')
+    );
+  }
+
   if (process.env.NODE_ENV === 'production' && (!vendor || !user || !isBcryptHash(user.passwordHash))) {
     return res.status(401).json({ error: 'Set a seller password using the secure password reset link before signing in.' });
   }
@@ -505,6 +548,15 @@ router.post('/auth/vendor-login', async (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Invalid vendor password or credentials' });
   }
 
+  if (vendor) {
+    activeUser.vendorId = vendor.id;
+    activeUser.vendorStoreName = vendor.storeName;
+    activeUser.profileImage = activeUser.profileImage || vendor.logo;
+    if (!vendor.userId) vendor.userId = activeUser.id;
+    db.set('users', users);
+    db.set('vendors', vendors);
+  }
+
   const token = jwt.sign(
     {
       id: activeUser.id,
@@ -553,6 +605,8 @@ router.get('/auth/me', (req: Request, res: Response) => {
   if (!user) {
     return res.status(401).json({ error: 'Invalid token session' });
   }
+
+  resolveVendorLink(user);
 
   const { passwordHash, passwordReset, passwordChangedAt, resetToken, resetTokenExpiry, ...userWithoutPass } = user;
   res.json({ user: userWithoutPass });
