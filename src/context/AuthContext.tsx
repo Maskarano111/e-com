@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types/index';
 import { api } from '../services/api';
+import { isDemoMode } from '../services/api/storage';
+import { seedDemoData } from '../services/api/demoData';
 import { useToast } from './ToastContext';
 
 interface AuthContextType {
@@ -69,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initAuth = async () => {
+      if (isDemoMode) seedDemoData();
       const storedToken = getStoredToken();
       if (storedToken) {
         try {

@@ -60,7 +60,20 @@ export const analyticsApi = {
     return safeFetch<PaymentTransaction[]>(
       `${API_BASE}/payments`,
       undefined,
-      () => []
+      () => getLocal<Order[]>(STORAGE_KEYS.ORDERS, []).map((order) => ({
+        id: `payment-${order.id}`,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        transactionReference: order.paymentReference || `DEMO-${order.orderNumber}`,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        amount: order.total,
+        currency: 'GHS',
+        paymentMethod: order.paymentMethod,
+        provider: order.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Demo Mobile Money',
+        status: order.paymentStatus,
+        createdAt: order.createdAt
+      }))
     );
   }
 };
