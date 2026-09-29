@@ -34,7 +34,7 @@ export const VendorProductsView: React.FC<VendorProductsViewProps> = ({ initialO
   const { user } = useAuth();
   const { formatPrice } = useSettings();
   const { showToast } = useToast();
-  const vendorId = user?.vendorId || 'vend-kofi';
+  const vendorId = user?.vendorId || '';
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

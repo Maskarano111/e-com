@@ -28,17 +28,17 @@ import { MobileBottomNav } from './components/common/MobileBottomNav';
 import { ScentQuizModal } from './components/common/ScentQuizModal';
 import { WhatsAppButton } from './components/common/WhatsAppButton';
 
-import { HomeView } from './views/HomeView';
-import { ShopView } from './views/ShopView';
-import { ProductDetailView } from './views/ProductDetailView';
-import { CartView } from './views/CartView';
-import { CheckoutView } from './views/CheckoutView';
-import { OrderConfirmationView } from './views/OrderConfirmationView';
-import { WishlistView } from './views/WishlistView';
-import { AuthViews } from './views/AuthViews';
-
 // Lazy-Loaded Views for Performance and Route Code-Splitting
 import { PageSkeleton } from './components/common/Skeletons';
+
+const HomeView = React.lazy(() => import('./views/HomeView').then(m => ({ default: m.HomeView })));
+const ShopView = React.lazy(() => import('./views/ShopView').then(m => ({ default: m.ShopView })));
+const ProductDetailView = React.lazy(() => import('./views/ProductDetailView').then(m => ({ default: m.ProductDetailView })));
+const CartView = React.lazy(() => import('./views/CartView').then(m => ({ default: m.CartView })));
+const CheckoutView = React.lazy(() => import('./views/CheckoutView').then(m => ({ default: m.CheckoutView })));
+const OrderConfirmationView = React.lazy(() => import('./views/OrderConfirmationView').then(m => ({ default: m.OrderConfirmationView })));
+const WishlistView = React.lazy(() => import('./views/WishlistView').then(m => ({ default: m.WishlistView })));
+const AuthViews = React.lazy(() => import('./views/AuthViews').then(m => ({ default: m.AuthViews })));
 
 const OrderTrackingView = React.lazy(() => import('./views/OrderTrackingView').then(m => ({ default: m.OrderTrackingView })));
 const CustomerDashboardView = React.lazy(() => import('./views/CustomerDashboardView').then(m => ({ default: m.CustomerDashboardView })));
@@ -107,7 +107,7 @@ const MainApp: React.FC = () => {
   } = useAppNavigation();
 
   // Derived flags to avoid repeating compound conditions in JSX
-  const isAuthView = currentView === 'login' || currentView === 'register' || currentView === 'forgot-password';
+  const isAuthView = currentView === 'login' || currentView === 'register' || currentView === 'forgot-password' || currentView === 'reset-password';
   const isStaticPage = ['about', 'contact', 'faq', 'terms', 'privacy', 'returns'].includes(currentView);
 
   // Admin Dashboard Portal
@@ -206,48 +206,60 @@ const MainApp: React.FC = () => {
       <main className="flex-1">
         {currentView === 'home' && (
           <ErrorBoundary name="Home">
-            <HomeView onNavigate={handleNavigate} onOpenQuickView={handleOpenQuickView} />
+            <React.Suspense fallback={<PageSkeleton />}>
+              <HomeView onNavigate={handleNavigate} onOpenQuickView={handleOpenQuickView} />
+            </React.Suspense>
           </ErrorBoundary>
         )}
 
         {currentView === 'shop' && (
           <ErrorBoundary name="Shop">
-            <ShopView
-              initialCategory={viewParams.category}
-              initialSearch={viewParams.search}
-              initialDealsOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
-              initialFlashDealOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
-              onNavigate={handleNavigate}
-              onOpenQuickView={handleOpenQuickView}
-            />
+            <React.Suspense fallback={<PageSkeleton />}>
+              <ShopView
+                initialCategory={viewParams.category}
+                initialSearch={viewParams.search}
+                initialDealsOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
+                initialFlashDealOnly={viewParams.dealsOnly || viewParams.isFlashDeal}
+                onNavigate={handleNavigate}
+                onOpenQuickView={handleOpenQuickView}
+              />
+            </React.Suspense>
           </ErrorBoundary>
         )}
 
         {currentView === 'product-detail' && (
           <ErrorBoundary name="Product Detail">
-            <ProductDetailView
-              productId={viewParams.productId || viewParams.id || 'prod-portable-blender'}
-              onNavigate={handleNavigate}
-              onOpenQuickView={handleOpenQuickView}
-            />
+            <React.Suspense fallback={<PageSkeleton />}>
+              <ProductDetailView
+                productId={viewParams.productId || viewParams.id || 'prod-portable-blender'}
+                onNavigate={handleNavigate}
+                onOpenQuickView={handleOpenQuickView}
+              />
+            </React.Suspense>
           </ErrorBoundary>
         )}
 
         {currentView === 'cart' && (
           <ErrorBoundary name="Cart">
-            <CartView onNavigate={handleNavigate} />
+            <React.Suspense fallback={<PageSkeleton />}>
+              <CartView onNavigate={handleNavigate} />
+            </React.Suspense>
           </ErrorBoundary>
         )}
 
         {currentView === 'checkout' && (
           <ErrorBoundary name="Checkout">
-            <CheckoutView onNavigate={handleNavigate} />
+            <React.Suspense fallback={<PageSkeleton />}>
+              <CheckoutView onNavigate={handleNavigate} />
+            </React.Suspense>
           </ErrorBoundary>
         )}
 
         {currentView === 'order-confirmation' && (
           <ErrorBoundary name="Order Confirmation">
-            <OrderConfirmationView order={viewParams.order} onNavigate={handleNavigate} />
+            <React.Suspense fallback={<PageSkeleton />}>
+              <OrderConfirmationView order={viewParams.order} onNavigate={handleNavigate} />
+            </React.Suspense>
           </ErrorBoundary>
         )}
 
@@ -273,13 +285,17 @@ const MainApp: React.FC = () => {
 
         {currentView === 'wishlist' && (
           <ErrorBoundary name="Wishlist">
-            <WishlistView onNavigate={handleNavigate} onOpenQuickView={handleOpenQuickView} />
+            <React.Suspense fallback={<PageSkeleton />}>
+              <WishlistView onNavigate={handleNavigate} onOpenQuickView={handleOpenQuickView} />
+            </React.Suspense>
           </ErrorBoundary>
         )}
 
         {isAuthView && (
           <ErrorBoundary name="Auth">
-            <AuthViews mode={currentView as any} onNavigate={handleNavigate} />
+            <React.Suspense fallback={<PageSkeleton />}>
+              <AuthViews mode={currentView as any} resetToken={viewParams.token} resetEmail={viewParams.email} onNavigate={handleNavigate} />
+            </React.Suspense>
           </ErrorBoundary>
         )}
 

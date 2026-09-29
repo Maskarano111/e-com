@@ -28,7 +28,13 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'store.json');
 
 export interface DatabaseSchema {
-  users: (User & { passwordHash: string })[];
+  users: (User & {
+    passwordHash: string;
+    passwordChangedAt?: string;
+    passwordReset?: { tokenHash: string; expiresAt: number };
+    resetToken?: string;
+    resetTokenExpiry?: number;
+  })[];
   products: Product[];
   categories: Category[];
   orders: Order[];
@@ -62,9 +68,9 @@ const DEFAULT_SETTINGS: StoreSettings = {
   freeDeliveryThreshold: 500,
   taxRate: 0.035, // 3.5% VAT / NHIL
   enableCOD: true,
-  enableMoMo: true,
-  enableCard: true,
-  enablePaystack: true,
+  enableMoMo: false,
+  enableCard: false,
+  enablePaystack: false,
   socialLinks: {
     facebook: "https://facebook.com/novamartgh",
     instagram: "https://instagram.com/novamartgh",
@@ -431,6 +437,18 @@ class Database {
           }));
         }
         if (!parsed.orders || parsed.orders.length === 0) parsed.orders = DEFAULT_ORDERS;
+        parsed.orders = parsed.orders.map((order: any) => ({
+          ...order,
+          items: (order.items || []).map((item: any) => {
+            const product = parsed.products.find((entry: Product) => entry.id === (item.productId || item.id));
+            return product ? {
+              ...item,
+              productId: item.productId || product.id,
+              vendorId: item.vendorId || product.vendorId,
+              vendorName: item.vendorName || product.vendorName
+            } : item;
+          })
+        }));
         if (!parsed.reviews || parsed.reviews.length === 0) parsed.reviews = DEFAULT_REVIEWS;
         if (!parsed.vendors) parsed.vendors = initialVendors;
         if (!parsed.payouts) parsed.payouts = [];

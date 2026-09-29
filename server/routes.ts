@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { GoogleGenAI } from '@google/genai';
 import bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { db } from './db';
 import {
@@ -30,7 +31,10 @@ import {
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'novamart_jwt_secure_signing_secret_gh_2026';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'novamart_jwt_secure_signing_secret_gh_2026');
+if (!JWT_SECRET || (process.env.NODE_ENV === 'production' && (JWT_SECRET.length < 32 || /replace_with|your_|change_me|placeholder|example/i.test(JWT_SECRET)))) {
+  throw new Error('Set a unique JWT_SECRET of at least 32 characters before starting in production.');
+}
 
 // Extended Express Request with decoded user payload
 export interface AuthRequest extends Request {
@@ -55,6 +59,10 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
   // Check real JWT
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const account = (db.get('users') || []).find((user: any) => user.id === decoded.id);
+    if (account?.passwordChangedAt && Number(decoded.iat || 0) * 1000 < new Date(account.passwordChangedAt).getTime()) {
+      return res.status(403).json({ error: 'Your password changed. Please sign in again.' });
+    }
     req.user = decoded;
     return next();
   } catch (err) {
@@ -82,9 +90,154 @@ export const requireRole = (allowedRoles: string[]) => {
   };
 };
 
+const ADMIN_ROLES = ['super_admin', 'admin', 'store_manager'];
+const isBcryptHash = (value?: string) => Boolean(value && (value.startsWith('$2a$') || value.startsWith('$2b$')));
+const isAdminUser = (user?: AuthRequest['user']) => Boolean(user && ADMIN_ROLES.includes(user.role));
+const getVendorForUser = (userId: string) => (db.get('vendors') || []).find((vendor: any) => vendor.userId === userId);
+const vendorBelongsToUser = (vendorId: string, userId: string) => {
+  const vendor = (db.get('vendors') || []).find((item: any) => item.id === vendorId || item.userId === vendorId);
+  return Boolean(vendor && vendor.userId === userId);
+};
+
+// Enforce API access centrally so individual dashboard routes cannot accidentally omit authorization.
+router.use((req: AuthRequest, res: Response, next: NextFunction) => {
+  const path = req.path;
+  const method = req.method.toUpperCase();
+  const read = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+  const vendorResource = path.match(/^\/vendors\/([^/]+)\/(orders|stats|payouts)$/);
+  const publicVendorRead = read && /^\/vendors\/[^/]+$/.test(path);
+  const publicOrderRead = read && /^\/orders\/[^/]+$/.test(path);
+  const orderCreate = method === 'POST' && path === '/orders';
+  const vendorProductMatch = path.match(/^\/vendors\/([^/]+)\/products(?:\/([^/]+))?$/);
+  const vendorProductWrite = Boolean(vendorProductMatch && !read);
+  const vendorProfileMatch = path.match(/^\/vendors\/([^/]+)$/);
+  const vendorProfileWrite = Boolean(vendorProfileMatch && method === 'PUT');
+  const vendorPromotionStatus = path.match(/^\/vendor\/([^/]+)\/promotion-status$/);
+  const vendorReplyWrite = method === 'PUT' && /^\/reviews\/[^/]+\/reply$/.test(path);
+  const orderStatusWrite = method === 'PUT' && /^\/orders\/[^/]+\/status$/.test(path);
+  const adminVendorAction = /^\/vendors\/[^/]+\/(?:approve|suspend|reject)$/.test(path) || (method === 'DELETE' && /^\/vendors\/[^/]+$/.test(path));
+  const adminResourceWrite = !read && (
+    /^\/products(?:\/[^/]+)?$/.test(path) || /^\/products\/[^/]+\/duplicate$/.test(path) ||
+    /^\/(?:categories|coupons|banners)(?:\/|$)/.test(path) && path !== '/coupons/validate' ||
+    /^\/reviews\/[^/]+\/status$/.test(path) ||
+    (method === 'DELETE' && /^\/reviews\/[^/]+$/.test(path)) ||
+    (method === 'PUT' && path === '/settings')
+  );
+  const adminRequest = path.startsWith('/admin/') || (path === '/vendors' && read) ||
+    adminVendorAction || adminResourceWrite || (path === '/payments' && read);
+  const profileRequest = path === '/auth/me' || path === '/auth/profile' || path === '/auth/change-password';
+  const vendorRequest = Boolean(vendorResource || vendorProductWrite || vendorProfileWrite || vendorPromotionStatus ||
+    path === '/vendor/subscribe-plan' || /^\/vendor\/products\/[^/]+\/toggle-promotion$/.test(path) || vendorReplyWrite);
+  const customerRequest = profileRequest || path.startsWith('/addresses') || path.startsWith('/notifications') ||
+    /^\/users\/[^/]+\/loyalty(?:\/redeem)?$/.test(path) || path === '/orders' && read ||
+    /^\/orders\/[^/]+\/return-request$/.test(path) || path === '/orders' && method === 'PUT';
+  const protectedReviewWrite = method === 'POST' && (path === '/reviews' || /^\/products\/[^/]+\/reviews$/.test(path));
+
+  if (orderCreate) {
+    if (!req.headers.authorization) return next();
+    return authenticateToken(req, res, () => {
+      if (req.body?.userId && req.user?.id !== req.body.userId) return res.status(403).json({ error: 'You can only place orders for your own account.' });
+      next();
+    });
+  }
+
+  if (!adminRequest && !vendorRequest && !customerRequest && !protectedReviewWrite && !orderStatusWrite) {
+    // Public storefront reads stay public even when a browser has an expired token.
+    if ((publicVendorRead || publicOrderRead) && req.headers.authorization) {
+      try {
+        const token = req.headers.authorization.replace(/^Bearer\s+/i, '');
+        req.user = jwt.verify(token, JWT_SECRET) as any;
+      } catch { /* Treat invalid optional credentials as anonymous. */ }
+    }
+    return next();
+  }
+
+  authenticateToken(req, res, () => {
+    const user = req.user;
+    if (!user) return res.status(401).json({ error: 'Authentication required.' });
+    if (adminRequest && !isAdminUser(user)) return res.status(403).json({ error: 'Administrator access required.' });
+    if (protectedReviewWrite && !['customer', ...ADMIN_ROLES].includes(user.role)) return res.status(403).json({ error: 'Customer access required.' });
+    if (customerRequest && !adminRequest && !['customer', 'vendor', ...ADMIN_ROLES].includes(user.role)) return res.status(403).json({ error: 'Access denied.' });
+
+    const reviewProduct = vendorReplyWrite ? (db.get('reviews') || []).find((review: any) => review.id === path.split('/')[2]) : null;
+    const reviewOwnerProduct = reviewProduct && (db.get('products') || []).find((product: any) => product.id === reviewProduct.productId);
+    const targetVendorId = vendorResource?.[1] || vendorProductMatch?.[1] || vendorProfileMatch?.[1] ||
+      vendorPromotionStatus?.[1] || req.body?.vendorId || (vendorReplyWrite ? reviewOwnerProduct?.vendorId : undefined);
+    if (vendorRequest && !isAdminUser(user)) {
+      if (user.role !== 'vendor' || !targetVendorId || !vendorBelongsToUser(targetVendorId, user.id)) {
+        return res.status(403).json({ error: 'This seller account cannot access that store.' });
+      }
+      const productId = vendorProductMatch?.[2] || path.match(/^\/vendor\/products\/([^/]+)\/toggle-promotion$/)?.[1];
+      if (productId) {
+        const product = (db.get('products') || []).find((item: any) => item.id === productId);
+        const vendor = getVendorForUser(user.id);
+        if (!product || product.vendorId !== vendor?.id) return res.status(403).json({ error: 'This product does not belong to your store.' });
+      }
+      const vendor = getVendorForUser(user.id);
+      const sellerSetup = vendorProfileWrite && method === 'PUT';
+      if (vendor?.status !== 'active' && !sellerSetup) {
+        return res.status(403).json({ error: 'Your seller account must be active to use this feature.' });
+      }
+    }
+
+    const routeUserId = path.match(/^\/users\/([^/]+)\/loyalty/)?.[1];
+    const requestedUserId = routeUserId ?? ((path === '/auth/profile' || path === '/auth/change-password') ? req.body?.userId : undefined);
+    if (requestedUserId && requestedUserId !== user.id && !isAdminUser(user)) return res.status(403).json({ error: 'You can only access your own account.' });
+    if (path === '/notifications' && req.query.target === 'admin' && !isAdminUser(user)) return res.status(403).json({ error: 'Administrator notifications are restricted.' });
+    const queryUserId = path === '/addresses' || path === '/notifications' ? req.query.userId : undefined;
+    if (queryUserId && queryUserId !== user.id && !isAdminUser(user)) return res.status(403).json({ error: 'You can only access your own account.' });
+    if (!read && (path === '/addresses' || path === '/notifications') && req.body?.userId && req.body.userId !== user.id && !isAdminUser(user)) return res.status(403).json({ error: 'You can only update your own account data.' });
+
+    if (path === '/orders' && read && !isAdminUser(user) && user.role !== 'customer') return res.status(403).json({ error: 'Customer order access required.' });
+    if (path === '/orders' && read && req.query.userId && req.query.userId !== user.id && !isAdminUser(user)) return res.status(403).json({ error: 'You can only view your own orders.' });
+
+    const returnOrderId = path.match(/^\/orders\/([^/]+)\/return-request$/)?.[1];
+    if (returnOrderId && !isAdminUser(user)) {
+      const returnOrder = (db.get('orders') || []).find((item: any) => item.id === returnOrderId || item.orderNumber === returnOrderId);
+      if (!returnOrder || (returnOrder.userId !== user.id && returnOrder.customerEmail?.toLowerCase() !== user.email.toLowerCase())) {
+        return res.status(403).json({ error: 'You can only request a return for your own order.' });
+      }
+    }
+
+    if (orderStatusWrite && !isAdminUser(user)) {
+      const orderId = path.split('/')[2];
+      const order = (db.get('orders') || []).find((item: any) => item.id === orderId || item.orderNumber === orderId);
+      if (user.role === 'customer') {
+        const ownsOrder = order && (order.userId === user.id || order.customerEmail?.toLowerCase() === user.email.toLowerCase());
+        if (req.body?.status !== 'Cancelled' || !ownsOrder) return res.status(403).json({ error: 'You can only cancel your own eligible orders.' });
+        if (order.paymentStatus === 'successful' || ['Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'].includes(order.orderStatus)) {
+          return res.status(409).json({ error: 'This order can no longer be cancelled. Request a return after delivery if needed.' });
+        }
+        return next();
+      }
+      const vendor = getVendorForUser(user.id);
+      if (user.role !== 'vendor' || !order || !vendor || !order.items.length || !order.items.every((item: any) => item.vendorId === vendor.id)) {
+        return res.status(403).json({ error: 'This order does not belong to your store.' });
+      }
+    }
+
+    if (!read && (adminRequest || vendorRequest || orderStatusWrite)) {
+      res.on('finish', () => {
+        if (res.statusCode >= 400) return;
+        const log = db.get('auditLog') || [];
+        log.unshift({ id: uid('audit'), actorId: user.id, actorRole: user.role, action: `${method} ${path}`, status: res.statusCode, createdAt: new Date().toISOString() });
+        db.set('auditLog', log.slice(0, 1000));
+      });
+    }
+    next();
+  });
+});
+
 // Helper to generate IDs
 const uid = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
 const generateOrderNumber = () => `NM-GH-${Math.floor(10000 + Math.random() * 90000)}`;
+const parseCouponDate = (value: string, endOfDay = false) => {
+  const raw = String(value || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return Date.parse(`${raw}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`);
+  return new Date(raw).getTime();
+};
+const couponIsInDateWindow = (coupon: Coupon, now = Date.now()) =>
+  (!coupon.startDate || parseCouponDate(coupon.startDate) <= now) && parseCouponDate(coupon.expiryDate, true) >= now;
 
 // ----------------------------------------------------
 // 1. AUTHENTICATION & USER MANAGEMENT
@@ -100,8 +253,8 @@ router.post('/auth/register', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Please provide first name, last name, email, and password' });
   }
 
-  if (cleanPass.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  if (cleanPass.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
   const users = db.get('users');
@@ -157,7 +310,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
   let user = users.find(u => u.email.toLowerCase() === cleanEmail);
 
   // Fallback demo matching for convenience if domain variant used
-  if (!user) {
+  if (!user && process.env.NODE_ENV !== 'production') {
     if (cleanEmail.startsWith('admin@')) {
       user = users.find(u => u.role === 'super_admin' || u.role === 'admin');
     } else if (cleanEmail.startsWith('manager@')) {
@@ -169,6 +322,9 @@ router.post('/auth/login', async (req: Request, res: Response) => {
 
   if (!user) {
     return res.status(401).json({ error: 'Invalid email or password' });
+  }
+  if (process.env.NODE_ENV === 'production' && !isBcryptHash(user.passwordHash)) {
+    return res.status(401).json({ error: 'Set a new password using the secure password reset link before signing in.' });
   }
 
   // Password verification: check bcrypt hash, with backward-compatibility for demo seeds
@@ -207,7 +363,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
     { expiresIn: '7d' }
   );
 
-  const { passwordHash, ...userWithoutPass } = user;
+  const { passwordHash, passwordReset, passwordChangedAt, resetToken, resetTokenExpiry, ...userWithoutPass } = user;
   res.json({ user: userWithoutPass, token });
 });
 
@@ -220,12 +376,15 @@ router.post('/auth/admin-login', async (req: Request, res: Response) => {
   let user = users.find(u => u.email.toLowerCase() === cleanEmail);
 
   // Fallback demo admin matching
-  if (!user && (cleanEmail.startsWith('admin@') || cleanEmail.startsWith('manager@'))) {
+  if (!user && process.env.NODE_ENV !== 'production' && (cleanEmail.startsWith('admin@') || cleanEmail.startsWith('manager@'))) {
     user = users.find(u => u.role === 'super_admin' || u.role === 'admin' || u.role === 'store_manager');
   }
   
   if (!user || (user.role !== 'super_admin' && user.role !== 'admin' && user.role !== 'store_manager')) {
     return res.status(403).json({ error: 'Access denied: Admin credentials required' });
+  }
+  if (process.env.NODE_ENV === 'production' && !isBcryptHash(user.passwordHash)) {
+    return res.status(401).json({ error: 'Set a new password using the secure password reset link before signing in.' });
   }
 
   let isPasswordValid = false;
@@ -257,7 +416,7 @@ router.post('/auth/admin-login', async (req: Request, res: Response) => {
     { expiresIn: '7d' }
   );
 
-  const { passwordHash, ...userWithoutPass } = user;
+  const { passwordHash, passwordReset, passwordChangedAt, resetToken, resetTokenExpiry, ...userWithoutPass } = user;
   res.json({ user: userWithoutPass, token });
 });
 
@@ -274,13 +433,15 @@ router.post('/auth/vendor-login', async (req: Request, res: Response) => {
   const users = db.get('users') || [];
 
   // Match vendor by email or owner name
-  const vendor = vendors.find(v => 
+  const vendor = vendors.find(v =>
     v.email.toLowerCase() === cleanEmail ||
-    v.ownerName.toLowerCase().includes(cleanEmail) ||
-    (cleanEmail.startsWith('vendor@') || cleanEmail.startsWith('kofi@'))
+    (process.env.NODE_ENV !== 'production' && (v.ownerName.toLowerCase().includes(cleanEmail) || cleanEmail.startsWith('vendor@') || cleanEmail.startsWith('kofi@')))
   );
 
   let user = users.find(u => u.email.toLowerCase() === cleanEmail && u.role === 'vendor');
+  if (process.env.NODE_ENV === 'production' && (!vendor || !user || !isBcryptHash(user.passwordHash))) {
+    return res.status(401).json({ error: 'Set a seller password using the secure password reset link before signing in.' });
+  }
   if (!user && vendor) {
     user = users.find(u => u.id === vendor.userId);
     if (!user) {
@@ -357,7 +518,7 @@ router.post('/auth/vendor-login', async (req: Request, res: Response) => {
     { expiresIn: '7d' }
   );
 
-  const { passwordHash, ...userWithoutPass } = activeUser;
+  const { passwordHash, passwordReset, passwordChangedAt, resetToken, resetTokenExpiry, ...userWithoutPass } = activeUser;
   res.json({ user: userWithoutPass, token, vendor });
 });
 
@@ -393,7 +554,7 @@ router.get('/auth/me', (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Invalid token session' });
   }
 
-  const { passwordHash, ...userWithoutPass } = user;
+  const { passwordHash, passwordReset, passwordChangedAt, resetToken, resetTokenExpiry, ...userWithoutPass } = user;
   res.json({ user: userWithoutPass });
 });
 
@@ -415,11 +576,11 @@ router.put('/auth/profile', (req: Request, res: Response) => {
   };
 
   db.set('users', users);
-  const { passwordHash, ...userWithoutPass } = users[userIndex];
+  const { passwordHash, passwordReset, passwordChangedAt, resetToken, resetTokenExpiry, ...userWithoutPass } = users[userIndex];
   res.json({ user: userWithoutPass });
 });
 
-router.put('/auth/change-password', (req: Request, res: Response) => {
+router.put('/auth/change-password', async (req: Request, res: Response) => {
   const { userId, currentPassword, newPassword } = req.body;
   const users = db.get('users');
   const userIndex = users.findIndex(u => u.id === userId);
@@ -427,44 +588,63 @@ router.put('/auth/change-password', (req: Request, res: Response) => {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  if (users[userIndex].passwordHash !== currentPassword) {
+  const storedPassword = users[userIndex].passwordHash || '';
+  const isHashed = storedPassword.startsWith('$2a$') || storedPassword.startsWith('$2b$');
+  const currentPasswordValid = isHashed
+    ? await bcrypt.compare(currentPassword || '', storedPassword)
+    : storedPassword === currentPassword;
+  if (!currentPasswordValid) {
     return res.status(400).json({ error: 'Current password is incorrect' });
   }
+  if (typeof newPassword !== 'string' || newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
 
-  users[userIndex].passwordHash = newPassword;
+  users[userIndex].passwordHash = await bcrypt.hash(newPassword, 10);
+  users[userIndex].passwordChangedAt = new Date(Math.floor(Date.now() / 1000) * 1000).toISOString();
   users[userIndex].updatedAt = new Date().toISOString();
   db.set('users', users);
 
   res.json({ message: 'Password updated successfully' });
 });
 
-router.post('/auth/forgot-password', (req: Request, res: Response) => {
-  const { email } = req.body;
-  const users = db.get('users');
-  const user = users.find(u => u.email.toLowerCase() === (email || '').toLowerCase());
-  if (!user) {
-    return res.status(404).json({ error: 'No account found with this email address' });
+router.post('/auth/forgot-password', async (req: Request, res: Response) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const genericMessage = 'If an account exists for that email, password reset instructions have been sent.';
+  if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(200).json({ message: genericMessage });
   }
-
-  // Generate a real reset token (in production use crypto.randomBytes)
-  const resetToken = `RESET-${user.id}-${Date.now().toString(36)}`;
-
-  // Send the actual password reset email
-  sendPasswordResetEmail(user.email, user.firstName || 'Customer', resetToken).catch(() => {});
-
-  res.json({ message: `Password reset instructions have been sent to ${email}.` });
+  const users = db.get('users') as any[];
+  const userIndex = users.findIndex(u => u.email.toLowerCase() === email);
+  if (userIndex !== -1) {
+    const resetToken = randomBytes(32).toString('hex');
+    users[userIndex].passwordReset = {
+      tokenHash: createHash('sha256').update(resetToken).digest('hex'),
+      expiresAt: Date.now() + 30 * 60 * 1000
+    };
+    db.set('users', users);
+    await sendPasswordResetEmail(email, users[userIndex].firstName || 'Customer', resetToken);
+  }
+  res.json({ message: genericMessage });
 });
 
-router.post('/auth/reset-password', (req: Request, res: Response) => {
-  const { email, token, newPassword } = req.body;
-  const users = db.get('users');
-  const userIndex = users.findIndex(u => u.email.toLowerCase() === (email || '').toLowerCase());
-  if (userIndex === -1) {
-    return res.status(404).json({ error: 'User not found' });
+router.post('/auth/reset-password', async (req: Request, res: Response) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const { token, newPassword } = req.body || {};
+  if (typeof token !== 'string' || token.length !== 64 || typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 128) {
+    return res.status(400).json({ error: 'A valid reset link and a password of at least 8 characters are required.' });
   }
-
-  users[userIndex].passwordHash = newPassword;
-  users[userIndex].updatedAt = new Date().toISOString();
+  const users = db.get('users') as any[];
+  const userIndex = users.findIndex(u => u.email.toLowerCase() === email);
+  const user = users[userIndex];
+  const tokenHash = createHash('sha256').update(token).digest('hex');
+  if (!user || !user.passwordReset || user.passwordReset.expiresAt <= Date.now() || user.passwordReset.tokenHash !== tokenHash) {
+    return res.status(400).json({ error: 'This password reset link is invalid or has expired. Request a new link.' });
+  }
+  user.passwordHash = await bcrypt.hash(newPassword, 10);
+  user.passwordChangedAt = new Date(Math.floor(Date.now() / 1000) * 1000).toISOString();
+  delete user.passwordReset;
+  delete user.resetToken;
+  delete user.resetTokenExpiry;
+  user.updatedAt = new Date().toISOString();
   db.set('users', users);
 
   res.json({ message: 'Password has been reset successfully. Please log in.' });
@@ -904,7 +1084,7 @@ router.post('/coupons/validate', (req: Request, res: Response) => {
   if (coupon.status !== 'active') {
     return res.status(400).json({ error: 'This coupon is inactive' });
   }
-  if (new Date(coupon.expiryDate).getTime() < new Date().getTime()) {
+  if (!couponIsInDateWindow(coupon)) {
     return res.status(400).json({ error: 'This coupon has expired' });
   }
   if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) {
@@ -989,9 +1169,8 @@ router.delete('/coupons/:id', (req: Request, res: Response) => {
 // ----------------------------------------------------
 // 5. ORDERS & CHECKOUT
 // ----------------------------------------------------
-router.post('/orders', (req: Request, res: Response) => {
+router.post('/orders', (req: AuthRequest, res: Response) => {
   const {
-    userId,
     customerName,
     customerEmail,
     customerPhone,
@@ -1000,50 +1179,90 @@ router.post('/orders', (req: Request, res: Response) => {
     deliveryMethod,
     paymentMethod,
     couponCode,
-    paymentReference
+    idempotencyKey
   } = req.body;
 
   if (!items || !items.length) {
     return res.status(400).json({ error: 'Order must have at least one item' });
   }
-  if (!customerName || !customerEmail || !customerPhone || !deliveryAddress) {
+  const normalizedEmail = typeof customerEmail === 'string' ? customerEmail.trim().toLowerCase() : '';
+  const normalizedPhone = typeof customerPhone === 'string' ? customerPhone.trim() : '';
+  if (typeof customerName !== 'string' || !customerName.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) || normalizedPhone.replace(/\D/g, '').length < 8 || !deliveryAddress || typeof deliveryAddress !== 'object') {
     return res.status(400).json({ error: 'Customer and delivery information are required' });
   }
+  if (typeof idempotencyKey !== 'string' || !/^[a-zA-Z0-9_-]{20,100}$/.test(idempotencyKey)) {
+    return res.status(400).json({ error: 'A valid checkout request key is required. Please refresh checkout and try again.' });
+  }
+  if (paymentMethod !== 'cash_on_delivery') {
+    return res.status(400).json({ error: 'Online payments are not available yet. Please choose Pay on Delivery.' });
+  }
+  const existingOrder = db.get('orders').find((order: any) => order.idempotencyKey === idempotencyKey && order.customerEmail?.toLowerCase() === normalizedEmail);
+  if (existingOrder) return res.status(200).json(existingOrder);
 
   const products = db.get('products');
   const settings = db.get('settings');
+  if (!settings.enableCOD) return res.status(400).json({ error: 'Pay on Delivery is temporarily unavailable.' });
 
-  // Validate stock quantities & calculate subtotal
+  // Validate stock quantities and rebuild each cart line from server-owned product data.
   let subtotal = 0;
+  const normalizedItems: any[] = [];
+  const requestedQuantities = new Map<string, number>();
+  for (const item of items) {
+    const quantity = Number(item.quantity);
+    if (!item.productId || !Number.isInteger(quantity) || quantity <= 0) return res.status(400).json({ error: 'Each item must have a product and a positive whole-number quantity.' });
+    requestedQuantities.set(item.productId, (requestedQuantities.get(item.productId) || 0) + quantity);
+  }
+  for (const [productId, requestedQuantity] of requestedQuantities) {
+    const product = products.find(p => p.id === productId);
+    if (!product || product.status !== 'active') return res.status(400).json({ error: 'One or more products are no longer available.' });
+    if (product.stockQuantity < requestedQuantity) {
+      return res.status(400).json({ error: `Insufficient stock for "${product.name}". Available: ${product.stockQuantity}, Requested: ${requestedQuantity}` });
+    }
+  }
   for (const item of items) {
     const product = products.find(p => p.id === item.productId);
-    if (!product) {
+    if (!product || product.status !== 'active') {
       return res.status(400).json({ error: `Product ${item.name || item.productId} no longer exists` });
     }
-    if (product.stockQuantity < item.quantity) {
+    const quantity = Number(item.quantity);
+    if (!Number.isInteger(quantity) || quantity <= 0) return res.status(400).json({ error: 'Each item quantity must be a positive whole number' });
+    if (product.stockQuantity < quantity) {
       return res.status(400).json({
-        error: `Insufficient stock for "${product.name}". Available: ${product.stockQuantity}, Requested: ${item.quantity}`
+        error: `Insufficient stock for "${product.name}". Available: ${product.stockQuantity}, Requested: ${quantity}`
       });
     }
-    subtotal += (item.price || product.discountPrice || product.price) * item.quantity;
+    const unitPrice = Number(product.discountPrice || product.price);
+    subtotal += unitPrice * quantity;
+    normalizedItems.push({
+      ...item,
+      productId: product.id,
+      productName: product.name,
+      name: product.name,
+      productImage: product.featuredImage || product.images?.[0] || '',
+      sku: product.sku,
+      unitPrice,
+      price: unitPrice,
+      quantity,
+      total: unitPrice * quantity,
+      vendorId: product.vendorId,
+      vendorName: product.vendorName
+    });
   }
 
   // Calculate discount if coupon applied
   let discount = 0;
   if (couponCode) {
     const coupons = db.get('coupons');
-    const coupon = coupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase());
-    if (coupon && coupon.status === 'active') {
-      if (coupon.discountType === 'percentage') {
-        discount = (subtotal * coupon.value) / 100;
-        if (coupon.maximumDiscount && discount > coupon.maximumDiscount) {
-          discount = coupon.maximumDiscount;
-        }
-      } else {
-        discount = coupon.value;
-      }
-      coupon.usageCount += 1;
-      db.set('coupons', coupons);
+    const coupon = coupons.find(c => c.code.toUpperCase() === String(couponCode).trim().toUpperCase());
+    const now = Date.now();
+    if (!coupon || coupon.status !== 'active' || !couponIsInDateWindow(coupon, now) || (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) || subtotal < coupon.minimumPurchase) {
+      return res.status(400).json({ error: 'This coupon is invalid, expired, unavailable, or does not meet its minimum order amount.' });
+    }
+    if (coupon.discountType === 'percentage') {
+      discount = (subtotal * coupon.value) / 100;
+      if (coupon.maximumDiscount && discount > coupon.maximumDiscount) discount = coupon.maximumDiscount;
+    } else {
+      discount = Math.min(coupon.value, subtotal);
     }
   }
 
@@ -1062,8 +1281,8 @@ router.post('/orders', (req: Request, res: Response) => {
   const tax = taxableAmount * settings.taxRate;
   const total = Number((taxableAmount + deliveryFee + tax).toFixed(2));
 
-  // Decrement inventory stock
-  for (const item of items) {
+  // Reserve stock when an order is placed; cancellation before dispatch releases it.
+  for (const item of normalizedItems) {
     const productIndex = products.findIndex(p => p.id === item.productId);
     if (productIndex !== -1) {
       products[productIndex].stockQuantity = Math.max(0, products[productIndex].stockQuantity - item.quantity);
@@ -1073,19 +1292,21 @@ router.post('/orders', (req: Request, res: Response) => {
   db.set('products', products);
 
   // Generate unique order number
-  const orderNumber = generateOrderNumber();
+  let orderNumber = generateOrderNumber();
+  while (db.get('orders').some((order: any) => order.orderNumber === orderNumber)) orderNumber = generateOrderNumber();
   const orderId = uid('ord');
   const now = new Date().toISOString();
 
   // Create Order Record
   const newOrder: Order = {
     id: orderId,
+    idempotencyKey,
     orderNumber,
-    userId: userId || undefined,
-    customerName,
-    customerEmail,
-    customerPhone,
-    items,
+    userId: req.user?.id || undefined,
+    customerName: customerName.trim(),
+    customerEmail: normalizedEmail,
+    customerPhone: normalizedPhone,
+    items: normalizedItems,
     subtotal,
     discount,
     couponCode: couponCode || undefined,
@@ -1093,18 +1314,15 @@ router.post('/orders', (req: Request, res: Response) => {
     deliveryMethod: deliveryMethod || 'standard',
     tax: Number(tax.toFixed(2)),
     total,
-    paymentMethod: paymentMethod || 'mtn_momo',
-    paymentStatus: paymentMethod === 'cash_on_delivery' ? 'pending' : 'successful',
-    paymentReference: paymentReference || `REF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-    orderStatus: paymentMethod === 'cash_on_delivery' ? 'Order Placed' : 'Payment Confirmed',
+    paymentMethod: 'cash_on_delivery',
+    paymentStatus: 'pending',
+    paymentReference: undefined,
+    orderStatus: 'Order Placed',
     deliveryAddress,
     estimatedDeliveryDate: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
-    trackingNumber: `TRK-${orderNumber}`,
+    trackingNumber: '',
     timeline: [
-      { status: 'Order Placed', time: now, note: 'Order received in online store system' },
-      ...(paymentMethod !== 'cash_on_delivery'
-        ? [{ status: 'Payment Confirmed' as OrderStatus, time: now, note: `Payment verified via ${paymentMethod}` }]
-        : [])
+      { status: 'Order Placed', time: now, note: 'Order received; payment is due on delivery.' }
     ],
     createdAt: now,
     updatedAt: now
@@ -1114,19 +1332,28 @@ router.post('/orders', (req: Request, res: Response) => {
   orders.unshift(newOrder);
   db.set('orders', orders);
 
+  if (couponCode) {
+    const coupons = db.get('coupons');
+    const coupon = coupons.find(c => c.code.toUpperCase() === String(couponCode).trim().toUpperCase());
+    if (coupon) {
+      coupon.usageCount += 1;
+      db.set('coupons', coupons);
+    }
+  }
+
   // Create Payment Transaction Record
   const payments = db.get('payments');
   const newPayment: PaymentTransaction = {
     id: uid('pay'),
     orderId,
     orderNumber,
-    transactionReference: newOrder.paymentReference || '',
-    customerName,
-    customerEmail,
+    transactionReference: '',
+    customerName: newOrder.customerName,
+    customerEmail: newOrder.customerEmail,
     amount: total,
     currency: settings.currency,
     paymentMethod,
-    provider: paymentMethod === 'mtn_momo' ? 'MTN MoMo Ghana' : paymentMethod === 'paystack' ? 'Paystack' : paymentMethod,
+    provider: 'Cash on Delivery',
     status: newOrder.paymentStatus,
     createdAt: now
   };
@@ -1135,13 +1362,14 @@ router.post('/orders', (req: Request, res: Response) => {
 
   // Create notifications for customer & admin
   const notifications = db.get('notifications');
-  if (userId) {
+  const orderUserId = req.user?.id;
+  if (orderUserId) {
     notifications.unshift({
       id: uid('notif'),
-      userId,
+      userId: orderUserId,
       target: 'customer',
-      title: 'Order Confirmed! 🎉',
-      message: `Your order #${orderNumber} for GH₵ ${total} has been confirmed.`,
+      title: 'Order placed',
+      message: `Your order #${orderNumber} has been received. Payment is due on delivery.`,
       type: 'order',
       read: false,
       link: `/account/orders`,
@@ -1154,7 +1382,7 @@ router.post('/orders', (req: Request, res: Response) => {
     id: uid('notif'),
     target: 'admin',
     title: `New Order #${orderNumber}`,
-    message: `${customerName} placed an order for GH₵ ${total} via ${paymentMethod}.`,
+    message: `${newOrder.customerName} placed order #${orderNumber}. Payment is due on delivery.`,
     type: 'order',
     read: false,
     link: `/admin/orders`,
@@ -1193,11 +1421,13 @@ router.post('/orders', (req: Request, res: Response) => {
   res.status(201).json(newOrder);
 });
 
-router.get('/orders', (req: Request, res: Response) => {
+router.get('/orders', (req: AuthRequest, res: Response) => {
   const { userId, status, search } = req.query;
   let orders = db.get('orders');
 
-  if (userId) {
+  if (!isAdminUser(req.user)) {
+    orders = orders.filter(o => o.userId === req.user?.id || o.customerEmail.toLowerCase() === req.user?.email.toLowerCase());
+  } else if (userId) {
     orders = orders.filter(o => o.userId === userId);
   }
 
@@ -1218,22 +1448,32 @@ router.get('/orders', (req: Request, res: Response) => {
   res.json(orders);
 });
 
-router.get('/orders/:idOrNumber', (req: Request, res: Response) => {
+router.get('/orders/:idOrNumber', (req: AuthRequest, res: Response) => {
   const { idOrNumber } = req.params;
   const orders = db.get('orders');
   const order = orders.find(o => o.id === idOrNumber || o.orderNumber === idOrNumber || o.trackingNumber === idOrNumber);
   if (!order) {
     return res.status(404).json({ error: 'Order not found' });
   }
+  const isOwner = Boolean(req.user && (order.userId === req.user.id || order.customerEmail?.toLowerCase() === req.user.email?.toLowerCase()));
+  if (!isAdminUser(req.user) && !isOwner) {
+    const suppliedPhone = String(req.query.phone || '').replace(/\D/g, '');
+    const orderPhone = String(order.customerPhone || '').replace(/\D/g, '');
+    if (!suppliedPhone || suppliedPhone !== orderPhone) return res.status(403).json({ error: 'Enter the phone number used at checkout to view this order.' });
+  }
   res.json(order);
 });
 
 router.put('/orders/:id/status', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { status, note } = req.body;
-  if (!status) {
-    return res.status(400).json({ error: 'Order status is required' });
+  const { status, note, trackingNumber } = req.body;
+  const authReq = req as AuthRequest;
+  if (trackingNumber !== undefined && !isAdminUser(authReq.user)) return res.status(403).json({ error: 'Only administrators can assign courier tracking codes.' });
+  if (trackingNumber !== undefined && (typeof trackingNumber !== 'string' || trackingNumber.trim().length > 100 || /[<>]/.test(trackingNumber))) {
+    return res.status(400).json({ error: 'Enter a valid courier tracking code.' });
   }
+  const allowedStatuses: OrderStatus[] = ['Order Placed', 'Payment Confirmed', 'Processing', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'];
+  if (!allowedStatuses.includes(status)) return res.status(400).json({ error: 'Choose a valid order status.' });
 
   const orders = db.get('orders');
   const index = orders.findIndex(o => o.id === id || o.orderNumber === id);
@@ -1243,20 +1483,53 @@ router.put('/orders/:id/status', (req: Request, res: Response) => {
 
   const now = new Date().toISOString();
   const currentOrder = orders[index];
+  if (currentOrder.orderStatus === status) return res.json(currentOrder);
+  if (currentOrder.orderStatus === 'Cancelled' || currentOrder.orderStatus === 'Delivered') {
+    return res.status(409).json({ error: 'This order is already complete and its status cannot be changed.' });
+  }
+  if (status === 'Payment Confirmed' && currentOrder.paymentStatus !== 'successful') {
+    return res.status(400).json({ error: 'Payment can only be confirmed by a verified payment provider.' });
+  }
+  if (status === 'Cancelled' && currentOrder.paymentStatus === 'successful') {
+    return res.status(409).json({ error: 'Paid orders need a refund decision before cancellation.' });
+  }
+  if (status === 'Cancelled' && ['Shipped', 'Out for Delivery'].includes(currentOrder.orderStatus)) {
+    return res.status(400).json({ error: 'Orders already handed to the courier cannot be cancelled. Submit a return request after delivery.' });
+  }
 
   currentOrder.orderStatus = status as OrderStatus;
-  if (status === 'Delivered') {
+  if (trackingNumber !== undefined) currentOrder.trackingNumber = trackingNumber.trim();
+  if (status === 'Delivered' && currentOrder.paymentMethod === 'cash_on_delivery') {
     currentOrder.paymentStatus = 'successful';
+    const payments = db.get('payments');
+    payments.forEach((payment: any) => {
+      if (payment.orderId === currentOrder.id) payment.status = 'successful';
+    });
+    db.set('payments', payments);
   } else if (status === 'Cancelled') {
-    // Return stock
+    // Release reserved inventory exactly once; shipped orders cannot be cancelled here.
     const products = db.get('products');
     for (const item of currentOrder.items) {
       const pIndex = products.findIndex(p => p.id === item.productId);
       if (pIndex !== -1) {
         products[pIndex].stockQuantity += item.quantity;
+        products[pIndex].salesCount = Math.max(0, (products[pIndex].salesCount || 0) - item.quantity);
       }
     }
     db.set('products', products);
+    const payments = db.get('payments');
+    payments.forEach((payment: any) => {
+      if (payment.orderId === currentOrder.id && payment.status === 'pending') payment.status = 'cancelled';
+    });
+    db.set('payments', payments);
+    if (currentOrder.couponCode) {
+      const coupons = db.get('coupons');
+      const coupon = coupons.find((item: any) => item.code.toUpperCase() === currentOrder.couponCode.toUpperCase());
+      if (coupon) {
+        coupon.usageCount = Math.max(0, coupon.usageCount - 1);
+        db.set('coupons', coupons);
+      }
+    }
   }
 
   currentOrder.timeline.push({
@@ -1318,28 +1591,37 @@ router.get('/reviews', (req: Request, res: Response) => {
   res.json(reviews);
 });
 
-router.post('/reviews', (req: Request, res: Response) => {
-  const { productId, userId, userName, rating, title, comment } = req.body;
+router.post('/reviews', (req: AuthRequest, res: Response) => {
+  const { productId, rating, title, comment } = req.body;
   if (!productId || !rating || !title || !comment) {
     return res.status(400).json({ error: 'Product, rating, title and review comment are required' });
   }
 
   const products = db.get('products');
   const product = products.find(p => p.id === productId);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  const hasPaidOrder = db.get('orders').some((order: any) =>
+    order.userId === req.user?.id && order.paymentStatus === 'successful' && order.items.some((item: any) => item.productId === productId)
+  );
+  if (req.user?.role !== 'super_admin' && req.user?.role !== 'admin' && !hasPaidOrder) {
+    return res.status(403).json({ error: 'A completed purchase is required to review this product.' });
+  }
+  const account = db.get('users').find((user: any) => user.id === req.user?.id);
+  const userName = account ? `${account.firstName} ${account.lastName}`.trim() : req.user?.email || 'Verified Customer';
 
   const reviews = db.get('reviews');
   const newReview: Review = {
     id: uid('rev'),
     productId,
     productName: product?.name || 'Product',
-    userId: userId || 'usr-anon',
-    userName: userName || 'Verified Customer',
-    userAvatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userName || 'VC')}`,
+    userId: req.user?.id || '',
+    userName,
+    userAvatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userName)}`,
     rating: Number(rating),
     title,
     comment,
-    status: 'approved', // Auto approved for demo
-    verifiedPurchase: true,
+    status: 'pending',
+    verifiedPurchase: hasPaidOrder,
     createdAt: new Date().toISOString()
   };
 
@@ -1356,6 +1638,20 @@ router.post('/reviews', (req: Request, res: Response) => {
   }
 
   res.status(201).json(newReview);
+});
+
+router.put('/reviews/:id/reply', (req: AuthRequest, res: Response) => {
+  const review = (db.get('reviews') || []).find((item: any) => item.id === req.params.id);
+  if (!review) return res.status(404).json({ error: 'Review not found' });
+  const product = (db.get('products') || []).find((item: any) => item.id === review.productId);
+  const vendor = getVendorForUser(req.user?.id || '');
+  if (!isAdminUser(req.user) && (!vendor || product?.vendorId !== vendor.id)) return res.status(403).json({ error: 'This review does not belong to your store.' });
+  const reply = String(req.body?.reply || '').trim();
+  if (!reply || reply.length > 1000) return res.status(400).json({ error: 'Reply must be between 1 and 1000 characters.' });
+  review.vendorReply = reply;
+  review.vendorReplyDate = new Date().toISOString();
+  db.set('reviews', db.get('reviews'));
+  res.json(review);
 });
 
 router.put('/reviews/:id/status', (req: Request, res: Response) => {
@@ -1435,28 +1731,27 @@ router.delete('/banners/:id', (req: Request, res: Response) => {
 // ----------------------------------------------------
 // 8. ADDRESSES
 // ----------------------------------------------------
-router.get('/addresses', (req: Request, res: Response) => {
+router.get('/addresses', (req: AuthRequest, res: Response) => {
   const { userId } = req.query;
-  let addresses = db.get('addresses');
-  if (userId) {
-    addresses = addresses.filter(a => a.userId === userId);
-  }
+  const ownerId = isAdminUser(req.user) && userId ? userId : req.user?.id;
+  const addresses = db.get('addresses').filter(a => a.userId === ownerId);
   res.json(addresses);
 });
 
-router.post('/addresses', (req: Request, res: Response) => {
+router.post('/addresses', (req: AuthRequest, res: Response) => {
   const addr = req.body;
   const addresses = db.get('addresses');
+  const userId = isAdminUser(req.user) ? (addr.userId || req.user?.id) : req.user?.id;
 
   if (addr.isDefault) {
     addresses.forEach(a => {
-      if (a.userId === addr.userId) a.isDefault = false;
+      if (a.userId === userId) a.isDefault = false;
     });
   }
 
   const newAddress: DeliveryAddress = {
     id: uid('addr'),
-    userId: addr.userId,
+    userId,
     name: addr.name,
     phone: addr.phone,
     email: addr.email,
@@ -1466,7 +1761,7 @@ router.post('/addresses', (req: Request, res: Response) => {
     address: addr.address,
     landmark: addr.landmark,
     deliveryInstructions: addr.deliveryInstructions,
-    isDefault: addr.isDefault || addresses.filter(a => a.userId === addr.userId).length === 0
+    isDefault: addr.isDefault || addresses.filter(a => a.userId === userId).length === 0
   };
 
   addresses.push(newAddress);
@@ -1474,7 +1769,7 @@ router.post('/addresses', (req: Request, res: Response) => {
   res.status(201).json(newAddress);
 });
 
-router.put('/addresses/:id', (req: Request, res: Response) => {
+router.put('/addresses/:id', (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
   const addresses = db.get('addresses');
@@ -1482,6 +1777,7 @@ router.put('/addresses/:id', (req: Request, res: Response) => {
   if (index === -1) {
     return res.status(404).json({ error: 'Address not found' });
   }
+  if (!isAdminUser(req.user) && addresses[index].userId !== req.user?.id) return res.status(403).json({ error: 'Address does not belong to your account.' });
 
   if (updates.isDefault) {
     addresses.forEach(a => {
@@ -1489,14 +1785,18 @@ router.put('/addresses/:id', (req: Request, res: Response) => {
     });
   }
 
-  addresses[index] = { ...addresses[index], ...updates };
+  const addressFields = ['name', 'phone', 'email', 'country', 'region', 'city', 'address', 'landmark', 'deliveryInstructions', 'isDefault'];
+  const safeUpdates = isAdminUser(req.user) ? updates : Object.fromEntries(addressFields.filter((key) => key in updates).map((key) => [key, updates[key]]));
+  addresses[index] = { ...addresses[index], ...safeUpdates, userId: addresses[index].userId };
   db.set('addresses', addresses);
   res.json(addresses[index]);
 });
 
-router.delete('/addresses/:id', (req: Request, res: Response) => {
+router.delete('/addresses/:id', (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   let addresses = db.get('addresses');
+  const target = addresses.find(a => a.id === id);
+  if (target && !isAdminUser(req.user) && target.userId !== req.user?.id) return res.status(403).json({ error: 'Address does not belong to your account.' });
   addresses = addresses.filter(a => a.id !== id);
   db.set('addresses', addresses);
   res.json({ message: 'Address removed', id });
@@ -1505,24 +1805,25 @@ router.delete('/addresses/:id', (req: Request, res: Response) => {
 // ----------------------------------------------------
 // 9. NOTIFICATIONS
 // ----------------------------------------------------
-router.get('/notifications', (req: Request, res: Response) => {
+router.get('/notifications', (req: AuthRequest, res: Response) => {
   const { userId, target } = req.query;
   let notifications = db.get('notifications');
 
-  if (target === 'admin') {
+  if (isAdminUser(req.user) && target === 'admin') {
     notifications = notifications.filter(n => n.target === 'admin' || n.target === 'all');
-  } else if (userId) {
-    notifications = notifications.filter(n => n.userId === userId || n.target === 'customer' || n.target === 'all');
+  } else {
+    const ownerId = isAdminUser(req.user) && userId ? userId : req.user?.id;
+    notifications = notifications.filter(n => n.userId === ownerId || n.target === 'all');
   }
 
   res.json(notifications);
 });
 
-router.put('/notifications/:id/read', (req: Request, res: Response) => {
+router.put('/notifications/:id/read', (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const notifications = db.get('notifications');
   const notif = notifications.find(n => n.id === id);
-  if (notif) {
+  if (notif && (isAdminUser(req.user) || notif.userId === req.user?.id || notif.target === 'all')) {
     notif.read = true;
     db.set('notifications', notifications);
   }
@@ -1617,6 +1918,7 @@ router.get('/admin/analytics', (req: Request, res: Response) => {
     const catProductIds = new Set(catProducts.map(p => p.id));
     let catRevenue = 0;
     orders.forEach(o => {
+      if (o.paymentStatus !== 'successful') return;
       o.items.forEach(item => {
         if (catProductIds.has(item.productId)) {
           catRevenue += item.total;
@@ -1687,7 +1989,7 @@ router.get('/admin/customers', (req: Request, res: Response) => {
       .filter(o => o.paymentStatus === 'successful')
       .reduce((sum, o) => sum + o.total, 0);
 
-    const { passwordHash, ...userWithoutPass } = user;
+  const { passwordHash, passwordReset, passwordChangedAt, resetToken, resetTokenExpiry, ...userWithoutPass } = user;
     return {
       ...userWithoutPass,
       orderCount: userOrders.length,
@@ -1702,137 +2004,22 @@ router.get('/admin/customers', (req: Request, res: Response) => {
 // ----------------------------------------------------
 // 14. PAYSTACK & GHANA PAYMENT GATEWAY INTEGRATIONS
 // ----------------------------------------------------
-router.post('/payments/paystack/initialize', (req: Request, res: Response) => {
-  const { email, amount, orderId, paymentMethod, phone, channel } = req.body;
-  if (!email || !amount) {
-    return res.status(400).json({ error: 'Email and amount are required' });
-  }
-
-  const reference = `NVM-PAY-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-  const amountInPesewas = Math.round(parseFloat(amount) * 100);
-
-  // Return standard Paystack initialization payload
-  res.json({
-    status: true,
-    message: 'Authorization URL created',
-    data: {
-      authorization_url: `https://checkout.paystack.com/novamart-demo-${reference}`,
-      access_code: `acc_${reference}`,
-      reference,
-      currency: 'GHS',
-      amount: amountInPesewas,
-      channels: channel ? [channel] : ['card', 'mobile_money'],
-      mobileMoneyPrompt: {
-        network: paymentMethod === 'mtn_momo' ? 'MTN' : paymentMethod === 'telecel_cash' ? 'Telecel (Vodafone)' : 'AT Money',
-        phone: phone || '0240000000',
-        instructions: `Please approve the prompt of GH₵ ${parseFloat(amount).toFixed(2)} on your mobile device.`
-      }
-    }
-  });
+router.post('/payments/paystack/initialize', (_req: Request, res: Response) => {
+  res.status(503).json({ error: 'Online payments are not available until a payment provider is integrated.' });
 });
 
-router.post('/payments/paystack/verify', (req: Request, res: Response) => {
-  const { reference, orderId } = req.body;
-  if (!reference) {
-    return res.status(400).json({ error: 'Transaction reference is required' });
-  }
-
-  const orders = db.get('orders');
-  const payments = db.get('payments');
-  const order = orders.find(o => o.paymentReference === reference || o.id === orderId || o.orderNumber === orderId);
-
-  if (order) {
-    order.paymentStatus = 'successful';
-    order.orderStatus = 'Payment Confirmed';
-    order.timeline.push({
-      status: 'Payment Confirmed',
-      time: new Date().toISOString(),
-      note: `Verified via Paystack Ghana (Ref: ${reference})`
-    });
-    db.set('orders', orders);
-
-    // Record or update payment record
-    const existingPayment = payments.find(p => p.transactionReference === reference);
-    if (!existingPayment) {
-      payments.unshift({
-        id: uid('pay'),
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        customerName: order.customerName,
-        customerEmail: order.customerEmail,
-        amount: order.total,
-        currency: 'GHS',
-        paymentMethod: order.paymentMethod,
-        status: 'successful',
-        transactionReference: reference,
-        provider: 'Paystack Ghana',
-        createdAt: new Date().toISOString()
-      });
-      db.set('payments', payments);
-    }
-  }
-
-  res.json({
-    status: true,
-    message: 'Payment verified successfully',
-    data: {
-      reference,
-      status: 'success',
-      gateway_response: 'Successful',
-      currency: 'GHS',
-      paid_at: new Date().toISOString()
-    }
-  });
+router.post('/payments/paystack/verify', (_req: Request, res: Response) => {
+  res.status(503).json({ error: 'Payment verification is unavailable until a payment provider is integrated.' });
 });
 
-router.post('/webhooks/paystack', (req: Request, res: Response) => {
-  const event = req.body;
-  console.log('📡 [Paystack Webhook Received]:', event.event, event.data?.reference);
-
-  if (event.event === 'charge.success') {
-    const reference = event.data?.reference;
-    const orders = db.get('orders');
-    const order = orders.find(o => o.paymentReference === reference);
-    if (order && order.paymentStatus !== 'successful') {
-      order.paymentStatus = 'successful';
-      order.orderStatus = 'Payment Confirmed';
-      order.timeline.push({
-        status: 'Payment Confirmed',
-        time: new Date().toISOString(),
-        note: 'Paystack webhook automated confirmation'
-      });
-      db.set('orders', orders);
-    }
-  }
-
-  res.status(200).json({ received: true });
+router.post('/webhooks/paystack', (_req: Request, res: Response) => {
+  res.status(503).json({ error: 'Payment webhooks are unavailable until a payment provider is integrated.' });
 });
-
-// ----------------------------------------------------
 // 15. SMS & NOTIFICATIONS DISPATCHER
 // ----------------------------------------------------
-router.post('/notifications/send-sms', (req: Request, res: Response) => {
-  const { phone, message, orderNumber, type } = req.body;
-  if (!phone || !message) {
-    return res.status(400).json({ error: 'Phone and message are required' });
-  }
-
-  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-  const simulatedId = `sms-${Date.now()}`;
-
-  console.log(`📱 [SMS DISPATCHED to ${phone}]: ${message} (Delivery OTP: ${otpCode})`);
-
-  res.json({
-    success: true,
-    messageId: simulatedId,
-    recipient: phone,
-    otpCode,
-    status: 'Delivered',
-    timestamp: new Date().toISOString()
-  });
+router.post('/notifications/send-sms', (_req: Request, res: Response) => {
+  res.status(503).json({ error: 'SMS notifications are not available until an SMS provider is configured.' });
 });
-
-// ----------------------------------------------------
 // 16. BULK CSV TOOLS & INVENTORY RESTOCK
 // ----------------------------------------------------
 router.post('/admin/products/restock', (req: Request, res: Response) => {
@@ -1920,15 +2107,18 @@ router.get('/vendors', (req: Request, res: Response) => {
   res.json(enriched);
 });
 
-router.get('/vendors/:id', (req: Request, res: Response) => {
+router.get('/vendors/:id', (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const vendors = db.get('vendors');
   const vendor = vendors.find((v: any) => v.id === id || v.userId === id || v.slug === id);
   if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
-  res.json(vendor);
+  const isOwner = req.user?.id === vendor.userId;
+  if (isAdminUser(req.user) || isOwner) return res.json(vendor);
+  const { payoutDetails, verificationDocuments, email, phone, address, ...publicVendor } = vendor;
+  res.json(publicVendor);
 });
 
-router.post('/vendors', (req: Request, res: Response) => {
+router.post('/vendors', async (req: Request, res: Response) => {
   const data = req.body;
   const vendors = db.get('vendors');
   const users = db.get('users');
@@ -1946,7 +2136,7 @@ router.post('/vendors', (req: Request, res: Response) => {
     vendorId,
     vendorStoreName: data.storeName,
     profileImage: data.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.storeName)}`,
-    passwordHash: data.password || 'seller123',
+    passwordHash: await bcrypt.hash(data.password || uid('temp'), 10),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -1969,7 +2159,7 @@ router.post('/vendors', (req: Request, res: Response) => {
     countryCode: data.countryCode || 'GH',
     address: data.address || '',
     city: data.city || 'Accra',
-    status: 'active' as const,
+    status: 'pending' as const,
     commissionRate: data.commissionRate || 10,
     payoutDetails: data.payoutDetails || { method: 'mtn_momo', accountName: '', accountNumber: '' },
     rating: 5.0,
@@ -1987,13 +2177,15 @@ router.post('/vendors', (req: Request, res: Response) => {
   res.status(201).json({ vendor: newVendor, user: { ...newUser, passwordHash: undefined } });
 });
 
-router.put('/vendors/:id', (req: Request, res: Response) => {
+router.put('/vendors/:id', (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
   const vendors = db.get('vendors');
   const idx = vendors.findIndex((v: any) => v.id === id || v.userId === id);
   if (idx === -1) return res.status(404).json({ error: 'Vendor not found' });
-  vendors[idx] = { ...vendors[idx], ...updates, updatedAt: new Date().toISOString() };
+  const allowedVendorFields = ['storeName', 'description', 'logo', 'banner', 'address', 'city', 'stateOrRegion', 'phone', 'payoutDetails'];
+  const safeUpdates = isAdminUser(req.user) ? updates : Object.fromEntries(allowedVendorFields.filter((key) => key in updates).map((key) => [key, updates[key]]));
+  vendors[idx] = { ...vendors[idx], ...safeUpdates, updatedAt: new Date().toISOString() };
   db.set('vendors', vendors);
   res.json({ vendor: vendors[idx] });
 });
@@ -2087,20 +2279,25 @@ router.post('/vendors/:id/products', (req: Request, res: Response) => {
   res.status(201).json({ product: newProd });
 });
 
-router.put('/vendors/:vendorId/products/:productId', (req: Request, res: Response) => {
-  const { productId } = req.params;
+router.put('/vendors/:vendorId/products/:productId', (req: AuthRequest, res: Response) => {
+  const { vendorId, productId } = req.params;
   const updates = req.body;
   const products = db.get('products');
   const idx = products.findIndex((p: any) => p.id === productId);
-  if (idx === -1) return res.status(404).json({ error: 'Product not found' });
-  products[idx] = { ...products[idx], ...updates, updatedAt: new Date().toISOString() };
+  if (idx === -1 || products[idx].vendorId !== vendorId) return res.status(404).json({ error: 'Product not found for this store' });
+  if (updates.price !== undefined && (!Number.isFinite(Number(updates.price)) || Number(updates.price) <= 0)) return res.status(400).json({ error: 'Product price must be greater than zero.' });
+  if (updates.stockQuantity !== undefined && (!Number.isInteger(Number(updates.stockQuantity)) || Number(updates.stockQuantity) < 0)) return res.status(400).json({ error: 'Stock quantity must be a non-negative whole number.' });
+  const editableFields = ['name', 'slug', 'description', 'shortDescription', 'categoryId', 'brand', 'sku', 'price', 'discountPrice', 'stockQuantity', 'images', 'featuredImage', 'specifications', 'tags', 'status'];
+  const safeUpdates = isAdminUser(req.user) ? updates : Object.fromEntries(editableFields.filter((key) => key in updates).map((key) => [key, updates[key]]));
+  products[idx] = { ...products[idx], ...safeUpdates, id: productId, vendorId, vendorName: products[idx].vendorName, updatedAt: new Date().toISOString() };
   db.set('products', products);
   res.json({ product: products[idx] });
 });
 
 router.delete('/vendors/:vendorId/products/:productId', (req: Request, res: Response) => {
-  const { productId } = req.params;
+  const { vendorId, productId } = req.params;
   let products = db.get('products');
+  if (!products.some((product: any) => product.id === productId && product.vendorId === vendorId)) return res.status(404).json({ error: 'Product not found for this store' });
   products = products.filter((p: any) => p.id !== productId);
   db.set('products', products);
   res.json({ success: true });
@@ -2108,7 +2305,7 @@ router.delete('/vendors/:vendorId/products/:productId', (req: Request, res: Resp
 
 router.get('/vendors/:id/orders', (req: Request, res: Response) => {
   const { id } = req.params;
-  const orders = db.get('orders').filter((o: any) => o.items.some((item: any) => item.vendorId === id || !item.vendorId));
+  const orders = db.get('orders').filter((o: any) => o.items.some((item: any) => item.vendorId === id));
   res.json(orders);
 });
 
@@ -2118,15 +2315,18 @@ router.get('/vendors/:id/stats', (req: Request, res: Response) => {
   const products = db.get('products');
   const vendor = vendors.find((v: any) => v.id === id || v.userId === id);
   const vProds = products.filter((p: any) => p.vendorId === (vendor?.id || id));
+  const vOrders = db.get('orders').filter((o: any) => o.items.some((item: any) => item.vendorId === (vendor?.id || id)));
   const lowStock = vProds.filter((p: any) => p.stockQuantity < 5).length;
-  const commissionRate = vendor?.commissionRate || 10;
-  const grossRevenue = vendor?.totalRevenue || 18450;
+  const commissionRate = vendor?.commissionRate ?? 0;
+  const grossRevenue = vendor?.totalRevenue ?? vOrders.filter((order: any) => order.paymentStatus === 'successful').reduce((sum: number, order: any) => sum + order.items
+    .filter((item: any) => item.vendorId === (vendor?.id || id))
+    .reduce((itemSum: number, item: any) => itemSum + (item.total || 0), 0), 0);
   const commissionPaid = (grossRevenue * commissionRate) / 100;
   res.json({
     grossRevenue, netEarnings: grossRevenue - commissionPaid, commissionPaid,
-    ordersCount: vendor?.totalSales || 48, productsCount: vProds.length || vendor?.totalProducts || 12,
-    lowStockCount: lowStock, rating: vendor?.rating || 4.8, reviewCount: vendor?.reviewCount || 64,
-    balance: vendor?.balance || 3450, pendingBalance: vendor?.pendingBalance || 1200
+    ordersCount: vendor?.totalSales ?? vOrders.length, productsCount: vProds.length,
+    lowStockCount: lowStock, rating: vendor?.rating ?? 0, reviewCount: vendor?.reviewCount ?? 0,
+    balance: vendor?.balance ?? 0, pendingBalance: vendor?.pendingBalance ?? 0
   });
 });
 
@@ -2139,11 +2339,13 @@ router.get('/vendors/:id/payouts', (req: Request, res: Response) => {
 
 router.post('/vendors/:id/payouts', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { amount, payoutDetails, notes } = req.body;
+  const amount = Number(req.body?.amount);
+  const { payoutDetails, notes } = req.body;
   const vendors = db.get('vendors');
   const vIdx = vendors.findIndex((v: any) => v.id === id || v.userId === id);
   const vendor = vendors[vIdx];
   if (!vendor) return res.status(404).json({ error: 'Vendor not found' });
+  if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ error: 'Enter a valid payout amount greater than zero' });
   if ((vendor.balance || 0) < amount) return res.status(400).json({ error: 'Insufficient available balance' });
 
   const payouts = db.get('payouts');
@@ -2226,8 +2428,15 @@ router.post('/orders/:id/return-request', (req: Request, res: Response) => {
   const orders = db.get('orders');
   const order = orders.find((o: any) => o.id === id || o.orderNumber === id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (order.orderStatus !== 'Delivered') return res.status(400).json({ error: 'Returns can only be requested after delivery.' });
+  const deliveredAt = new Date(order.updatedAt || order.createdAt).getTime();
+  if (!Number.isFinite(deliveredAt) || deliveredAt > Date.now() || Date.now() - deliveredAt > 7 * 86400000) return res.status(400).json({ error: 'The 7-day return window has closed.' });
+  if (typeof reason !== 'string' || reason.trim().length < 5 || reason.trim().length > 1000) return res.status(400).json({ error: 'Please provide a return reason between 5 and 1000 characters.' });
 
   const returnRequests = db.get('returnRequests') || [];
+  if (returnRequests.some((request: any) => request.orderId === order.id && request.status !== 'rejected')) {
+    return res.status(409).json({ error: 'A return request for this order is already being processed.' });
+  }
   const newRequest = {
     id: uid('ret'),
     orderId: order.id,
@@ -2235,12 +2444,13 @@ router.post('/orders/:id/return-request', (req: Request, res: Response) => {
     customerId: order.userId,
     customerName: order.customerName,
     customerEmail: order.customerEmail,
-    items: items || order.items,
-    reason,
+    items: order.items,
+    reason: reason.trim(),
     refundPreference: refundPreference || 'original_method',
     additionalNotes: additionalNotes || '',
     status: 'pending',
     refundAmount: order.total,
+    refundStatus: 'not_started',
     createdAt: new Date().toISOString()
   };
   returnRequests.unshift(newRequest);
@@ -2265,18 +2475,71 @@ router.get('/admin/return-requests', (req: Request, res: Response) => {
 
 router.put('/admin/return-requests/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { status, adminNote, refundAmount } = req.body;
+  const { status, adminNote, refundAmount, refundReference } = req.body;
   const returnRequests = db.get('returnRequests') || [];
   const idx = returnRequests.findIndex((r: any) => r.id === id);
   if (idx === -1) return res.status(404).json({ error: 'Return request not found' });
-  returnRequests[idx] = { ...returnRequests[idx], status, adminNote, refundAmount: refundAmount || returnRequests[idx].refundAmount, processedAt: new Date().toISOString() };
+  const request = returnRequests[idx];
+  if (status === 'approved' || status === 'rejected') {
+    if (request.status !== 'pending') return res.status(409).json({ error: 'Only pending return requests can be approved or rejected.' });
+    if (refundAmount !== undefined && (!Number.isFinite(Number(refundAmount)) || Number(refundAmount) !== Number(request.refundAmount))) {
+      return res.status(400).json({ error: 'Only full-order refunds are supported for this return request.' });
+    }
+    request.status = status;
+    request.refundStatus = status === 'approved' ? 'awaiting_return' : 'not_required';
+    request.refundAmount = refundAmount === undefined ? request.refundAmount : Number(refundAmount);
+    request.adminNote = typeof adminNote === 'string' ? adminNote.trim().slice(0, 1000) : '';
+    request.processedAt = new Date().toISOString();
+  } else if (status === 'received') {
+    if (request.status !== 'approved') return res.status(409).json({ error: 'Approve the request before marking returned items as received.' });
+    const orders = db.get('orders');
+    const order = orders.find((item: any) => item.id === request.orderId);
+    if (!order) return res.status(404).json({ error: 'The original order could not be found.' });
+    const products = db.get('products');
+    for (const item of order.items) {
+      const product = products.find((candidate: any) => candidate.id === item.productId);
+      if (product) product.stockQuantity = Math.max(0, Number(product.stockQuantity) || 0) + item.quantity;
+    }
+    db.set('products', products);
+    request.status = 'received';
+    request.refundStatus = 'manual_action_required';
+    request.returnReceivedAt = new Date().toISOString();
+  } else if (status === 'refunded') {
+    if (request.status !== 'received' || typeof refundReference !== 'string' || refundReference.trim().length < 3 || refundReference.trim().length > 120) {
+      return res.status(400).json({ error: 'Mark the returned items as received and enter the manual refund reference before completing the refund.' });
+    }
+    request.status = 'refunded';
+    request.refundStatus = 'processed_manually';
+    request.refundReference = refundReference.trim();
+    request.refundedAt = new Date().toISOString();
+    const orders = db.get('orders');
+    const order = orders.find((item: any) => item.id === request.orderId);
+    if (order && order.paymentStatus === 'successful') {
+      order.paymentStatus = 'refunded';
+      order.updatedAt = new Date().toISOString();
+      db.set('orders', orders);
+      const payments = db.get('payments');
+      payments.forEach((payment: any) => { if (payment.orderId === order.id) payment.status = 'refunded'; });
+      db.set('payments', payments);
+    }
+  } else {
+    return res.status(400).json({ error: 'Choose approved, rejected, received, or refunded.' });
+  }
+  returnRequests[idx] = request;
   db.set('returnRequests', returnRequests);
-  if (status === 'approved' && returnRequests[idx].customerId) {
+  if (['approved', 'rejected', 'received', 'refunded'].includes(status) && returnRequests[idx].customerId) {
     const notifications = db.get('notifications');
+    const outcome = status === 'approved'
+      ? 'approved. The refund is waiting for manual processing; approval does not send money.'
+      : status === 'received'
+        ? 'received. The refund is now waiting for manual processing.'
+      : status === 'refunded'
+        ? `refunded manually. Reference: ${returnRequests[idx].refundReference}.`
+        : 'was not approved. Contact support if you need more information.';
     notifications.unshift({
       id: uid('notif'), userId: returnRequests[idx].customerId, target: 'customer',
-      title: 'Return Request Approved ✅',
-      message: `Your return request for order #${returnRequests[idx].orderNumber} has been approved. Refund will be processed within 3-5 business days.`,
+      title: status === 'approved' ? 'Return approved' : status === 'received' ? 'Return received' : status === 'refunded' ? 'Refund recorded' : 'Return update',
+      message: `Your return request for order #${returnRequests[idx].orderNumber} was ${outcome}`,
       type: 'order', read: false, createdAt: new Date().toISOString()
     });
     db.set('notifications', notifications);
@@ -2657,6 +2920,12 @@ router.post('/vendor/subscribe-plan', (req, res) => {
   if (!selectedPlan) {
     return res.status(400).json({ success: false, message: 'Invalid promotion plan selected' });
   }
+  if ((paymentMethod || 'vendor_balance') !== 'vendor_balance') {
+    return res.status(400).json({ success: false, message: 'Mobile money and card payments are not connected yet. Choose the store balance method.' });
+  }
+  if ((vendors[vendorIndex].balance || 0) < selectedPlan.priceGH) {
+    return res.status(400).json({ success: false, message: 'Your available store balance is too low for this plan.' });
+  }
 
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 30 * 86400000); // 30-day billing cycle
@@ -2682,10 +2951,7 @@ router.post('/vendor/subscribe-plan', (req, res) => {
 
   vendors[vendorIndex].subscription = newSubscription;
 
-  // If vendor paid from wallet balance, deduct fee
-  if (paymentMethod === 'vendor_balance' && (vendors[vendorIndex].balance || 0) >= selectedPlan.priceGH) {
-    vendors[vendorIndex].balance = Math.max(0, (vendors[vendorIndex].balance || 0) - selectedPlan.priceGH);
-  }
+  vendors[vendorIndex].balance = Math.max(0, (vendors[vendorIndex].balance || 0) - selectedPlan.priceGH);
 
   db.set('vendors', vendors);
 

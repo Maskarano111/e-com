@@ -14,6 +14,7 @@ export const AdminReturnRequestsView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState<any | null>(null);
   const [adminNote, setAdminNote] = useState('');
+  const [refundReference, setRefundReference] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const load = async () => {
@@ -30,12 +31,13 @@ export const AdminReturnRequestsView: React.FC = () => {
     return matchSearch && matchStatus;
   });
 
-  const handleUpdate = async (status: 'approved' | 'rejected') => {
+  const handleUpdate = async (status: 'approved' | 'rejected' | 'received' | 'refunded') => {
     if (!selected) return;
+    if (status === 'refunded' && refundReference.trim().length < 3) return;
     setIsProcessing(true);
     try {
-      await api.updateReturnRequest(selected.id, { status, adminNote });
-      showToast(`Return request ${status}!`, 'success');
+      await api.updateReturnRequest(selected.id, { status, adminNote, refundReference });
+      showToast(status === 'refunded' ? 'Manual refund recorded' : status === 'received' ? 'Returned items received and restocked' : `Return request ${status}`, 'success');
       setSelected(null);
       await load();
     } catch { showToast('Failed to update', 'error'); }
@@ -47,6 +49,8 @@ export const AdminReturnRequestsView: React.FC = () => {
       pending: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
       approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
       rejected: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300',
+      received: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300',
+      refunded: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
     };
     return <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${map[status] || 'bg-slate-100 text-slate-600'}`}>{status}</span>;
   };
@@ -66,7 +70,7 @@ export const AdminReturnRequestsView: React.FC = () => {
         </div>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
-          {['all', 'pending', 'approved', 'rejected'].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+          {['all', 'pending', 'approved', 'received', 'rejected', 'refunded'].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
         </select>
       </div>
 
@@ -93,7 +97,7 @@ export const AdminReturnRequestsView: React.FC = () => {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-black text-emerald-600">{formatPrice(r.refundAmount || 0)}</p>
-                  <button onClick={() => { setSelected(r); setAdminNote(r.adminNote || ''); }}
+                  <button onClick={() => { setSelected(r); setAdminNote(r.adminNote || ''); setRefundReference(r.refundReference || ''); }}
                     className="mt-1 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
                     <Eye className="w-3 h-3" />Review
                   </button>
@@ -116,12 +120,24 @@ export const AdminReturnRequestsView: React.FC = () => {
                 <div className="flex justify-between"><span className="text-slate-500">Customer</span><span className="font-semibold text-slate-900 dark:text-white">{selected.customerName}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Refund Amount</span><span className="font-black text-emerald-600">{formatPrice(selected.refundAmount || 0)}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Refund To</span><span className="font-semibold text-slate-900 dark:text-white">{selected.refundPreference?.replace(/_/g, ' ') || 'Original method'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Refund status</span><span className="font-semibold text-slate-900 dark:text-white">{selected.refundStatus?.replace(/_/g, ' ') || 'Not started'}</span></div>
+                {selected.refundReference && <div className="flex justify-between"><span className="text-slate-500">Refund reference</span><span className="font-mono text-xs text-slate-900 dark:text-white">{selected.refundReference}</span></div>}
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
                   <p className="text-xs text-slate-500 mb-1">Reason</p>
                   <p className="text-slate-900 dark:text-white text-xs">{selected.reason}</p>
                   {selected.additionalNotes && <p className="text-slate-500 text-xs mt-1">{selected.additionalNotes}</p>}
                 </div>
               </div>
+              {selected.status === 'approved' && (
+                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  Approval authorizes the return. Mark items received only after the returned parcel has arrived and been inspected; returned stock will then be restored.
+                </div>
+              )}
+              {selected.status === 'received' && (
+                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  The return is received and stock is restored. The payment provider is not connected, so send the refund manually and record its receipt/reference below.
+                </div>
+              )}
               <div className="mb-4">
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Admin Note</label>
                 <textarea value={adminNote} onChange={e => setAdminNote(e.target.value)} rows={2} placeholder="Add a note for this decision..."
@@ -135,11 +151,29 @@ export const AdminReturnRequestsView: React.FC = () => {
                   </button>
                   <button onClick={() => handleUpdate('approved')} disabled={isProcessing}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50">
-                    <CheckCircle2 className="w-4 h-4" />{isProcessing ? 'Processing...' : 'Approve Refund'}
+                    <CheckCircle2 className="w-4 h-4" />{isProcessing ? 'Processing...' : 'Approve Return'}
                   </button>
                 </div>
               )}
-              {selected.status !== 'pending' && (
+              {selected.status === 'approved' && (
+                <button onClick={() => handleUpdate('received')} disabled={isProcessing}
+                  className="w-full rounded-xl bg-indigo-700 py-2.5 text-sm font-bold text-white disabled:opacity-50">
+                  {isProcessing ? 'Saving…' : 'Mark Returned Items Received'}
+                </button>
+              )}
+              {selected.status === 'received' && selected.refundStatus !== 'processed_manually' && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-400">Manual refund receipt / reference</label>
+                  <input value={refundReference} onChange={e => setRefundReference(e.target.value)} maxLength={120}
+                    placeholder="Bank or MoMo transfer reference"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800" />
+                  <button onClick={() => handleUpdate('refunded')} disabled={isProcessing || refundReference.trim().length < 3}
+                    className="w-full rounded-xl bg-sky-700 py-2.5 text-sm font-bold text-white disabled:opacity-50">
+                    {isProcessing ? 'Saving…' : 'Record Refund as Sent'}
+                  </button>
+                </div>
+              )}
+              {selected.status !== 'pending' && selected.status !== 'approved' && selected.status !== 'received' && (
                 <button onClick={() => setSelected(null)} className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Close</button>
               )}
             </motion.div>

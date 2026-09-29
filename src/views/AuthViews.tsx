@@ -21,9 +21,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { api } from '../services/api';
 
 interface AuthViewsProps {
-  mode: 'login' | 'register' | 'forgot-password';
+  mode: 'login' | 'register' | 'forgot-password' | 'reset-password';
+  resetToken?: string;
+  resetEmail?: string;
   onNavigate: (view: string, param?: any) => void;
 }
 
@@ -40,11 +43,11 @@ function getPasswordStrength(pw: string): { label: string; level: 0 | 1 | 2 | 3 
   return { label: 'Strong', level: 3 };
 }
 
-export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate }) => {
+export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', resetToken = '', resetEmail = '', onNavigate }) => {
   const { login, register, adminLogin, googleLogin, user } = useAuth();
   const { showToast } = useToast();
 
-  const [currentMode, setCurrentMode] = useState<'login' | 'register' | 'forgot-password'>(mode);
+  const [currentMode, setCurrentMode] = useState<'login' | 'register' | 'forgot-password' | 'reset-password'>(mode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,19 +68,20 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
   // Sync mode whenever prop changes
   useEffect(() => {
     setCurrentMode(mode);
+    if (mode === 'reset-password') setEmail(resetEmail);
     setErrorMessage(null);
-  }, [mode]);
+  }, [mode, resetEmail]);
 
   // If user is already logged in, offer quick navigation
   useEffect(() => {
-    if (user) {
+    if (user && mode !== 'reset-password') {
       if (user.role === 'super_admin' || user.role === 'admin') {
         onNavigate('admin');
       } else {
         onNavigate('home');
       }
     }
-  }, [user]);
+  }, [user, mode]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,8 +129,8 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
       return;
     }
 
-    if (cleanPass.length < 6) {
-      setErrorMessage('Password must be at least 6 characters in length.');
+    if (cleanPass.length < 8) {
+      setErrorMessage('Password must be at least 8 characters in length.');
       return;
     }
 
@@ -154,14 +158,49 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
     }
   };
 
-  const handleForgotPassword = (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
       showToast('error', 'Email Required', 'Please enter your account email.');
       return;
     }
-    setForgotSubmitted(true);
-    showToast('success', 'Reset Link Dispatched', `Instructions have been sent to ${email.trim()}`);
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      await api.forgotPassword(email.trim());
+      setForgotSubmitted(true);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Could not send reset instructions. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetToken || !email.trim()) {
+      setErrorMessage('This reset link is incomplete. Request a new password reset link.');
+      return;
+    }
+    if (password.length < 8) {
+      setErrorMessage('Your new password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMessage('Your passwords do not match.');
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      await api.resetPassword({ email: email.trim(), token: resetToken, newPassword: password });
+      showToast('success', 'Password updated', 'Sign in with your new password.');
+      onNavigate('login');
+    } catch (err: any) {
+      setErrorMessage(err.message || 'This reset link is invalid or has expired. Request a new one.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Quick 1-Click Demo Logins
@@ -334,11 +373,13 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
                 {currentMode === 'login' && 'Welcome Back'}
                 {currentMode === 'register' && 'Create Account'}
                 {currentMode === 'forgot-password' && 'Reset Password'}
+                {currentMode === 'reset-password' && 'Choose a New Password'}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 {currentMode === 'login' && 'Sign in to access your orders, wishlist & discounts'}
                 {currentMode === 'register' && 'For shoppers to track orders, save items & get exclusive discounts'}
                 {currentMode === 'forgot-password' && 'Enter your email to receive recovery instructions'}
+                {currentMode === 'reset-password' && 'Use a new password you have not used before'}
               </p>
             </div>
 
@@ -594,7 +635,7 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Password * (Min 6 chars)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Password * (Min 8 chars)</label>
                   <div className="relative">
                     <input
                       id="input-reg-password"
@@ -744,9 +785,9 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
                     className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200 text-center space-y-3"
                   >
                     <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto animate-bounce" />
-                    <p className="font-black text-sm">Password Reset Dispatched</p>
+                    <p className="font-black text-sm">Check your email</p>
                     <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                      We have sent password reset instructions to <strong>{email}</strong>. Please check your inbox or spam folder.
+                      If an account matches that address, password reset instructions have been sent. Check your inbox or spam folder.
                     </p>
                     <button
                       onClick={() => { setForgotSubmitted(false); setCurrentMode('login'); }}
@@ -774,9 +815,10 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
 
                     <button
                       type="submit"
+                      disabled={isLoading}
                       className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
-                      Send Password Reset Link
+                      {isLoading ? 'Sending…' : 'Send Password Reset Link'}
                     </button>
 
                     <div className="text-center pt-2">
@@ -791,6 +833,28 @@ export const AuthViews: React.FC<AuthViewsProps> = ({ mode = 'login', onNavigate
                   </form>
                 )}
               </div>
+            )}
+
+            {currentMode === 'reset-password' && (
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">New password</label>
+                  <input type="password" required minLength={8} autoComplete="new-password" value={password}
+                    onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters"
+                    className={`${inputBase} px-3.5`} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Confirm new password</label>
+                  <input type="password" required minLength={8} autoComplete="new-password" value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)} placeholder="Enter your new password again"
+                    className={`${inputBase} px-3.5`} />
+                </div>
+                <button type="submit" disabled={isLoading || !resetToken}
+                  className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm disabled:opacity-50">
+                  {isLoading ? 'Updating password…' : 'Update Password'}
+                </button>
+                {!resetToken && <p className="text-xs text-rose-600">This reset link is incomplete. Request a new one.</p>}
+              </form>
             )}
           </motion.div>
         </div>

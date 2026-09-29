@@ -80,32 +80,37 @@ export const ordersApi = {
     );
   },
 
-  async getOrder(idOrNumber: string) {
+  async getOrder(idOrNumber: string, phone?: string) {
+    const query = new URLSearchParams();
+    if (phone) query.set('phone', phone);
     return safeFetch<Order>(
-      `${API_BASE}/orders/${idOrNumber}`,
+      `${API_BASE}/orders/${encodeURIComponent(idOrNumber)}${query.size ? `?${query}` : ''}`,
       undefined,
       () => {
         const orders = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
         const found = orders.find((o) => o.id === idOrNumber || o.orderNumber === idOrNumber);
         if (!found) throw new Error('Order not found');
+        const digits = (value?: string) => String(value || '').replace(/\D/g, '');
+        if (!phone || digits(phone) !== digits(found.customerPhone)) throw new Error('Enter the phone number used at checkout to view this order.');
         return found;
       }
     );
   },
 
-  async updateOrderStatus(id: string, status: string, note?: string) {
+  async updateOrderStatus(id: string, status: string, note?: string, trackingNumber?: string) {
     return safeFetch<Order>(
       `${API_BASE}/orders/${id}/status`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, note })
+        body: JSON.stringify({ status, note, trackingNumber })
       },
       () => {
         const orders = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
         const idx = orders.findIndex((o) => o.id === id || o.orderNumber === id);
         if (idx !== -1) {
           orders[idx].orderStatus = status as any;
+          if (trackingNumber !== undefined) orders[idx].trackingNumber = trackingNumber;
           orders[idx].updatedAt = new Date().toISOString();
           setLocal(STORAGE_KEYS.ORDERS, orders);
           return orders[idx];
@@ -123,8 +128,7 @@ export const ordersApi = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-      },
-      () => ({ returnRequest: { id: `ret-${Date.now()}`, orderId, status: 'pending', ...data, createdAt: new Date().toISOString() } })
+      }
     );
   },
 
@@ -136,7 +140,7 @@ export const ordersApi = {
     );
   },
 
-  async updateReturnRequest(id: string, data: { status: string; adminNote?: string; refundAmount?: number }) {
+  async updateReturnRequest(id: string, data: { status: string; adminNote?: string; refundAmount?: number; refundReference?: string }) {
     return safeFetch<{ returnRequest: any }>(
       `${API_BASE}/admin/return-requests/${id}`,
       {

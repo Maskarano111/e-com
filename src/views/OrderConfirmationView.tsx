@@ -16,7 +16,6 @@ import {
 import { Order } from '../types/index';
 import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
-import { generateOrderInvoicePDF } from '../utils/pdfGenerator';
 
 interface OrderConfirmationViewProps {
   order: Order | null;
@@ -49,8 +48,9 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({ or
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     try {
+      const { generateOrderInvoicePDF } = await import('../utils/pdfGenerator');
       generateOrderInvoicePDF(order, settings);
       showToast('success', 'PDF Generated', 'Your official commercial tax invoice has been downloaded.');
     } catch (err) {
@@ -76,12 +76,12 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({ or
           <CheckCircle2 className="w-10 h-10" />
         </motion.div>
 
-        <span className="text-xs font-black uppercase tracking-widest text-emerald-600">Order Confirmed</span>
+        <span className="text-xs font-black uppercase tracking-widest text-emerald-600">Order Placed</span>
         <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
           Thank You For Your Order!
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-          We’ve received your order and our fulfilment team at Airport City, Accra is currently packaging your items.
+          Your order has been received. We will update you as it is prepared and dispatched. Payment is due when it arrives.
         </p>
 
         {/* Order Number Pill */}
@@ -114,13 +114,13 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({ or
                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                 : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
             }`}>
-              {order.paymentStatus}
+              {order.paymentMethod === 'cash_on_delivery' && order.paymentStatus === 'pending' ? 'Due on Delivery' : order.paymentStatus}
             </span>
           </div>
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-bold">Payment Method</span>
             <span className="font-bold text-slate-900 dark:text-white capitalize">
-              {order.paymentMethod === 'mtn_momo' ? 'Mobile Money (MoMo)' : order.paymentMethod}
+              {order.paymentMethod === 'mtn_momo' ? 'Mobile Money (MoMo)' : order.paymentMethod === 'cash_on_delivery' ? 'Pay on Delivery' : order.paymentMethod?.replace(/_/g, ' ')}
             </span>
           </div>
           <div>

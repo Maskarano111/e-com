@@ -14,7 +14,7 @@ import {
   Store
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { Review, Product } from '../../types/index';
+import { Review } from '../../types/index';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -26,13 +26,14 @@ interface VendorReviewItem extends Review {
 export const VendorReviewsView: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const vendorId = user?.vendorId || 'vend-kofi';
+  const vendorId = user?.vendorId || '';
 
   const [reviews, setReviews] = useState<VendorReviewItem[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [ratingFilter, setRatingFilter] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [isSavingReply, setIsSavingReply] = useState(false);
 
   // Reply Modal State
   const [replyingReview, setReplyingReview] = useState<VendorReviewItem | null>(null);
@@ -41,57 +42,18 @@ export const VendorReviewsView: React.FC = () => {
   useEffect(() => {
     const loadReviews = async () => {
       setIsLoading(true);
+      setLoadError('');
       try {
-        const [prodsRes, reviewsRes] = await Promise.all([
-          api.getVendorProducts(vendorId),
-          api.getReviews({ productId: 'prod-portable-blender' })
-        ]);
-        setProducts(prodsRes.products || []);
-        setReviews([
-          {
-            id: 'rev-01',
-            productId: 'prod-portable-blender',
-            productName: 'Sony WH-1000XM5 Wireless Headphones',
-            userId: 'usr-buyer-01',
-            userName: 'Kweku Darko',
-            rating: 5,
-            title: 'Incredible Sound & Fast Accra Delivery!',
-            comment: 'Delivered in under 24 hours to East Legon. The noise cancelling is top notch and 100% authentic.',
-            status: 'approved',
-            verifiedPurchase: true,
-            createdAt: '2026-02-22T12:00:00Z',
-            vendorReply: 'Thank you Kweku! We take pride in 100% genuine Sony audio and express dispatch in Greater Accra.',
-            vendorReplyDate: '2026-02-22T14:30:00Z'
-          },
-          {
-            id: 'rev-02',
-            productId: 'prod-portable-blender',
-            productName: 'Anker 737 Power Bank 24,000mAh',
-            userId: 'usr-buyer-02',
-            userName: 'Esi Frimpong',
-            rating: 5,
-            title: 'Heavy duty and charges my MacBook fast',
-            comment: 'Very reliable merchant. Original package sealed with manufacturer barcode.',
-            status: 'approved',
-            verifiedPurchase: true,
-            createdAt: '2026-02-18T15:30:00Z'
-          },
-          {
-            id: 'rev-03',
-            productId: 'prod-portable-blender',
-            productName: 'Apple Watch Series 9 GPS 45mm',
-            userId: 'usr-buyer-03',
-            userName: 'Yaw Amponsah',
-            rating: 4,
-            title: 'Great product, smooth transaction',
-            comment: 'Item arrived in excellent condition. Recommended seller!',
-            status: 'approved',
-            verifiedPurchase: true,
-            createdAt: '2026-02-10T09:15:00Z'
-          }
-        ]);
+        const [productsRes, allReviews] = await Promise.all([api.getVendorProducts(vendorId), api.getReviews()]);
+        const vendorProducts = productsRes.products || [];
+        const productIds = new Set(vendorProducts.map((product) => product.id));
+        setReviews(allReviews.filter((review) => productIds.has(review.productId)).map((review) => ({
+          ...review,
+          productName: vendorProducts.find((product) => product.id === review.productId)?.name || review.productName || 'Product'
+        })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
       } catch (err) {
         console.error(err);
+        setLoadError('Could not load reviews. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -99,25 +61,22 @@ export const VendorReviewsView: React.FC = () => {
     loadReviews();
   }, [vendorId]);
 
-  const handleSendReply = (e: React.FormEvent) => {
+  const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyingReview || !replyText.trim()) return;
 
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === replyingReview.id
-          ? {
-              ...r,
-              vendorReply: replyText.trim(),
-              vendorReplyDate: new Date().toISOString()
-            }
-          : r
-      )
-    );
-
-    showToast('success', 'Reply Published', `Your reply to ${replyingReview.userName} has been posted.`);
-    setReplyingReview(null);
-    setReplyText('');
+    setIsSavingReply(true);
+    try {
+      const saved = await api.saveVendorReviewReply(replyingReview.id, replyText.trim());
+      setReviews((prev) => prev.map((review) => review.id === saved.id ? { ...review, ...saved } : review));
+      showToast('success', 'Reply Published', `Your reply to ${replyingReview.userName} has been posted.`);
+      setReplyingReview(null);
+      setReplyText('');
+    } catch (err: any) {
+      showToast('error', 'Reply Failed', err.message || 'Could not save your reply.');
+    } finally {
+      setIsSavingReply(false);
+    }
   };
 
   const filteredReviews = reviews.filter((r) => {
@@ -130,7 +89,8 @@ export const VendorReviewsView: React.FC = () => {
     return matchesSearch && matchesRating;
   });
 
-  const avgRating = reviews.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : '5.0';
+  const avgRating = reviews.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : '0.0';
+  const verifiedPercent = reviews.length ? Math.round(reviews.filter((review) => review.verifiedPurchase).length / reviews.length * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -164,7 +124,7 @@ export const VendorReviewsView: React.FC = () => {
           </div>
           <div>
             <p className="text-xs text-slate-500 font-semibold">Verified Purchases</p>
-            <p className="text-3xl font-black text-slate-900 dark:text-white">100%</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white">{verifiedPercent}%</p>
           </div>
         </div>
 
@@ -181,6 +141,9 @@ export const VendorReviewsView: React.FC = () => {
 
       {/* Reviews List */}
       <div className="space-y-4">
+        {isLoading && <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">Loading reviews…</div>}
+        {!isLoading && loadError && <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">{loadError}<button onClick={() => window.location.reload()} className="ml-3 font-bold underline">Retry</button></div>}
+        {!isLoading && !loadError && filteredReviews.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center"><p className="font-bold text-slate-800 dark:text-white">{reviews.length ? 'No reviews match these filters' : 'No customer reviews yet'}</p><p className="mt-1 text-sm text-slate-500">Reviews for your products will appear here.</p></div>}
         {filteredReviews.map((rev) => (
           <div
             key={rev.id}
@@ -314,10 +277,11 @@ export const VendorReviewsView: React.FC = () => {
                   </button>
                   <button
                     type="submit"
+                    disabled={isSavingReply}
                     className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1.5"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>Post Reply</span>
+                    <span>{isSavingReply ? 'Saving…' : 'Post Reply'}</span>
                   </button>
                 </div>
               </form>

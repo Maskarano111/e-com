@@ -158,8 +158,7 @@ export const authApi = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-      },
-      () => ({ message: 'Password updated successfully' })
+      }
     );
   },
 
@@ -170,8 +169,7 @@ export const authApi = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
-      },
-      () => ({ message: `Password reset link sent to ${email}` })
+      }
     );
   },
 
@@ -182,8 +180,7 @@ export const authApi = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-      },
-      () => ({ message: 'Password has been reset successfully' })
+      }
     );
   },
 

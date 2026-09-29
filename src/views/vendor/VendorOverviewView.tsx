@@ -35,20 +35,9 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
 }) => {
   const { user } = useAuth();
   const { formatPrice } = useSettings();
-  const vendorId = user?.vendorId || 'vend-kofi';
+  const vendorId = user?.vendorId || '';
 
-  const [stats, setStats] = useState<any>({
-    grossRevenue: 18450,
-    netEarnings: 16605,
-    commissionPaid: 1845,
-    ordersCount: 48,
-    productsCount: 12,
-    lowStockCount: 2,
-    rating: 4.8,
-    reviewCount: 64,
-    balance: 3450.00,
-    pendingBalance: 1200.00
-  });
+  const [stats, setStats] = useState<any>({});
 
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -94,7 +83,7 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
           <div className="space-y-2 max-w-xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-xs text-[11px] font-bold tracking-wide uppercase">
               <Store className="w-3.5 h-3.5" />
-              <span>{vendor?.storeName || 'Kofi Tech & Audio Hub'}</span>
+              <span>{vendor?.storeName || user?.vendorStoreName || 'Your Store'}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
               Welcome to Your Seller Dashboard
@@ -137,12 +126,12 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
             </div>
           </div>
           <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            {formatPrice(stats.netEarnings || 16605)}
+            {formatPrice(stats.netEarnings ?? 0)}
           </p>
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-            <span>Gross: {formatPrice(stats.grossRevenue || 18450)}</span>
+            <span>Gross: {formatPrice(stats.grossRevenue ?? 0)}</span>
             <span>•</span>
-            <span className="text-emerald-600 font-semibold">{vendor?.commissionRate || 10}% fee deducted</span>
+            <span className="text-emerald-600 font-semibold">{vendor?.commissionRate ?? 0}% fee deducted</span>
           </div>
         </div>
 
@@ -158,11 +147,11 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
             </div>
           </div>
           <p className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400">
-            {formatPrice(stats.balance || 3450.00)}
+            {formatPrice(stats.balance ?? 0)}
           </p>
           <div className="flex items-center gap-1 text-[11px] text-slate-500">
             <Clock className="w-3 h-3 text-amber-500" />
-            <span>Pending settlement: {formatPrice(stats.pendingBalance || 1200.00)}</span>
+            <span>Pending settlement: {formatPrice(stats.pendingBalance ?? 0)}</span>
           </div>
         </div>
 
@@ -178,7 +167,7 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
             </div>
           </div>
           <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            {stats.ordersCount || 48} orders
+            {stats.ordersCount ?? orders.length} orders
           </p>
           <p className="text-[11px] text-slate-500">Across Greater Accra &amp; Nationwide</p>
         </div>
@@ -196,11 +185,11 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
           </div>
           <div className="flex items-baseline gap-3">
             <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              {products.length || stats.productsCount || 12}
+              {products.length || stats.productsCount || 0}
             </p>
             <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
               <Star className="w-3.5 h-3.5 fill-current" />
-              {stats.rating || 4.8} ({stats.reviewCount || 64} reviews)
+              {stats.rating ?? 0} ({stats.reviewCount ?? 0} reviews)
             </span>
           </div>
           <p className="text-[11px] text-slate-500">{lowStockProducts.length} items low in stock</p>
@@ -339,7 +328,7 @@ export const VendorOverviewView: React.FC<VendorOverviewViewProps> = ({
             <div>
               <p className="text-xs text-slate-400">Direct MTN / Telecel Cash Payout</p>
               <p className="text-2xl font-black text-emerald-400 mt-0.5">
-                {formatPrice(stats.balance || 3450.00)}
+                {formatPrice(stats.balance ?? 0)}
               </p>
             </div>
 

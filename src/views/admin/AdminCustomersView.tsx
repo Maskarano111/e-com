@@ -42,8 +42,9 @@ export const AdminCustomersView: React.FC = () => {
   }, []);
 
   const getCustomerStats = (userId: string) => {
-    const userOrders = orders.filter((o) => o.userId === userId);
-    const totalSpent = userOrders.reduce((sum, o) => sum + o.total, 0);
+    const user = customers.find((customer) => customer.id === userId);
+    const userOrders = orders.filter((order) => order.userId === userId || order.customerEmail.toLowerCase() === user?.email.toLowerCase());
+    const totalSpent = userOrders.filter((order) => order.paymentStatus === 'successful').reduce((sum, order) => sum + order.total, 0);
     return {
       orderCount: userOrders.length,
       totalSpent
@@ -102,6 +103,8 @@ export const AdminCustomersView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {isLoading && <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-500">Loading customers…</td></tr>}
+              {!isLoading && filteredCustomers.length === 0 && <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-500">{searchQuery ? 'No customers match your search.' : 'No customers have registered yet.'}</td></tr>}
               {filteredCustomers.map((u) => {
                 const stats = getCustomerStats(u.id);
                 return (
@@ -122,7 +125,7 @@ export const AdminCustomersView: React.FC = () => {
 
                     <td className="py-3 px-4">
                       <p className="font-semibold text-slate-700 dark:text-slate-300">{u.email}</p>
-                      <p className="text-[10px] text-slate-400">{u.phone || '+233 24 555 0199'}</p>
+                      <p className="text-[10px] text-slate-400">{u.phone || 'Phone not provided'}</p>
                     </td>
 
                     <td className="py-3 px-4">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { CreditCard, Download, Search, Filter, RefreshCw, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { CreditCard, Download, Search, Filter, RefreshCw, CheckCircle2, Clock, XCircle, RotateCcw } from 'lucide-react';
 import { api } from '../../services/api';
 import { useSettings } from '../../context/SettingsContext';
 import { PaymentTransaction } from '../../types/index';
@@ -31,7 +31,7 @@ export const AdminPaymentsView: React.FC = () => {
     return matchSearch && matchStatus;
   });
 
-  const totalRevenue = filtered.filter(p => p.status === 'successful').reduce((s, p) => s + p.amount, 0);
+  const totalRevenue = payments.filter(p => p.status === 'successful').reduce((s, p) => s + p.amount, 0);
 
   const statusBadge = (status: string) => {
     if (status === 'successful') return (
@@ -44,6 +44,16 @@ export const AdminPaymentsView: React.FC = () => {
         <Clock className="w-3 h-3" />PENDING
       </span>
     );
+    if (status === 'refunded') return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+        <RotateCcw className="w-3 h-3" />REFUNDED
+      </span>
+    );
+    if (status === 'cancelled') return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        <XCircle className="w-3 h-3" />CANCELLED
+      </span>
+    );
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300">
         <XCircle className="w-3 h-3" />FAILED
@@ -53,11 +63,12 @@ export const AdminPaymentsView: React.FC = () => {
 
   const exportCSV = () => {
     const headers = ['Transaction Ref', 'Order #', 'Customer', 'Amount', 'Method', 'Status', 'Date'];
+    const escapeCsv = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
     const rows = filtered.map(p => [
       p.transactionReference, p.orderNumber, p.customerName, p.amount,
       p.paymentMethod, p.status, new Date(p.createdAt).toLocaleString()
-    ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    ].map(escapeCsv));
+    const csv = [headers.map(escapeCsv), ...rows].map(r => r.join(',')).join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'novamart-payments.csv'; a.click();
@@ -69,7 +80,7 @@ export const AdminPaymentsView: React.FC = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white">Payments & Transactions</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Full transaction log for all payment methods</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Cash on Delivery records and manually recorded refunds. Online payment providers are not connected.</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load} className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
@@ -108,6 +119,8 @@ export const AdminPaymentsView: React.FC = () => {
           <option value="successful">Successful</option>
           <option value="pending">Pending</option>
           <option value="failed">Failed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="refunded">Refunded</option>
         </select>
       </div>
 

@@ -109,7 +109,7 @@ export type OrderStatus =
   | 'Delivered'
   | 'Cancelled';
 
-export type PaymentStatus = 'pending' | 'successful' | 'failed' | 'refunded';
+export type PaymentStatus = 'pending' | 'successful' | 'failed' | 'refunded' | 'cancelled';
 
 export type PaymentMethod =
   | 'mtn_momo'
@@ -157,6 +157,7 @@ export interface DeliveryAddress {
 
 export interface Order {
   id: string;
+  idempotencyKey?: string;
   orderNumber: string;
   userId?: string;
   customerName: string;
@@ -218,6 +219,8 @@ export interface Review {
   helpfulCount?: number;
   status: 'approved' | 'pending' | 'rejected';
   verifiedPurchase: boolean;
+  vendorReply?: string;
+  vendorReplyDate?: string;
   createdAt: string;
 }
 

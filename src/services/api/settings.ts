@@ -21,9 +21,9 @@ export const settingsApi = {
         freeDeliveryThreshold: 500,
         taxRate: 0.035,
         enableCOD: true,
-        enableMoMo: true,
-        enableCard: true,
-        enablePaystack: true,
+        enableMoMo: false,
+        enableCard: false,
+        enablePaystack: false,
         socialLinks: {
           facebook: 'https://facebook.com/novamartgh',
           instagram: 'https://instagram.com/novamartgh',
@@ -58,9 +58,9 @@ export const settingsApi = {
           freeDeliveryThreshold: 500,
           taxRate: 0.035,
           enableCOD: true,
-          enableMoMo: true,
-          enableCard: true,
-          enablePaystack: true,
+          enableMoMo: false,
+          enableCard: false,
+          enablePaystack: false,
           socialLinks: {
             facebook: 'https://facebook.com/novamartgh',
             instagram: 'https://instagram.com/novamartgh',
@@ -75,7 +75,7 @@ export const settingsApi = {
     );
   },
 
-  // Paystack & Ghana Payments
+  // Payment provider integration is intentionally deferred.
   async initializePaystack(data: {
     email: string;
     amount: number;
@@ -84,39 +84,14 @@ export const settingsApi = {
     phone?: string;
     channel?: string;
   }) {
-    return safeFetch<any>(
-      `${API_BASE}/payments/paystack/initialize`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      },
-      () => ({
-        status: true,
-        message: 'Authorization URL created',
-        data: {
-          authorization_url: `https://checkout.paystack.com/demo-ref-${Date.now()}`,
-          access_code: `demo-access-${Date.now()}`,
-          reference: `NM-PAY-${Date.now()}`
-        }
-      })
-    );
+    void data;
+    throw new Error('Online payments are not available until a payment provider is integrated.');
   },
 
   async verifyPaystack(reference: string, orderId?: string) {
-    return safeFetch<any>(
-      `${API_BASE}/payments/paystack/verify`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reference, orderId })
-      },
-      () => ({
-        status: true,
-        message: 'Payment verification successful',
-        data: { status: 'success', reference }
-      })
-    );
+    void reference;
+    void orderId;
+    throw new Error('Payment verification is unavailable until a payment provider is integrated.');
   },
 
   // SMS & Customer Communications
@@ -127,8 +102,7 @@ export const settingsApi = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-      },
-      () => ({ success: true, message: 'SMS sent successfully' })
+      }
     );
   }
 };

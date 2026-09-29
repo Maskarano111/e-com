@@ -40,10 +40,22 @@ function createTransporter() {
 }
 
 const transporter = createTransporter();
+if (process.env.NODE_ENV === 'production' && !transporter) {
+  throw new Error('Configure EMAIL_HOST, EMAIL_USER, and EMAIL_PASS before starting the production server.');
+}
 
 const FROM_NAME = process.env.EMAIL_FROM_NAME || 'NovaMart Ghana';
 const FROM_EMAIL = process.env.EMAIL_USER || 'noreply@novamart.com.gh';
 const APP_URL = process.env.APP_URL || 'https://novamart.com.gh';
+if (process.env.NODE_ENV === 'production') {
+  const smtpValues = [process.env.EMAIL_HOST, process.env.EMAIL_USER, process.env.EMAIL_PASS];
+  const hasRealSmtpValues = smtpValues.every(value => Boolean(value && !/your_|placeholder|example\.com/i.test(value)));
+  let hasSecureAppUrl = false;
+  try { hasSecureAppUrl = new URL(APP_URL).protocol === 'https:'; } catch { /* Invalid URL */ }
+  if (!hasRealSmtpValues || !hasSecureAppUrl) {
+    throw new Error('Production requires real SMTP credentials and an HTTPS APP_URL.');
+  }
+}
 
 // ── Core Send Helper ───────────────────────────────────────────────────────────
 async function sendMail(to: string, subject: string, html: string): Promise<void> {
@@ -241,9 +253,9 @@ export async function sendOrderConfirmationEmail(
   });
 
   const html = emailWrapper(`
-    <div class="badge">Order Confirmed ✅</div>
+    <div class="badge">Order Received</div>
     <h1>Thank you, ${order.customerName.split(' ')[0]}!</h1>
-    <p>Your order has been received and is being processed. You'll receive another email when it ships.</p>
+    <p>Your pay-on-delivery order has been received. Payment is due when it arrives. We will email you when it ships.</p>
 
     <div class="info-box">
       <div class="info-row">
@@ -252,15 +264,15 @@ export async function sendOrderConfirmationEmail(
       </div>
       <div class="info-row">
         <span class="info-label">Tracking Number</span>
-        <span class="info-value">${order.trackingNumber}</span>
+        <span class="info-value">${order.trackingNumber || 'Assigned when dispatched'}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Payment Method</span>
         <span class="info-value">${paymentLabel[order.paymentMethod] || order.paymentMethod}</span>
       </div>
       <div class="info-row">
-        <span class="info-label">Payment Ref</span>
-        <span class="info-value">${order.paymentReference}</span>
+        <span class="info-label">Payment Due</span>
+        <span class="info-value">On delivery</span>
       </div>
       <div class="info-row">
         <span class="info-label">Est. Delivery</span>
@@ -402,7 +414,14 @@ export async function sendPasswordResetEmail(
   firstName: string,
   resetToken: string
 ): Promise<void> {
-  const resetLink = `${APP_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(to)}`;
+  const resetBaseUrl = process.env.NODE_ENV === 'production'
+    ? APP_URL
+    : `http://localhost:${Number(process.env.PORT) || 3000}`;
+  const resetUrl = new URL('/', resetBaseUrl);
+  resetUrl.searchParams.set('view', 'reset-password');
+  resetUrl.searchParams.set('token', resetToken);
+  resetUrl.searchParams.set('email', to);
+  const resetLink = resetUrl.toString();
 
   const html = emailWrapper(`
     <div class="badge">🔐 Password Reset Request</div>
@@ -428,6 +447,9 @@ export async function sendPasswordResetEmail(
     </div>
   `);
 
+  if (!transporter && process.env.NODE_ENV !== 'production') {
+    console.info(`[NovaMart Email — Dev Mode] Password reset link: ${resetLink}`);
+  }
   await sendMail(to, '🔐 NovaMart Ghana — Password Reset Request', html);
 }
 

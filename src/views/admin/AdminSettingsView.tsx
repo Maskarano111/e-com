@@ -7,16 +7,14 @@ import {
   Truck,
   CreditCard,
   Building,
-  CheckCircle2,
   Lock,
-  Smartphone
 } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 
 export const AdminSettingsView: React.FC = () => {
-  const { settings, refreshSettings, formatPrice } = useSettings();
+  const { settings, refreshSettings } = useSettings();
   const { showToast } = useToast();
 
   const [storeName, setStoreName] = useState(settings.storeName);
@@ -28,8 +26,6 @@ export const AdminSettingsView: React.FC = () => {
   const [standardDeliveryFee, setStandardDeliveryFee] = useState(settings.standardDeliveryFee);
   const [expressDeliveryFee, setExpressDeliveryFee] = useState(settings.expressDeliveryFee);
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(settings.freeDeliveryThreshold);
-  const [momoEnabled, setMomoEnabled] = useState(settings.enableMoMo);
-  const [cardEnabled, setCardEnabled] = useState(settings.enableCard);
   const [codEnabled, setCodEnabled] = useState(settings.enableCOD);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -48,8 +44,9 @@ export const AdminSettingsView: React.FC = () => {
         standardDeliveryFee: Number(standardDeliveryFee),
         expressDeliveryFee: Number(expressDeliveryFee),
         freeDeliveryThreshold: Number(freeDeliveryThreshold),
-        enableMoMo: momoEnabled,
-        enableCard: cardEnabled,
+        // Online gateways are intentionally unavailable until provider integration is complete.
+        enableMoMo: false,
+        enableCard: false,
         enableCOD: codEnabled
       });
       await refreshSettings();
@@ -170,41 +167,14 @@ export const AdminSettingsView: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
             <CreditCard className="w-4 h-4 text-emerald-600" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Active Payment Gateways</h3>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Checkout payment options</h3>
           </div>
 
           <div className="space-y-3 text-xs">
-            <label className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 cursor-pointer">
-              <div className="flex items-center gap-3">
-                <Smartphone className="w-5 h-5 text-amber-500" />
-                <div>
-                  <p className="font-bold text-slate-900 dark:text-white">MTN Mobile Money & Telecel Cash</p>
-                  <p className="text-[10px] text-slate-500">Enable USSD instant payment prompt at checkout</p>
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={momoEnabled}
-                onChange={(e) => setMomoEnabled(e.target.checked)}
-                className="rounded text-emerald-600 w-4 h-4"
-              />
-            </label>
-
-            <label className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 cursor-pointer">
-              <div className="flex items-center gap-3">
-                <CreditCard className="w-5 h-5 text-indigo-500" />
-                <div>
-                  <p className="font-bold text-slate-900 dark:text-white">Debit / Credit Card (Paystack Gateway)</p>
-                  <p className="text-[10px] text-slate-500">Accept Visa, Mastercard, GH-Link cards</p>
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={cardEnabled}
-                onChange={(e) => setCardEnabled(e.target.checked)}
-                className="rounded text-emerald-600 w-4 h-4"
-              />
-            </label>
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+              <p className="font-bold">Card and Mobile Money payments are not connected yet.</p>
+              <p className="mt-1 text-[11px] opacity-80">They will become available after a payment provider is integrated and verified. Checkout currently accepts Cash on Delivery only.</p>
+            </div>
 
             <label className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 cursor-pointer">
               <div className="flex items-center gap-3">
@@ -224,60 +194,15 @@ export const AdminSettingsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Section 4: Live Gateway & API Keys Integration */}
+        {/* Payment provider setup is deferred; never claim credentials are active before integration. */}
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
             <Lock className="w-4 h-4 text-emerald-600" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">API Keys & Live Integrations</h3>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Payment provider setup</h3>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Paystack Public Key (GHS / Card / MoMo)
-              </label>
-              <input
-                type="text"
-                placeholder="Your Paystack public key"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-[11px]"
-              />
-              <p className="text-[10px] text-slate-400 mt-1">Leaves in test mode if blank</p>
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Paystack Secret Key
-              </label>
-              <input
-                type="password"
-                placeholder="Your Paystack secret key"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-[11px]"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                SMS Provider (Arkesel / Hubtel / Twilio)
-              </label>
-              <select className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs">
-                <option value="arkesel">Arkesel SMS Gateway (Ghana)</option>
-                <option value="hubtel">Hubtel SMS Platform</option>
-                <option value="twilio">Twilio Global SMS</option>
-                <option value="simulated">Simulated Sandbox (Instant Log)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                SMS Sender ID (Max 11 chars)
-              </label>
-              <input
-                type="text"
-                defaultValue="NOVAMART"
-                maxLength={11}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold text-xs uppercase"
-              />
-            </div>
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p className="font-bold text-slate-800 dark:text-slate-100">No online payment provider is active.</p>
+            <p className="mt-1">Connect and verify a provider before enabling card or Mobile Money checkout. This settings page does not accept payment credentials.</p>
           </div>
         </div>
 

@@ -78,22 +78,12 @@ export const AdminOrdersView: React.FC = () => {
     if (!selectedOrder) return;
     setIsUpdating(true);
     try {
-      const res: any = await api.updateOrderStatus(selectedOrder.id, newStatus, trackingNumber);
+      const res: any = await api.updateOrderStatus(selectedOrder.id, newStatus, undefined, trackingNumber);
       const updatedOrder = res.order || res;
       setOrders((prev) => prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o)));
       setSelectedOrder(updatedOrder);
 
-      // Auto dispatch SMS to customer on status update
-      if (selectedOrder.customerPhone) {
-        api.sendOrderSMS({
-          phone: selectedOrder.customerPhone,
-          message: `NovaMart Update: Your order #${selectedOrder.orderNumber} is now ${newStatus}. Tracking Code: ${trackingNumber || selectedOrder.trackingNumber || 'Assigned'}`,
-          orderNumber: selectedOrder.orderNumber,
-          type: 'status_update'
-        }).catch(console.warn);
-      }
-
-      showToast('success', 'Order Updated & Customer Notified', `Order #${updatedOrder.orderNumber} set to ${newStatus}.`);
+      showToast('success', 'Order Updated', `Order #${updatedOrder.orderNumber} set to ${newStatus}. Customer SMS notifications are not configured yet.`);
     } catch (err: any) {
       showToast('error', 'Error', err.message);
     } finally {
@@ -352,7 +342,7 @@ export const AdminOrdersView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Courier Tracking Code:</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Courier Tracking Code (add when dispatched):</label>
                     <input
                       type="text"
                       value={trackingNumber}

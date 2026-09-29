@@ -68,6 +68,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   // Quick-access tabs shown in mobile bottom bar
   const MOBILE_QUICK_TABS = ['overview', 'orders', 'products', 'vendors', 'settings'];
   const mobileTabs = NAV_ITEMS.filter((i) => MOBILE_QUICK_TABS.includes(i.id));
+  const activeItem = NAV_ITEMS.find((item) => item.id === currentTab) ?? NAV_ITEMS[0];
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
@@ -105,12 +106,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Notification Bell */}
           <button
+            onClick={() => onTabChange('orders')}
             className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            aria-label="Notifications"
-            title="Notifications"
+            aria-label="Open orders"
+            title="Open orders"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-white dark:border-slate-900" />
           </button>
 
           {/* Live Storefront Button */}
@@ -308,8 +309,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </AnimatePresence>
 
         {/* ── Main Content Area ── */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+        <main className="flex-1 min-w-0 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-24 lg:pb-8">
           <div className="max-w-7xl mx-auto space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 pb-3 lg:hidden">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-emerald-600">Administration</p>
+                <h1 className="text-lg font-black text-slate-900 dark:text-white truncate">{activeItem.label}</h1>
+              </div>
+              <button
+                onClick={() => setMobileNavOpen(true)}
+                className="shrink-0 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300"
+                aria-label="Browse all admin sections"
+              >
+                All sections
+              </button>
+            </div>
             <React.Suspense fallback={
               <div className="min-h-[350px] flex flex-col items-center justify-center space-y-4 py-16">
                 <div className="w-9 h-9 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />

@@ -238,13 +238,7 @@ export const vendorsApi = {
       undefined,
       () => {
         const prods = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
-        // Match either explicit vendorId or fallback for demo
-        const filtered = prods.filter((p) => p.vendorId === vendorId);
-        if (filtered.length === 0 && vendorId === 'vend-kofi') {
-          // If kofi, assign a few tech products if not tagged yet
-          return { products: prods.slice(0, 5).map(p => ({ ...p, vendorId: 'vend-kofi', vendorName: 'Kofi Tech & Audio Hub' })) };
-        }
-        return { products: filtered };
+        return { products: prods.filter((product) => product.vendorId === vendorId) };
       }
     );
   },
@@ -315,7 +309,7 @@ export const vendorsApi = {
       },
       () => {
         const prods = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
-        const idx = prods.findIndex((p) => p.id === productId);
+        const idx = prods.findIndex((p) => p.id === productId && p.vendorId === vendorId);
         if (idx === -1) throw new Error('Product not found');
 
         prods[idx] = {
@@ -335,7 +329,7 @@ export const vendorsApi = {
       { method: 'DELETE' },
       () => {
         const prods = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
-        const filtered = prods.filter((p) => p.id !== productId);
+        const filtered = prods.filter((p) => !(p.id === productId && p.vendorId === vendorId));
         setLocal(STORAGE_KEYS.PRODUCTS, filtered);
         return { success: true };
       }
@@ -350,7 +344,7 @@ export const vendorsApi = {
         const orders = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
         // Return orders that contain at least one item from this vendor
         return orders.filter((o) =>
-          o.items.some((item) => item.vendorId === vendorId || !item.vendorId)
+          o.items.some((item) => item.vendorId === vendorId)
         );
       }
     );
@@ -375,12 +369,17 @@ export const vendorsApi = {
         const vendors = getLocal<Vendor[]>(STORAGE_KEYS.VENDORS, initialVendors);
         const prods = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
         const vendor = vendors.find((v) => v.id === vendorId || v.userId === vendorId);
+        const orders = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []).filter((order) =>
+          order.items.some((item) => item.vendorId === (vendor?.id || vendorId))
+        );
 
         const vProds = prods.filter((p) => p.vendorId === (vendor?.id || vendorId));
         const lowStock = vProds.filter((p) => p.stockQuantity < 5).length;
 
-        const commissionRate = vendor?.commissionRate || 10;
-        const grossRevenue = vendor?.totalRevenue || 18450;
+        const commissionRate = vendor?.commissionRate ?? 0;
+        const grossRevenue = vendor?.totalRevenue ?? orders.filter((order) => order.paymentStatus === 'successful').reduce((total, order) => total + order.items
+          .filter((item) => item.vendorId === (vendor?.id || vendorId))
+          .reduce((sum, item) => sum + item.total, 0), 0);
         const commissionPaid = (grossRevenue * commissionRate) / 100;
         const netEarnings = grossRevenue - commissionPaid;
 
@@ -388,13 +387,13 @@ export const vendorsApi = {
           grossRevenue,
           netEarnings,
           commissionPaid,
-          ordersCount: vendor?.totalSales || 48,
-          productsCount: vProds.length || vendor?.totalProducts || 12,
+          ordersCount: vendor?.totalSales ?? orders.length,
+          productsCount: vProds.length,
           lowStockCount: lowStock,
-          rating: vendor?.rating || 4.8,
-          reviewCount: vendor?.reviewCount || 64,
-          balance: vendor?.balance || 3450.00,
-          pendingBalance: vendor?.pendingBalance || 1200.00
+          rating: vendor?.rating ?? 0,
+          reviewCount: vendor?.reviewCount ?? 0,
+          balance: vendor?.balance ?? 0,
+          pendingBalance: vendor?.pendingBalance ?? 0
         };
       }
     );

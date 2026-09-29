@@ -24,7 +24,7 @@ export const VendorPayoutsView: React.FC = () => {
   const { user } = useAuth();
   const { formatPrice } = useSettings();
   const { showToast } = useToast();
-  const vendorId = user?.vendorId || 'vend-kofi';
+  const vendorId = user?.vendorId || '';
 
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [payouts, setPayouts] = useState<VendorPayoutRequest[]>([]);
@@ -126,7 +126,7 @@ export const VendorPayoutsView: React.FC = () => {
             </span>
             <Wallet className="w-5 h-5 text-emerald-200" />
           </div>
-          <p className="text-3xl font-black">{formatPrice(vendor?.balance || 3450.00)}</p>
+          <p className="text-3xl font-black">{formatPrice(vendor?.balance ?? 0)}</p>
           <p className="text-[11px] text-emerald-100">Ready to transfer to your MTN MoMo / Bank</p>
         </div>
 
@@ -139,7 +139,7 @@ export const VendorPayoutsView: React.FC = () => {
             <Clock className="w-5 h-5 text-amber-500" />
           </div>
           <p className="text-3xl font-black text-slate-900 dark:text-white">
-            {formatPrice(vendor?.pendingBalance || 1200.00)}
+            {formatPrice(vendor?.pendingBalance ?? 0)}
           </p>
           <p className="text-[11px] text-slate-500">Releases upon buyer delivery confirmation</p>
         </div>
@@ -153,7 +153,7 @@ export const VendorPayoutsView: React.FC = () => {
             <CheckCircle2 className="w-5 h-5 text-indigo-500" />
           </div>
           <p className="text-3xl font-black text-slate-900 dark:text-white">
-            {formatPrice(totalPaidOut || 4000.00)}
+            {formatPrice(totalPaidOut)}
           </p>
           <p className="text-[11px] text-slate-500">Successfully sent to your Mobile Money</p>
         </div>
@@ -164,7 +164,7 @@ export const VendorPayoutsView: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-black text-slate-900 dark:text-white">Withdrawal &amp; Payout History</h2>
-            <p className="text-xs text-slate-500">Record of all disbursement requests and transaction receipts</p>
+            <p className="text-xs text-slate-500">Record of payout requests and the references admins add when processing them.</p>
           </div>
         </div>
 
@@ -178,7 +178,7 @@ export const VendorPayoutsView: React.FC = () => {
                   <th className="py-3.5 px-4">Destination Account</th>
                   <th className="py-3.5 px-4">Date Requested</th>
                   <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right">Receipt</th>
+                  <th className="py-3.5 px-4 text-right">Transfer Reference</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -240,12 +240,22 @@ export const VendorPayoutsView: React.FC = () => {
 
                       {/* Action */}
                       <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => showToast('info', 'Receipt', `Transaction ${p.transactionRef || p.id} verified.`)}
-                          className="text-xs text-amber-600 font-bold hover:underline"
-                        >
-                          View
-                        </button>
+                        {p.transactionRef ? (
+                          <button
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(p.transactionRef!);
+                                showToast('success', 'Reference copied', 'The transfer reference was copied to your clipboard.');
+                              } catch {
+                                showToast('info', 'Transfer reference', p.transactionRef!);
+                              }
+                            }}
+                            className="text-xs text-amber-600 font-bold hover:underline"
+                            aria-label={`Copy transfer reference for payout ${p.id}`}
+                          >
+                            Copy reference
+                          </button>
+                        ) : <span className="text-xs text-slate-400">Not recorded</span>}
                       </td>
                     </tr>
                   ))
@@ -270,7 +280,7 @@ export const VendorPayoutsView: React.FC = () => {
                 <div>
                   <h2 className="text-lg font-black text-slate-900 dark:text-white">Request Funds Withdrawal</h2>
                   <p className="text-slate-500">
-                    Available balance: <strong>{formatPrice(vendor?.balance || 3450.00)}</strong>
+                    Available balance: <strong>{formatPrice(vendor?.balance ?? 0)}</strong>
                   </p>
                 </div>
                 <button
@@ -290,7 +300,7 @@ export const VendorPayoutsView: React.FC = () => {
                   <input
                     type="number"
                     min="50"
-                    max={vendor?.balance || 3450.00}
+                    max={vendor?.balance ?? 0}
                     required
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}

@@ -28,6 +28,54 @@ import { useSettings } from '../../context/SettingsContext';
 import { useToast } from '../../context/ToastContext';
 import { Order, Product } from '../../types/index';
 
+const buildSalesData = (orders: Order[], timeframe: '7d' | '30d' | '90d') => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const paidOrders = orders.filter((order) => order.paymentStatus === 'successful');
+  const bins: { key: string; day: string; label: string; revenue: number; orders: number }[] = [];
+
+  if (timeframe === '7d') {
+    for (let offset = 6; offset >= 0; offset -= 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - offset);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      bins.push({ key, day: date.toLocaleDateString(undefined, { weekday: 'short' }), label: date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }), revenue: 0, orders: 0 });
+    }
+    paidOrders.forEach((order) => {
+      const orderDate = new Date(order.createdAt);
+      const key = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}-${String(orderDate.getDate()).padStart(2, '0')}`;
+      const bin = bins.find((item) => item.key === key);
+      if (bin) { bin.revenue += order.total || 0; bin.orders += 1; }
+    });
+  } else if (timeframe === '30d') {
+    for (let index = 0; index < 4; index += 1) {
+      const end = new Date(today);
+      end.setDate(today.getDate() - (3 - index) * 7);
+      bins.push({ key: String(index), day: `Week ${index + 1}`, label: `Week ${index + 1} ending ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`, revenue: 0, orders: 0 });
+    }
+    paidOrders.forEach((order) => {
+      const age = Math.floor((today.getTime() - new Date(order.createdAt).getTime()) / 86400000);
+      if (age >= 0 && age < 30) {
+        const bin = bins[Math.min(3, Math.floor((29 - age) / 7))];
+        bin.revenue += order.total || 0;
+        bin.orders += 1;
+      }
+    });
+  } else {
+    for (let offset = 2; offset >= 0; offset -= 1) {
+      const date = new Date(today.getFullYear(), today.getMonth() - offset, 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      bins.push({ key, day: date.toLocaleDateString(undefined, { month: 'short' }), label: date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }), revenue: 0, orders: 0 });
+    }
+    paidOrders.forEach((order) => {
+      const date = new Date(order.createdAt);
+      const bin = bins.find((item) => item.key === `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+      if (bin) { bin.revenue += order.total || 0; bin.orders += 1; }
+    });
+  }
+  return bins;
+};
+
 interface AdminOverviewViewProps {
   onNavigateTab: (tab: string, param?: any) => void;
 }
@@ -37,38 +85,15 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
   const { showToast } = useToast();
 
   const [stats, setStats] = useState<any>(null);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [topProducts, setTopProducts] = useState<Product[]>([]);
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d'>('7d');
   const [hoveredPoint, setHoveredPoint] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Dynamic Sales Data based on timeframe
-  const salesDataByTimeframe = {
-    '7d': [
-      { day: 'Mon', revenue: 14200, orders: 8, label: 'Mon, Aug 14' },
-      { day: 'Tue', revenue: 19800, orders: 12, label: 'Tue, Aug 15' },
-      { day: 'Wed', revenue: 16400, orders: 10, label: 'Wed, Aug 16' },
-      { day: 'Thu', revenue: 24600, orders: 15, label: 'Thu, Aug 17' },
-      { day: 'Fri', revenue: 31200, orders: 19, label: 'Fri, Aug 18' },
-      { day: 'Sat', revenue: 27500, orders: 16, label: 'Sat, Aug 19' },
-      { day: 'Sun', revenue: 29800, orders: 18, label: 'Sun, Aug 20' }
-    ],
-    '30d': [
-      { day: 'Week 1', revenue: 84500, orders: 52, label: 'Jul 24 - Jul 30' },
-      { day: 'Week 2', revenue: 102300, orders: 64, label: 'Jul 31 - Aug 6' },
-      { day: 'Week 3', revenue: 118900, orders: 75, label: 'Aug 7 - Aug 13' },
-      { day: 'Week 4', revenue: 135400, orders: 84, label: 'Aug 14 - Aug 20' }
-    ],
-    '90d': [
-      { day: 'June', revenue: 320000, orders: 210, label: 'June 2026' },
-      { day: 'July', revenue: 412000, orders: 265, label: 'July 2026' },
-      { day: 'August', revenue: 485000, orders: 312, label: 'August 2026 MTD' }
-    ]
-  };
-
-  const chartData = salesDataByTimeframe[timeframe];
-  const maxRevenue = Math.max(...chartData.map((d) => d.revenue));
+  const chartData = buildSalesData(allOrders, timeframe);
+  const maxRevenue = Math.max(1, ...chartData.map((d) => d.revenue));
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -79,11 +104,14 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
           api.getOrders(),
           api.getProducts({ limit: 6, sortBy: 'popularity' })
         ]);
-        setStats(dashStats);
+        setStats({ ...(dashStats?.metrics ?? dashStats ?? {}), categorySales: dashStats?.categorySales ?? [] });
+        setAllOrders(ordersRes);
         setRecentOrders(ordersRes.slice(0, 6));
-        setTopProducts(prodsRes.products.slice(0, 5));
+        const lowStockProducts = dashStats?.lowStockProducts ?? prodsRes.products.filter((product) => product.stockQuantity <= 5);
+        setTopProducts(lowStockProducts.slice(0, 5));
       } catch (err) {
         console.error('Failed loading admin overview:', err);
+        showToast('error', 'Dashboard data unavailable', 'Some figures could not be loaded. Refresh the page to try again.');
       } finally {
         setIsLoading(false);
       }
@@ -93,15 +121,26 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
 
   const handleQuickRestock = async (productId: string, productName: string) => {
     try {
-      await api.updateProduct(productId, { stockQuantity: 25 });
+      const product = topProducts.find((item) => item.id === productId);
+      const nextQuantity = (product?.stockQuantity ?? 0) + 25;
+      await api.updateProduct(productId, { stockQuantity: nextQuantity });
       setTopProducts((prev) =>
-        prev.map((p) => (p.id === productId ? { ...p, stockQuantity: 25 } : p))
+        prev.map((p) => (p.id === productId ? { ...p, stockQuantity: nextQuantity } : p))
       );
       showToast('success', 'Stock Replenished! 📦', `Added +25 units to ${productName}`);
     } catch (err: any) {
       showToast('error', 'Restock Error', err.message);
     }
   };
+
+  const totalOrders = stats?.totalOrders ?? allOrders.length;
+  const successfulOrderCount = allOrders.filter((order) => order.paymentStatus === 'successful').length;
+  const pendingOrders = stats?.pendingOrders ?? allOrders.filter((order) => ['Order Placed', 'Payment Confirmed'].includes(order.orderStatus)).length;
+  const deliveredOrders = allOrders.filter((order) => order.orderStatus === 'Delivered').length;
+  const nonCancelledOrders = allOrders.filter((order) => order.orderStatus !== 'Cancelled').length;
+  const deliveredRate = nonCancelledOrders ? Math.round((deliveredOrders / nonCancelledOrders) * 100) : 0;
+  const categorySales = (stats?.categorySales ?? []).filter((category: any) => category.value > 0);
+  const categoryTotal = categorySales.reduce((total: number, category: any) => total + category.value, 0);
 
   if (isLoading) {
     return (
@@ -167,18 +206,18 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
         {/* Total Revenue */}
         <div className="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3 group hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">Gross Sales Revenue</span>
+            <span className="text-xs font-bold text-slate-500">Paid Order Revenue</span>
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
           <div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {formatPrice(stats?.totalRevenue || 124950)}
+              {formatPrice(stats?.totalRevenue ?? 0)}
             </h3>
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 mt-1">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>+18.4% vs prev {timeframe}</span>
+              <span>All time from successful payments</span>
             </div>
           </div>
           <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -189,18 +228,18 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
         {/* Orders Count */}
         <div className="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3 group hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">Completed Orders</span>
+            <span className="text-xs font-bold text-slate-500">Total Orders</span>
             <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-black">
               <ShoppingBag className="w-5 h-5" />
             </div>
           </div>
           <div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {stats?.totalOrders || 84}
+              {totalOrders}
             </h3>
             <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 mt-1">
               <Clock className="w-3.5 h-3.5" />
-              <span>{stats?.pendingOrders || 3} pending fulfillment</span>
+              <span>{pendingOrders} pending fulfillment</span>
             </div>
           </div>
           <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -218,11 +257,11 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
           </div>
           <div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {formatPrice(1487.50)}
+              {formatPrice(successfulOrderCount ? (stats?.totalRevenue ?? 0) / successfulOrderCount : 0)}
             </h3>
             <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 mt-1">
               <Zap className="w-3.5 h-3.5" />
-              <span>+12.3% Luxury Basket Surge</span>
+              <span>Average across paid orders</span>
             </div>
           </div>
           <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -233,18 +272,18 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
         {/* Fulfillment Rate */}
         <div className="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3 group hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">On-Time Dispatch Rate</span>
+            <span className="text-xs font-bold text-slate-500">Delivery Completion Rate</span>
             <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-black">
               <Truck className="w-5 h-5" />
             </div>
           </div>
           <div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              98.6%
+              {deliveredRate}%
             </h3>
             <div className="flex items-center gap-1.5 text-xs font-bold text-purple-600 mt-1">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Same-Day in Greater Accra</span>
+              <span>{deliveredOrders} delivered orders</span>
             </div>
           </div>
           <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -260,22 +299,18 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-black text-base text-slate-900 dark:text-white">Revenue & Velocity Trend</h3>
+                <h3 className="font-black text-base text-slate-900 dark:text-white">Paid Revenue Trend</h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
                   {timeframe.toUpperCase()} Window
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">Real-time daily transaction curve & order volume</p>
+              <p className="text-xs text-slate-400 mt-0.5">Revenue from successful orders over time</p>
             </div>
 
             <div className="flex items-center gap-4 text-xs font-bold">
               <span className="flex items-center gap-1.5 text-emerald-600">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                Gross Sales
-              </span>
-              <span className="flex items-center gap-1.5 text-indigo-500">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                Order Count
+                Paid Sales
               </span>
             </div>
           </div>
@@ -289,15 +324,18 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
               <div className="border-b border-dashed border-slate-400 w-full" />
             </div>
 
-            {chartData.map((item, idx) => {
-              const heightPercent = Math.max(15, Math.round((item.revenue / maxRevenue) * 100));
+            {chartData.map((item) => {
+              const heightPercent = item.revenue > 0 ? Math.max(8, Math.round((item.revenue / maxRevenue) * 100)) : 0;
               const isHovered = hoveredPoint?.day === item.day;
 
               return (
                 <div
                   key={item.day}
+                  tabIndex={0}
                   onMouseEnter={() => setHoveredPoint(item)}
                   onMouseLeave={() => setHoveredPoint(null)}
+                  onFocus={() => setHoveredPoint(item)}
+                  onBlur={() => setHoveredPoint(null)}
                   className="relative flex-1 flex flex-col items-center justify-end h-full group cursor-pointer z-10"
                 >
                   {/* Tooltip on hover */}
@@ -329,36 +367,35 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
           </div>
 
           <div className="flex items-center justify-between text-xs text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3">
-            <span>Peak Velocity: <strong className="text-slate-900 dark:text-white font-bold">{formatPrice(maxRevenue)}</strong></span>
-            <span className="text-emerald-600 font-bold">100% Verified Paystack & MoMo Settlement</span>
+            <span>Peak Revenue: <strong className="text-slate-900 dark:text-white font-bold">{formatPrice(maxRevenue)}</strong></span>
+            <span>Based on recorded orders</span>
           </div>
         </div>
 
         {/* Category Share & Department Breakdown (4 Cols) */}
         <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-5">
           <div>
-            <h3 className="font-black text-base text-slate-900 dark:text-white">Department Revenue Share</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Distribution across luxury catalog</p>
+              <h3 className="font-black text-base text-slate-900 dark:text-white">Category Revenue Share</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Distribution across product categories</p>
           </div>
 
           <div className="space-y-4 pt-1">
-            {[
-              { label: 'Designer & Niche Perfumes', share: 54, amount: 'GH₵ 67,470', color: 'bg-emerald-500' },
-              { label: 'Arabian Oud & Attar Oils', share: 26, amount: 'GH₵ 32,480', color: 'bg-indigo-500' },
-              { label: 'Discovery Decant Sets', share: 14, amount: 'GH₵ 17,490', color: 'bg-amber-500' },
-              { label: 'Luxury Candles & Home Mists', share: 6, amount: 'GH₵ 7,510', color: 'bg-rose-500' }
-            ].map((cat) => (
-              <div key={cat.label} className="space-y-1.5">
+            {categorySales.slice(0, 4).map((cat: any, index: number) => {
+              const share = categoryTotal ? Math.round((cat.value / categoryTotal) * 100) : 0;
+              return (
+              <div key={cat.name} className="space-y-1.5">
                 <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-700 dark:text-slate-300 truncate">{cat.label}</span>
-                  <span className="text-slate-900 dark:text-white shrink-0 ml-2">{cat.share}%</span>
+                  <span className="text-slate-700 dark:text-slate-300 truncate">{cat.name}</span>
+                  <span className="text-slate-900 dark:text-white shrink-0 ml-2">{share}%</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div style={{ width: `${cat.share}%` }} className={`${cat.color} h-full rounded-full`} />
+                  <div style={{ width: `${share}%` }} className={`${['bg-emerald-500', 'bg-indigo-500', 'bg-amber-500', 'bg-rose-500'][index % 4]} h-full rounded-full`} />
                 </div>
-                <p className="text-[10px] text-slate-400 text-right">{cat.amount}</p>
+                <p className="text-[10px] text-slate-400 text-right">{formatPrice(cat.value)}</p>
               </div>
-            ))}
+              );
+            })}
+            {categorySales.length === 0 && <p className="text-sm text-slate-500 py-4">Category revenue will appear here when orders are recorded.</p>}
           </div>
 
           <button
@@ -390,10 +427,10 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { stage: 'New Orders', count: 3, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-900/50' },
-              { stage: 'Velvet Packing', count: 2, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-900/50' },
-              { stage: 'With Courier', count: 4, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/50 border-purple-200 dark:border-purple-900/50' },
-              { stage: 'Delivered', count: 18, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900/50' }
+              { stage: 'New Orders', count: allOrders.filter((order) => ['Order Placed', 'Payment Confirmed'].includes(order.orderStatus)).length, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-900/50' },
+              { stage: 'Packing', count: allOrders.filter((order) => ['Processing', 'Packed'].includes(order.orderStatus)).length, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-900/50' },
+              { stage: 'With Courier', count: allOrders.filter((order) => ['Shipped', 'Out for Delivery'].includes(order.orderStatus)).length, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/50 border-purple-200 dark:border-purple-900/50' },
+              { stage: 'Delivered', count: deliveredOrders, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900/50' }
             ].map((p) => (
               <div key={p.stage} className={`p-4 rounded-2xl border text-center space-y-1 ${p.color}`}>
                 <p className="text-2xl font-black">{p.count}</p>
@@ -407,12 +444,12 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
             <div className="flex items-center justify-between text-xs font-bold">
               <span className="text-slate-900 dark:text-white flex items-center gap-1.5">
                 <Truck className="w-3.5 h-3.5 text-emerald-600" />
-                Active Dispatch Courier Fleet:
+                Delivery completion:
               </span>
-              <span className="text-emerald-600">3 Riders En Route</span>
+              <span className="text-emerald-600">{deliveredRate}%</span>
             </div>
             <p className="text-[11px] text-slate-500">
-              Deliveries active in <strong>East Legon, Airport Residential, Cantonments & Tema Community 1</strong>.
+              {deliveredOrders} of {nonCancelledOrders} active orders marked delivered.
             </p>
           </div>
         </div>
@@ -469,6 +506,7 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({ onNavigate
                 </div>
               );
             })}
+            {topProducts.length === 0 && <p className="text-sm text-slate-500 py-4">No products are at the low stock threshold.</p>}
           </div>
         </div>
       </div>

@@ -21,7 +21,7 @@ import { useToast } from '../../context/ToastContext';
 export const VendorProfileView: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const vendorId = user?.vendorId || 'vend-kofi';
+  const vendorId = user?.vendorId || '';
 
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [storeName, setStoreName] = useState('');

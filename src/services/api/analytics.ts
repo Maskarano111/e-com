@@ -1,4 +1,4 @@
-import { Product, Order, PaymentTransaction } from '../../types/index';
+import { Product, Order, PaymentTransaction, User } from '../../types/index';
 import { initialProducts } from '../../data/initialData';
 import { API_BASE, STORAGE_KEYS, getLocal, safeFetch } from './storage';
 
@@ -10,11 +10,21 @@ export const analyticsApi = {
       () => {
         const prods = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
         const orders = getLocal<Order[]>(STORAGE_KEYS.ORDERS, []);
+        const users = getLocal<any[]>(STORAGE_KEYS.USERS, []);
+        const today = new Date().toISOString().slice(0, 10);
         return {
-          totalRevenue: orders.reduce((sum, o) => sum + (o.total || 0), 125400),
-          totalOrders: orders.length + 342,
-          totalProducts: prods.length,
-          totalCustomers: 1280
+          metrics: {
+            totalRevenue: orders.filter((order) => order.paymentStatus === 'successful').reduce((sum, order) => sum + (order.total || 0), 0),
+            revenueToday: orders.filter((order) => order.paymentStatus === 'successful' && order.createdAt.startsWith(today)).reduce((sum, order) => sum + (order.total || 0), 0),
+            totalOrders: orders.length,
+            pendingOrders: orders.filter((order) => ['Order Placed', 'Payment Confirmed'].includes(order.orderStatus)).length,
+            totalProducts: prods.length,
+            totalCustomers: users.filter((user) => user.role === 'customer').length,
+            outOfStock: prods.filter((product) => product.stockQuantity <= 0).length,
+            lowStock: prods.filter((product) => product.stockQuantity > 0 && product.stockQuantity <= 5).length
+          },
+          categorySales: [],
+          lowStockProducts: prods.filter((product) => product.stockQuantity <= 5)
         };
       }
     );
@@ -24,26 +34,7 @@ export const analyticsApi = {
     return safeFetch<any>(
       `${API_BASE}/admin/customers`,
       undefined,
-      () => [
-        {
-          id: 'cust-1',
-          name: 'Abena Osei',
-          email: 'abena@example.com',
-          phone: '+233 24 111 2233',
-          ordersCount: 4,
-          totalSpent: 1250,
-          joinedDate: '2026-01-15'
-        },
-        {
-          id: 'cust-2',
-          name: 'Kwesi Mensah',
-          email: 'kwesi@example.com',
-          phone: '+233 20 444 5566',
-          ordersCount: 2,
-          totalSpent: 16900,
-          joinedDate: '2026-02-01'
-        }
-      ]
+      () => getLocal<User[]>(STORAGE_KEYS.USERS, []).filter((user) => user.role === 'customer')
     );
   },
 

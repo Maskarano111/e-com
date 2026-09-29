@@ -29,7 +29,7 @@ export const VendorOrdersView: React.FC = () => {
   const { user } = useAuth();
   const { formatPrice } = useSettings();
   const { showToast } = useToast();
-  const vendorId = user?.vendorId || 'vend-kofi';
+  const vendorId = user?.vendorId || '';
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState('');

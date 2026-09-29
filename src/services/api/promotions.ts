@@ -98,36 +98,7 @@ export const promotionsApi = {
    */
   async getVendorPromotionStatus(vendorId: string): Promise<VendorPromotionStatusResponse | null> {
     return safeFetch<VendorPromotionStatusResponse>(
-      `${API_BASE}/vendor/${vendorId}/promotion-status`,
-      undefined,
-      () => ({
-        success: true,
-        subscription: {
-          tier: 'growth',
-          planName: 'Growth Accelerator',
-          status: 'active',
-          price: 249,
-          currency: 'GHS',
-          startedAt: new Date(Date.now() - 10 * 86400000).toISOString(),
-          expiresAt: new Date(Date.now() + 20 * 86400000).toISOString(),
-          slotsTotal: 10,
-          slotsUsed: 3,
-          autoRenew: true,
-          paymentMethod: 'mtn_momo',
-          transactionRef: 'SUB-MOMO-DEMO'
-        },
-        slotsTotal: 10,
-        slotsUsed: 3,
-        promotedProducts: [],
-        allVendorProducts: [],
-        analytics: {
-          impressions: 4850,
-          clicks: 342,
-          ctr: 7.1,
-          attributedSales: 41,
-          revenueGenerated: 18450
-        }
-      })
+      `${API_BASE}/vendor/${vendorId}/promotion-status`
     );
   },
 
@@ -141,25 +112,7 @@ export const promotionsApi = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vendorId, planId, paymentMethod })
-      },
-      () => ({
-        success: true,
-        message: 'Plan activated successfully',
-        subscription: {
-          tier: planId.includes('enterprise') ? 'enterprise' : planId.includes('growth') ? 'growth' : 'starter',
-          planName: planId.includes('enterprise') ? 'Enterprise Dominance' : planId.includes('growth') ? 'Growth Accelerator' : 'Starter Boost',
-          status: 'active',
-          price: 249,
-          currency: 'GHS',
-          startedAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
-          slotsTotal: planId.includes('enterprise') ? 999 : planId.includes('growth') ? 10 : 3,
-          slotsUsed: 0,
-          autoRenew: true,
-          paymentMethod,
-          transactionRef: `SUB-${Date.now()}`
-        }
-      })
+      }
     );
   },
 
@@ -173,12 +126,7 @@ export const promotionsApi = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vendorId })
-      },
-      () => ({
-        success: true,
-        isPromoted: true,
-        message: 'Product promotion updated'
-      })
+      }
     );
   },
 

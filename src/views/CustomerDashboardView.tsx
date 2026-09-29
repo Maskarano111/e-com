@@ -61,6 +61,9 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
   const [addresses, setAddresses] = useState<DeliveryAddress[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<Order | null>(null);
+  const [selectedReturnOrder, setSelectedReturnOrder] = useState<Order | null>(null);
+  const [returnReason, setReturnReason] = useState('');
+  const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
 
   // Profile Form State
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -126,10 +129,11 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
   }
 
   // Calculate VIP Tier metrics
-  const totalSpent = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const qualifyingOrders = orders.filter((order) => order.orderStatus === 'Delivered');
+  const totalSpent = qualifyingOrders.reduce((sum, order) => sum + (order.total || 0), 0);
   const tier = totalSpent >= 10000 ? 'Diamond Privé' : totalSpent >= 4000 ? 'Platinum Member' : 'Gold Member';
   const tierProgress = Math.min(100, Math.round((totalSpent / 10000) * 100));
-  const points = Math.round(totalSpent * 0.2);
+  const points = qualifyingOrders.reduce((sum, order) => sum + Math.floor((order.total || 0) * 2), 0);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,6 +188,33 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
       showToast('info', 'Address Removed', 'Location was deleted from your address book.');
     } catch (err: any) {
       showToast('error', 'Error', err.message);
+    }
+  };
+
+  const handleSubmitReturn = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedReturnOrder || returnReason.trim().length < 5) return;
+    setIsSubmittingReturn(true);
+    try {
+      await api.createReturnRequest(selectedReturnOrder.id, { reason: returnReason.trim(), refundPreference: 'original_method' });
+      showToast('success', 'Return request sent', 'Support will review your request and send you an update.');
+      setSelectedReturnOrder(null);
+      setReturnReason('');
+    } catch (err: any) {
+      showToast('error', 'Could not request a return', err.message || 'Please check the return window and try again.');
+    } finally {
+      setIsSubmittingReturn(false);
+    }
+  };
+
+  const handleCancelOrder = async (order: Order) => {
+    if (!window.confirm(`Cancel order #${order.orderNumber}? Reserved stock will be released.`)) return;
+    try {
+      const updated = await api.updateOrderStatus(order.id, 'Cancelled', 'Cancelled by customer');
+      setOrders(current => current.map(item => item.id === updated.id ? updated : item));
+      showToast('success', 'Order cancelled', 'The order was cancelled and reserved stock has been released.');
+    } catch (err: any) {
+      showToast('error', 'Could not cancel order', err.message || 'This order may already be with the courier.');
     }
   };
 
@@ -257,7 +288,7 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
               { id: 'overview', label: 'Overview', icon: LayoutDashboard },
               { id: 'orders', label: 'My Orders', icon: Package, count: orders.length },
               { id: 'wishlist', label: 'Saved Items', icon: Heart, count: wishlist.length },
-              { id: 'loyalty', label: 'Loyalty Points', icon: Award, count: points },
+              { id: 'loyalty', label: 'Loyalty Points', icon: Award },
               { id: 'addresses', label: 'Delivery Locations', icon: MapPin, count: addresses.length },
               { id: 'notifications', label: 'Alerts', icon: Bell, count: notifications.filter((n) => !n.read).length },
               { id: 'profile', label: 'Profile & Account Info', icon: User },
@@ -532,18 +563,15 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                         >
                           View Receipt
                         </button>
-                        {(String(o.orderStatus || (o as any).status || '') === 'Delivered') && (
+                        {o.paymentStatus === 'pending' && ['Order Placed', 'Payment Confirmed', 'Processing', 'Packed'].includes(o.orderStatus) && (
+                          <button onClick={() => handleCancelOrder(o)}
+                            className="px-3.5 py-1.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/30 font-bold">
+                            Cancel Order
+                          </button>
+                        )}
+                        {(String(o.orderStatus || (o as any).status || '') === 'Delivered' && Date.now() - new Date(o.updatedAt || o.createdAt).getTime() <= 7 * 86400000) && (
                           <button
-                            onClick={async () => {
-                              const reason = prompt('Please describe the reason for return:');
-                              if (!reason) return;
-                              try {
-                                await api.createReturnRequest(o.id, { reason, refundPreference: 'original_method' });
-                                showToast('Return request submitted! We will review it within 24 hours.', 'success');
-                              } catch {
-                                showToast('Failed to submit return request', 'error');
-                              }
-                            }}
+                            onClick={() => { setSelectedReturnOrder(o); setReturnReason(''); }}
                             className="px-3.5 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-bold flex items-center gap-1.5"
                           >
                             <RotateCcw className="w-3 h-3" />
@@ -571,7 +599,7 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
             <div className="bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
               <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
                 <h3 className="font-black text-base text-slate-900 dark:text-white">Loyalty Rewards</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Earn points on every purchase and redeem for discounts</p>
+                <p className="text-xs text-slate-400 mt-0.5">Points are calculated from delivered orders. Reward redemption is not active yet.</p>
               </div>
 
               {/* Points Card */}
@@ -580,9 +608,9 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                 <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full" />
                 <div className="relative z-10 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold text-emerald-100 mb-1">Available Points</p>
+                    <p className="text-xs font-bold text-emerald-100 mb-1">Points Earned</p>
                     <p className="text-5xl font-black">{points.toLocaleString()}</p>
-                    <p className="text-xs text-emerald-200 mt-2">≈ {formatPrice(points / 10)} in discount value</p>
+                    <p className="text-xs text-emerald-200 mt-2">From {qualifyingOrders.length} delivered {qualifyingOrders.length === 1 ? 'order' : 'orders'}</p>
                   </div>
                   <div className="text-right">
                     <Award className="w-16 h-16 text-white/30" />
@@ -594,8 +622,8 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
               {/* How it works */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
-                  { icon: ShoppingBag, title: 'Earn Points', desc: 'Get 2 points for every ₵1 spent on orders', color: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600' },
-                  { icon: Gift, title: 'Redeem Rewards', desc: 'Redeem 100 points = ₵10 off on any order', color: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600' },
+                  { icon: ShoppingBag, title: 'Earn Points', desc: 'Delivered orders earn 2 points for every 1 unit spent.', color: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600' },
+                  { icon: Gift, title: 'Redeem Rewards', desc: 'Point redemption is coming soon; points do not apply as a checkout discount yet.', color: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600' },
                   { icon: Crown, title: 'Tier Upgrades', desc: 'Unlock better rates as you reach higher tiers', color: 'bg-amber-50 dark:bg-amber-950/30 text-amber-600' },
                 ].map(item => (
                   <div key={item.title} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -608,21 +636,21 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                 ))}
               </div>
 
-              {/* Points history placeholder */}
+              {/* Derived loyalty history from delivered orders */}
               <div>
                 <h4 className="text-sm font-black text-slate-900 dark:text-white mb-3">Points History</h4>
                 <div className="space-y-2">
-                  {orders.slice(0, 5).map(o => (
+                  {qualifyingOrders.slice(0, 5).map(o => (
                     <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-xs">
                       <div>
                         <p className="font-bold text-slate-900 dark:text-white">Order #{o.orderNumber}</p>
                         <p className="text-slate-400">{new Date(o.createdAt).toLocaleDateString('en-GB')}</p>
                       </div>
-                      <span className="font-black text-emerald-600">+{Math.round((o.total || 0) * 0.2)} pts</span>
+                      <span className="font-black text-emerald-600">+{Math.floor((o.total || 0) * 2)} pts</span>
                     </div>
                   ))}
-                  {orders.length === 0 && (
-                    <div className="text-center py-8 text-slate-400 text-sm">Place orders to start earning loyalty points!</div>
+                  {qualifyingOrders.length === 0 && (
+                    <div className="text-center py-8 text-slate-400 text-sm">Points will appear here after an order is delivered.</div>
                   )}
                 </div>
               </div>
@@ -991,6 +1019,38 @@ export const CustomerDashboardView: React.FC<CustomerDashboardViewProps> = ({
                 </div>
               </form>
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Return Request Modal */}
+      <AnimatePresence>
+        {selectedReturnOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelectedReturnOrder(null)} />
+            <motion.form onSubmit={handleSubmitReturn} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}
+              className="relative w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white">Request a return</h2>
+                <p className="mt-1 text-xs text-slate-500">Order #{selectedReturnOrder.orderNumber} · Delivered {new Date(selectedReturnOrder.updatedAt).toLocaleDateString()}</p>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                Submit within 7 days of delivery. Support reviews the request; approved refunds are processed manually while online payments are being set up.
+              </div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Why are you returning this order?
+                <textarea value={returnReason} onChange={event => setReturnReason(event.target.value)} minLength={5} maxLength={1000} required rows={4}
+                  placeholder="Describe the issue or reason for your return…"
+                  className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-normal dark:border-slate-700 dark:bg-slate-800" />
+              </label>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setSelectedReturnOrder(null)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-bold text-slate-600 dark:border-slate-700 dark:text-slate-300">Cancel</button>
+                <button type="submit" disabled={isSubmittingReturn || returnReason.trim().length < 5} className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50">
+                  {isSubmittingReturn ? 'Submitting…' : 'Send Request'}
+                </button>
+              </div>
+            </motion.form>
           </div>
         )}
       </AnimatePresence>

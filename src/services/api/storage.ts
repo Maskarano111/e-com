@@ -40,7 +40,14 @@ export async function safeFetch<T>(
   fallbackFn?: () => T | Promise<T>
 ): Promise<T> {
   try {
-    const res = await fetch(url, options);
+    const headers = new Headers(options?.headers);
+    if (!headers.has('Authorization')) {
+      try {
+        const token = localStorage.getItem('novamart_auth_token');
+        if (token) headers.set('Authorization', `Bearer ${token}`);
+      } catch {}
+    }
+    const res = await fetch(url, { ...options, headers });
     if (res.ok) {
       const contentType = res.headers.get('content-type') || '';
       if (contentType.includes('application/json')) {
@@ -54,10 +61,12 @@ export async function safeFetch<T>(
         throw new Error('Invalid JSON response');
       }
     }
-    if (fallbackFn) return await fallbackFn();
-    throw new Error(`Request failed with status ${res.status}`);
+    const errorBody = await res.json().catch(() => ({}));
+    const httpError = new Error(errorBody.error || `Request failed with status ${res.status}`) as Error & { status?: number };
+    httpError.status = res.status;
+    throw httpError;
   } catch (err) {
-    if (fallbackFn) {
+    if (fallbackFn && !(err instanceof Error && 'status' in err)) {
       return await fallbackFn();
     }
     throw err;

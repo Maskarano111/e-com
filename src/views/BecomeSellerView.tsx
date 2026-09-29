@@ -143,8 +143,8 @@ export const BecomeSellerView: React.FC<BecomeSellerViewProps> = ({ onNavigate }
       showToast('error', 'Valid Phone Required', 'Please enter an active contact phone number.');
       return;
     }
-    if (!password.trim() || password.length < 6) {
-      showToast('error', 'Password Too Short', 'Please choose a password with at least 6 characters.');
+    if (!password.trim() || password.length < 8) {
+      showToast('error', 'Password Too Short', 'Please choose a password with at least 8 characters.');
       return;
     }
     if (!address.trim()) {
@@ -579,7 +579,7 @@ export const BecomeSellerView: React.FC<BecomeSellerViewProps> = ({ onNavigate }
                   <input
                     type="password"
                     required
-                    placeholder="Min 6 characters"
+                    placeholder="Min 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-medium focus:ring-2 focus:ring-emerald-500 outline-none"

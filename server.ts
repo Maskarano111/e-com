@@ -8,7 +8,7 @@ import apiRouter from "./server/routes";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Security headers via helmet
   app.use(helmet({
@@ -24,6 +24,14 @@ async function startServer() {
     legacyHeaders: false,
     message: { error: 'Too many authentication attempts. Please try again in 15 minutes.' }
   });
+  const passwordResetLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many password reset requests. Please try again later.' }
+  });
+  app.use('/api/auth/forgot-password', passwordResetLimiter);
   app.use('/api/auth/', authLimiter);
 
   // General API rate limiter

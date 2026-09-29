@@ -53,10 +53,6 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
       if (user?.vendorId) {
         const v = await api.getVendorById(user.vendorId);
         if (v) setVendor(v);
-      } else {
-        // Fallback demo vendor if not tagged
-        const v = await api.getVendorById('vend-kofi');
-        if (v) setVendor(v);
       }
     };
     fetchVendor();
@@ -75,6 +71,23 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
   // Mobile quick-access tabs
   const MOBILE_QUICK = ['overview', 'promotions', 'products', 'orders', 'payouts'];
   const mobileTabs = NAV_ITEMS.filter((i) => MOBILE_QUICK.includes(i.id));
+  const activeItem = NAV_ITEMS.find((item) => item.id === currentTab) ?? NAV_ITEMS[0];
+
+  if (!user?.vendorId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-950 p-6">
+        <div className="max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 text-center space-y-4 shadow-sm">
+          <Store className="w-10 h-10 mx-auto text-amber-500" />
+          <h1 className="text-xl font-black text-slate-900 dark:text-white">Seller account not linked</h1>
+          <p className="text-sm text-slate-500">This login is not connected to a store. Contact support or sign in with your seller account.</p>
+          <div className="flex justify-center gap-3">
+            <button onClick={onNavigateToStore} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm font-bold">Back to store</button>
+            <button onClick={logout} className="px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-bold">Sign out</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
@@ -97,12 +110,12 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-black text-sm tracking-tight text-slate-900 dark:text-white">
+                <span className="max-w-[132px] truncate sm:max-w-none font-black text-sm tracking-tight text-slate-900 dark:text-white">
                   {vendor?.storeName || user?.vendorStoreName || 'Seller Hub'}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-200 dark:border-emerald-800">
+                <span className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${vendor?.status === 'active' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'}`}>
                   <CheckCircle2 className="w-2.5 h-2.5" />
-                  Verified Merchant
+                  {vendor?.status === 'active' ? 'Active Merchant' : vendor?.status === 'suspended' ? 'Suspended' : 'Verification Pending'}
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 hidden sm:block">
@@ -116,28 +129,28 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Notification Bell — pending orders badge */}
           <button
+            onClick={() => onTabChange('orders')}
             className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            aria-label="Notifications"
-            title="Notifications"
+            aria-label="Open orders"
+            title="Open orders"
           >
             <Bell className="w-5 h-5" />
-            {/* Badge: pending orders indicator */}
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900" />
           </button>
 
           {/* Wallet Balance Badge */}
-          <div
+          <button
+            type="button"
             onClick={() => onTabChange('payouts')}
-            className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs font-bold text-amber-800 dark:text-amber-300 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors shadow-2xs"
+            className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors shadow-2xs"
           >
             <Wallet className="w-3.5 h-3.5 text-amber-600" />
-            <span>Balance: {formatPrice(vendor?.balance || 3450.00)}</span>
-          </div>
+            <span>Balance: {formatPrice(vendor?.balance ?? 0)}</span>
+          </button>
 
           {/* View Live Boutique */}
           <button
             onClick={onNavigateToStore}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors"
           >
             <Store className="w-3.5 h-3.5 text-emerald-600" />
             <span className="hidden sm:inline">Storefront</span>
@@ -286,7 +299,7 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
                     <p className="font-bold text-xs text-slate-900 dark:text-white truncate">
                       {vendor?.storeName || 'Kofi Tech & Audio'}
                     </p>
-                    <p className="text-[11px] text-amber-600 font-semibold">Balance: {formatPrice(vendor?.balance || 3450)}</p>
+                    <p className="text-[11px] text-amber-600 font-semibold">Balance: {formatPrice(vendor?.balance ?? 0)}</p>
                   </div>
                 </div>
 
@@ -341,8 +354,23 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
         </AnimatePresence>
 
         {/* ── Content View Body ── */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto w-full">
-          {children}
+        <main className="flex-1 min-w-0 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto w-full">
+          <div className="space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 pb-3 lg:hidden">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-amber-600">Seller portal</p>
+                <h1 className="text-lg font-black text-slate-900 dark:text-white truncate">{activeItem.label}</h1>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="shrink-0 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300"
+                aria-label="Browse all seller sections"
+              >
+                All sections
+              </button>
+            </div>
+            {children}
+          </div>
         </main>
       </div>
 
@@ -381,7 +409,7 @@ export const VendorLayout: React.FC<VendorLayoutProps> = ({
                   {item.id === 'overview' ? 'Dashboard' :
                    item.id === 'products' ? 'Products' :
                    item.id === 'orders' ? 'Orders' :
-                   item.id === 'payouts' ? 'Payouts' : 'Profile'}
+                   item.id === 'payouts' ? 'Payouts' : 'Promote'}
                 </span>
               </button>
             );

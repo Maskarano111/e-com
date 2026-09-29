@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShieldCheck,
@@ -78,6 +78,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
   const { user, token } = useAuth();
   const { formatPrice, settings, country, setCountry, countryConfig } = useSettings();
   const { showToast } = useToast();
+  const checkoutRequestKey = useRef(globalThis.crypto?.randomUUID?.() || `checkout_${Date.now()}_${Math.random().toString(36).slice(2, 18)}`);
 
   // Contact Info
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -95,40 +96,16 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
   const [deliveryNotes, setDeliveryNotes] = useState('');
 
   // Payment State
-  const [paymentMethod, setPaymentMethod] = useState<'momo' | 'card' | 'bank_transfer' | 'ussd' | 'opay' | 'cod'>(
-    country === 'NG' ? 'bank_transfer' : 'momo'
-  );
-  const [momoProvider, setMomoProvider] = useState<'mtn' | 'telecel' | 'at'>('mtn');
-  const [momoNumber, setMomoNumber] = useState(user?.phone || '0245550199');
-
   // NovaPoints Loyalty State
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const userLoyaltyPoints = user ? 350 : 150;
   const loyaltyDiscount = useLoyaltyPoints ? Math.min(userLoyaltyPoints * 0.1, subtotal * 0.2) : 0;
   const payableTotal = Math.max(0, total - loyaltyDiscount);
 
-  // Card State
-  const [cardNumber, setCardNumber] = useState('5399 4123 5678 9010');
-  const [cardExpiry, setCardExpiry] = useState('12/28');
-  const [cardCvv, setCardCvv] = useState('888');
-
-  // Nigeria Bank Transfer State
-  const [virtualAccount, setVirtualAccount] = useState({
-    bank: 'Wema Bank (Paystack)',
-    accountNumber: '9928410294',
-    accountName: 'NovaMart / Paystack Checkout'
-  });
-  const [hasCopiedAccount, setHasCopiedAccount] = useState(false);
-  const [transferTimer, setTransferTimer] = useState(1800); // 30 mins
   const [showMobileSummary, setShowMobileSummary] = useState(false);
 
   // Modals & Processing States
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showMomoPrompt, setShowMomoPrompt] = useState(false);
-  const [showBankTransferModal, setShowBankTransferModal] = useState(false);
-  const [showUssdModal, setShowUssdModal] = useState(false);
-  const [momoStep, setMomoStep] = useState<'prompt' | 'pin' | 'authorized'>('prompt');
-  const [momoPin, setMomoPin] = useState('');
 
   // Synchronize country defaults
   useEffect(() => {
@@ -136,14 +113,10 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
       setCity('Ikeja, Lagos');
       setRegion('Lagos');
       setPostalCode('100001');
-      if (paymentMethod === 'momo') setPaymentMethod('bank_transfer');
     } else {
       setCity('Accra');
       setRegion('Greater Accra');
       setPostalCode('GA-183-9022');
-      if (paymentMethod === 'bank_transfer' || paymentMethod === 'ussd' || paymentMethod === 'opay') {
-        setPaymentMethod('momo');
-      }
     }
   }, [country]);
 
@@ -175,7 +148,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
     setRegion(addr.region);
   };
 
-  const handleCreateOrder = async (confirmedPaymentStatus: 'paid' | 'pending' | 'failed' = 'pending', transactionId?: string) => {
+  const handleCreateOrder = async () => {
     if (!firstName || !lastName || !email || !phone || !streetAddress || !city) {
       showToast('error', 'Missing Information', 'Please complete all customer and delivery address fields.');
       return;
@@ -184,13 +157,6 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
     setIsSubmitting(true);
 
     try {
-      let mappedMethod: PaymentMethod = 'card';
-      if (paymentMethod === 'momo') mappedMethod = momoProvider === 'mtn' ? 'mtn_momo' : 'telecel_cash';
-      else if (paymentMethod === 'bank_transfer') mappedMethod = 'bank_transfer';
-      else if (paymentMethod === 'ussd') mappedMethod = 'ussd';
-      else if (paymentMethod === 'opay') mappedMethod = 'opay';
-      else if (paymentMethod === 'cod') mappedMethod = 'cash_on_delivery';
-
       const orderPayload = {
         userId: user?.id,
         customerName: `${firstName} ${lastName}`,
@@ -204,9 +170,9 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
         deliveryMethod: deliveryMethod || 'standard',
         tax,
         total: payableTotal,
-        paymentMethod: mappedMethod,
-        paymentStatus: confirmedPaymentStatus === 'paid' ? 'successful' as const : 'pending' as const,
-        paymentReference: transactionId || `PAY-${country}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+        paymentMethod: 'cash_on_delivery' as PaymentMethod,
+        paymentStatus: 'pending' as const,
+        idempotencyKey: checkoutRequestKey.current,
         deliveryAddress: {
           name: `${firstName} ${lastName}`,
           phone,
@@ -222,43 +188,20 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
       const result: any = await api.createOrder(orderPayload);
       const createdOrder = result.order || result;
 
-      // Send SMS confirmation notification
-      api.sendOrderSMS({
-        phone,
-        message: `Your NovaMart order #${createdOrder.orderNumber} for ${formatPrice(total)} has been received and confirmed. Track at ${window.location.origin}/#track-${createdOrder.orderNumber}`,
-        orderNumber: createdOrder.orderNumber,
-        type: 'order_confirmed'
-      }).catch(console.warn);
-
       clearCart();
-      showToast('success', 'Order Placed Successfully! 🎉', `Order #${createdOrder.orderNumber || ''} is confirmed.`);
+      showToast('success', 'Order placed', `Order #${createdOrder.orderNumber || ''}. Payment is due on delivery.`);
       onNavigate('order-confirmation', { order: createdOrder });
     } catch (err: any) {
       showToast('error', 'Order Failed', err.message || 'Could not process order. Please try again.');
     } finally {
       setIsSubmitting(false);
-      setShowMomoPrompt(false);
-      setShowBankTransferModal(false);
-      setShowUssdModal(false);
     }
   };
 
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (country === 'GH' && paymentMethod === 'momo') {
-      setShowMomoPrompt(true);
-      setMomoStep('prompt');
-    } else if (country === 'NG' && paymentMethod === 'bank_transfer') {
-      setShowBankTransferModal(true);
-    } else if (country === 'NG' && (paymentMethod === 'ussd' || paymentMethod === 'opay')) {
-      setShowUssdModal(true);
-    } else if (paymentMethod === 'card') {
-      handleCreateOrder('paid', `PSTK-${country}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`);
-    } else {
-      // Cash on Delivery
-      handleCreateOrder('pending');
-    }
+    handleCreateOrder();
   };
 
   if (cart.length === 0) {
@@ -601,176 +544,19 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
                 </h2>
               </div>
 
-              {/* GHANA PAYMENT METHODS */}
-              {country === 'GH' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {/* MTN Mobile Money / Telecel */}
-                  <div
-                    onClick={() => setPaymentMethod('momo')}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                      paymentMethod === 'momo'
-                        ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                        <Smartphone className="w-4 h-4 text-amber-500" />
-                        <span>Mobile Money</span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-600 text-[10px] font-bold">
-                        Instant Push
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                      MTN MoMo, Telecel Cash, AT Money
-                    </p>
+              {settings.enableCOD ? <div className="rounded-2xl border-2 border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 p-4" role="status">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+                    <Banknote className="w-4 h-4 text-emerald-600" />
+                    <span>Pay on Delivery</span>
                   </div>
-
-                  {/* Card / Paystack */}
-                  <div
-                    onClick={() => setPaymentMethod('card')}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                      paymentMethod === 'card'
-                        ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                        <CreditCard className="w-4 h-4 text-indigo-500" />
-                        <span>Credit / Debit Card</span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-600 text-[10px] font-bold">
-                        Paystack
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                      Visa, Mastercard, GH-Link
-                    </p>
-                  </div>
-
-                  {/* Cash on Delivery */}
-                  <div
-                    onClick={() => setPaymentMethod('cod')}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all sm:col-span-2 ${
-                      paymentMethod === 'cod'
-                        ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                        <Banknote className="w-4 h-4 text-emerald-500" />
-                        <span>Cash / MoMo On Delivery</span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 text-[10px] font-bold">
-                        Accra & Kumasi
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                      Pay conveniently upon inspection at your doorstep
-                    </p>
-                  </div>
+                  <span className="rounded bg-emerald-500/20 px-2 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">AVAILABLE</span>
                 </div>
-              )}
-
-              {/* NIGERIA PAYMENT METHODS */}
-              {country === 'NG' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {/* Pay with Bank Transfer (NIP Virtual Account) */}
-                  <div
-                    onClick={() => setPaymentMethod('bank_transfer')}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                      paymentMethod === 'bank_transfer'
-                        ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                        <Building2 className="w-4 h-4 text-emerald-500" />
-                        <span>Pay with Bank Transfer</span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 text-[10px] font-bold">
-                        ★ Popular (#1 in Nigeria)
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                      Instant Virtual NIP Account (Wema / Providus Bank)
-                    </p>
-                  </div>
-
-                  {/* Naira Card (Verve / Visa / Mastercard) */}
-                  <div
-                    onClick={() => setPaymentMethod('card')}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                      paymentMethod === 'card'
-                        ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                        <CreditCard className="w-4 h-4 text-indigo-500" />
-                        <span>Naira Debit Card</span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-600 text-[10px] font-bold">
-                        Verve / Visa
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                      Verve, Mastercard, Visa via Paystack
-                    </p>
-                  </div>
-
-                  {/* USSD / OPay / PalmPay */}
-                  <div
-                    onClick={() => setPaymentMethod('ussd')}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                      paymentMethod === 'ussd'
-                        ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                        <Smartphone className="w-4 h-4 text-purple-500" />
-                        <span>USSD & OPay / PalmPay</span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-600 text-[10px] font-bold">
-                        *737# / Wallet
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                      GTBank, Zenith, Access, Moniepoint & Wallets
-                    </p>
-                  </div>
-
-                  {/* Cash on Delivery (Lagos & Abuja) */}
-                  <div
-                    onClick={() => setPaymentMethod('cod')}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                      paymentMethod === 'cod'
-                        ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                        <Banknote className="w-4 h-4 text-emerald-500" />
-                        <span>Pay On Delivery</span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 text-[10px] font-bold">
-                        Lagos & Abuja
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                      Card / Transfer upon arrival at your doorstep
-                    </p>
-                  </div>
-                </div>
-              )}
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Pay the courier when your order arrives. Your order remains unpaid until delivery is marked complete.</p>
+                <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">Mobile Money, cards, and bank transfer will be enabled when a payment provider is connected.</p>
+              </div> : <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200" role="alert">
+                Pay on Delivery is currently unavailable. Please contact support before placing an order.
+              </div>}
             </div>
           </div>
 
@@ -859,14 +645,14 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
               <button
                 id="btn-place-order"
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !settings.enableCOD}
                 className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting ? (
-                  <span>Processing Secure Payment...</span>
+                  <span>Placing your order...</span>
                 ) : (
                   <>
-                    <span>Confirm &amp; Pay {formatPrice(payableTotal)}</span>
+                    <span>Place Order · Pay on Delivery ({formatPrice(payableTotal)})</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -882,214 +668,6 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ onNavigate }) => {
       </form>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 1. NIGERIA BANK TRANSFER MODAL (VIRTUAL NIP ACCOUNT) */}
-      {/* ------------------------------------------------------------------ */}
-      <AnimatePresence>
-        {showBankTransferModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
-              className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-6 text-center"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-600 mx-auto flex items-center justify-center">
-                <Building2 className="w-8 h-8" />
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                  Paystack NIP Instant Transfer
-                </span>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white mt-2">
-                  Transfer {formatPrice(total)}
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Send exact amount to this dedicated virtual account from your bank app (OPay, Kuda, GTBank, Zenith, Access, etc.).
-                </p>
-              </div>
-
-              {/* Account Details Box */}
-              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3 text-left">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Bank Name</span>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">{virtualAccount.bank}</p>
-                </div>
-
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Account Number</span>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-xl font-mono font-black text-emerald-600 dark:text-emerald-400 tracking-wider">
-                      {virtualAccount.accountNumber}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(virtualAccount.accountNumber);
-                        setHasCopiedAccount(true);
-                        setTimeout(() => setHasCopiedAccount(false), 2000);
-                        showToast('info', 'Copied!', 'Account number copied to clipboard.');
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
-                    >
-                      {hasCopiedAccount ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{hasCopiedAccount ? 'Copied' : 'Copy'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Account Name</span>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">
-                    NovaMart / {firstName} {lastName}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Account expires in <strong>29:45 mins</strong></span>
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => handleCreateOrder('paid', `NIP-NG-${Math.random().toString(36).substring(2, 9).toUpperCase()}`)}
-                  className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>I Have Sent The Money (Verify)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowBankTransferModal(false)}
-                  className="w-full py-2.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-semibold"
-                >
-                  Cancel & Choose Another Method
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 2. GHANA MOMO PUSH APPROVAL MODAL */}
-      {/* ------------------------------------------------------------------ */}
-      <AnimatePresence>
-        {showMomoPrompt && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
-              className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-6 text-center"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 mx-auto flex items-center justify-center">
-                <Smartphone className="w-8 h-8 animate-pulse" />
-              </div>
-
-              <div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                  Mobile Money USSD Prompt Sent
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  A payment authorization prompt for <strong>{formatPrice(total)}</strong> was sent to <strong>{momoNumber || phone}</strong>.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 text-left space-y-2">
-                <p className="font-bold">Instructions to Authorize:</p>
-                <ol className="list-decimal pl-4 space-y-1 text-[11px]">
-                  <li>Check your phone screen for the MTN/Telecel USSD approval prompt.</li>
-                  <li>Enter your MoMo PIN and press 1 to confirm payment.</li>
-                  <li>Click the button below once approved.</li>
-                </ol>
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => handleCreateOrder('paid', `MOMO-GH-${Math.random().toString(36).substring(2, 9).toUpperCase()}`)}
-                  className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>I Have Approved on My Phone</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowMomoPrompt(false)}
-                  className="w-full py-2.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-semibold"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 3. NIGERIA USSD / OPAY WALLET MODAL */}
-      {/* ------------------------------------------------------------------ */}
-      <AnimatePresence>
-        {showUssdModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
-              className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-6 text-center"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-600 mx-auto flex items-center justify-center">
-                <Smartphone className="w-8 h-8" />
-              </div>
-
-              <div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                  Pay via USSD & OPay Wallet
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Dial your bank's USSD code or pay with OPay/PalmPay wallet for {formatPrice(total)}.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left space-y-2 text-xs">
-                <div className="flex justify-between font-mono">
-                  <span>GTBank:</span> <strong>*737*50*Amount*001#</strong>
-                </div>
-                <div className="flex justify-between font-mono">
-                  <span>Zenith Bank:</span> <strong>*966*60#</strong>
-                </div>
-                <div className="flex justify-between font-mono">
-                  <span>Access Bank:</span> <strong>*901*000#</strong>
-                </div>
-                <div className="flex justify-between font-mono">
-                  <span>OPay / PalmPay:</span> <strong>Open App → Scan QR</strong>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => handleCreateOrder('paid', `USSD-NG-${Math.random().toString(36).substring(2, 9).toUpperCase()}`)}
-                  className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>I Have Completed Payment</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowUssdModal(false)}
-                  className="w-full py-2.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-semibold"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

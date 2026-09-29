@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 import { User } from '../types/index';
 import { api } from '../services/api';
 import { useToast } from './ToastContext';
@@ -151,6 +149,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const googleLogin = async (): Promise<boolean> => {
     try {
+      const [{ GoogleAuthProvider, signInWithPopup }, { auth }] = await Promise.all([
+        import('firebase/auth'),
+        import('../lib/firebase'),
+      ]);
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       const result = await signInWithPopup(auth, provider);

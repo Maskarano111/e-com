@@ -87,7 +87,23 @@ export const marketingApi = {
       () => {
         let reviews = getLocal<Review[]>(STORAGE_KEYS.REVIEWS, []);
         if (params?.productId) reviews = reviews.filter((r) => r.productId === params.productId);
+        if (params?.status && params.status !== 'all') reviews = reviews.filter((r) => r.status === params.status);
         return reviews;
+      }
+    );
+  },
+
+  async saveVendorReviewReply(id: string, reply: string) {
+    return safeFetch<Review>(
+      `${API_BASE}/reviews/${id}/reply`,
+      { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply }) },
+      () => {
+        const reviews = getLocal<Review[]>(STORAGE_KEYS.REVIEWS, []);
+        const index = reviews.findIndex((review) => review.id === id);
+        if (index < 0) throw new Error('Review not found');
+        reviews[index] = { ...reviews[index], vendorReply: reply.trim(), vendorReplyDate: new Date().toISOString() };
+        setLocal(STORAGE_KEYS.REVIEWS, reviews);
+        return reviews[index];
       }
     );
   },
@@ -102,16 +118,26 @@ export const marketingApi = {
       },
       () => {
         const reviews = getLocal<Review[]>(STORAGE_KEYS.REVIEWS, []);
+        const productId = data.productId;
+        const userId = data.userId;
+        if (!productId || !userId) throw new Error('Sign in and select a product before submitting a review.');
+        const orders = getLocal<any[]>('novamart_orders', []);
+        const hasPaidOrder = orders.some((order) =>
+          order.userId === userId &&
+          ['successful', 'paid', 'processing', 'shipped', 'delivered', 'completed'].includes(String(order.paymentStatus || order.status).toLowerCase()) &&
+          (order.items || []).some((item: any) => item.productId === productId || item.id === productId)
+        );
+        if (!hasPaidOrder) throw new Error('A completed purchase is required before reviewing this product.');
         const newRev: Review = {
           id: `rev-${Date.now()}`,
-          productId: data.productId || 'prod-portable-blender',
-          userId: data.userId || 'usr-guest',
-          userName: data.userName || 'Verified Buyer',
+          productId,
+          userId,
+          userName: data.userName || 'Customer',
           rating: Number(data.rating) || 5,
           title: data.title || '',
           comment: data.comment || '',
           verifiedPurchase: true,
-          status: 'approved',
+          status: 'pending',
           createdAt: new Date().toISOString()
         };
         reviews.unshift(newRev);
@@ -208,8 +234,7 @@ export const marketingApi = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ points })
-      },
-      () => ({ success: true, pointsRedeemed: points, discountAmount: points / 10 })
+      }
     );
   },
 

@@ -25,7 +25,6 @@ import { Order, OrderStatus } from '../types/index';
 import { api } from '../services/api';
 import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
-import jsPDF from 'jspdf';
 
 interface OrderTrackingViewProps {
   initialOrderNumber?: string;
@@ -34,7 +33,7 @@ interface OrderTrackingViewProps {
 
 const TIMELINE_STEPS: { status: OrderStatus; label: string; description: string }[] = [
   { status: 'Order Placed', label: 'Order Received', description: 'Your order details have been securely logged in our system.' },
-  { status: 'Payment Confirmed', label: 'Payment Confirmed', description: 'MoMo / Card transaction cleared and approved.' },
+  { status: 'Payment Confirmed', label: 'Payment Confirmed', description: 'Your online payment has been confirmed.' },
   { status: 'Processing', label: 'Quality Check & Packing', description: 'Items picked and verified at Airport City Fulfillment Hub.' },
   { status: 'Packed', label: 'Packed & Ready', description: 'Package sealed and placed in the dispatch queue.' },
   { status: 'Shipped', label: 'Handed to Courier', description: 'Package dispatched for transit to regional sorting depot.' },
@@ -47,6 +46,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
   const { showToast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState(initialOrderNumber || 'NM-GH-10928');
+  const [phoneQuery, setPhoneQuery] = useState('');
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -55,12 +55,12 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
   const [courierLocation, setCourierLocation] = useState({ lat: 5.6037, lng: -0.1870, name: 'Airport Residential Area, Accra' });
   const [deliveryOtp, setDeliveryOtp] = useState('7492');
 
-  const fetchOrder = async (num: string) => {
+  const fetchOrder = async (num: string, phone = phoneQuery) => {
     if (!num.trim()) return;
     setIsLoading(true);
     setErrorMsg('');
     try {
-      const data = await api.getOrder(num.trim());
+      const data = await api.getOrder(num.trim(), phone.trim());
       setOrder(data);
       // Generate deterministic OTP based on order number
       const otp = Math.abs(num.split('').reduce((a, b) => a + b.charCodeAt(0), 0) % 9000 + 1000).toString();
@@ -77,7 +77,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
     if (!order) return;
     setIsRefreshing(true);
     try {
-      const latest = await api.getOrder(order.orderNumber);
+      const latest = await api.getOrder(order.orderNumber, phoneQuery.trim());
       if (latest) {
         setOrder(latest);
         showToast('info', 'Status Refreshed', `Tracking data updated for #${latest.orderNumber}.`);
@@ -106,7 +106,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
 
     const pollInterval = setInterval(async () => {
       try {
-        const latest = await api.getOrder(order.orderNumber);
+        const latest = await api.getOrder(order.orderNumber, phoneQuery.trim());
         if (latest) {
           if (latest.orderStatus !== order.orderStatus) {
             showToast('success', 'Order Status Updated', `Your order #${latest.orderNumber} is now: ${latest.orderStatus}`);
@@ -136,15 +136,22 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
 
   const getStepIndex = (status: OrderStatus) => {
     if (status === 'Cancelled') return -1;
-    return TIMELINE_STEPS.findIndex((s) => s.status === status);
+    const steps = order?.paymentMethod === 'cash_on_delivery'
+      ? TIMELINE_STEPS.filter((step) => step.status !== 'Payment Confirmed')
+      : TIMELINE_STEPS;
+    return steps.findIndex((s) => s.status === status);
   };
 
   const currentStepIdx = order ? getStepIndex(order.orderStatus) : 5;
+  const timelineSteps = order?.paymentMethod === 'cash_on_delivery'
+    ? TIMELINE_STEPS.filter((step) => step.status !== 'Payment Confirmed')
+    : TIMELINE_STEPS;
 
   // Generate downloadable PDF invoice receipt
-  const handleDownloadInvoice = () => {
+  const handleDownloadInvoice = async () => {
     if (!order) return;
     try {
+      const { default: jsPDF } = await import('jspdf');
       const doc = new jsPDF();
       doc.setFontSize(20);
       doc.setTextColor(5, 150, 105);
@@ -204,11 +211,11 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
           Track Your Delivery
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-          Enter your order reference code (e.g. <strong>NM-GH-10928</strong>) or courier tracking number.
+          Enter your order reference and the phone number used at checkout.
         </p>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearch} className="max-w-md mx-auto pt-2 flex gap-2">
+        <form onSubmit={handleSearch} className="max-w-md mx-auto pt-2 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
           <div className="relative flex-1">
             <input
               id="input-tracking-query"
@@ -221,6 +228,14 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           </div>
+          <input
+            type="tel"
+            value={phoneQuery}
+            onChange={(e) => setPhoneQuery(e.target.value)}
+            placeholder="Checkout phone number"
+            autoComplete="tel"
+            className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+          />
           <button
             id="btn-submit-track"
             type="submit"
@@ -421,7 +436,7 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({ initialOrd
               </h3>
 
               <div className="relative pl-6 sm:pl-8 space-y-8 before:absolute before:left-2.5 sm:before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
-                {TIMELINE_STEPS.map((step, idx) => {
+                {timelineSteps.map((step, idx) => {
                   const isCompleted = idx <= currentStepIdx;
                   const isCurrent = idx === currentStepIdx;
 

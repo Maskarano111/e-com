@@ -100,9 +100,9 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   freeDeliveryThreshold: 500,
   taxRate: 0.035,
   enableCOD: true,
-  enableMoMo: true,
-  enableCard: true,
-  enablePaystack: true,
+  enableMoMo: false,
+  enableCard: false,
+  enablePaystack: false,
   socialLinks: {
     facebook: "https://facebook.com/novamartgh",
     instagram: "https://instagram.com/novamartgh",

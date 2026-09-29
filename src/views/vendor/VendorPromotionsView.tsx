@@ -19,9 +19,7 @@ import {
   Check,
   ChevronRight,
   X,
-  CreditCard,
   Wallet,
-  Smartphone,
   RefreshCw,
   HelpCircle
 } from 'lucide-react';
@@ -35,7 +33,7 @@ export const VendorPromotionsView: React.FC = () => {
   const { user } = useAuth();
   const { formatPrice, country } = useSettings();
   const { showToast } = useToast();
-  const vendorId = user?.vendorId || 'vend-kofi';
+  const vendorId = user?.vendorId || '';
 
   const [isLoading, setIsLoading] = useState(true);
   const [plans, setPlans] = useState<PromotionPlan[]>([]);
@@ -127,8 +125,8 @@ export const VendorPromotionsView: React.FC = () => {
       } else {
         showToast(res?.message || 'Failed to complete subscription.', 'error');
       }
-    } catch {
-      showToast('Error processing subscription payment.', 'error');
+    } catch (err: any) {
+      showToast(err.message || 'Error processing subscription payment.', 'error');
     } finally {
       setIsSubmittingPayment(false);
     }
@@ -595,7 +593,7 @@ export const VendorPromotionsView: React.FC = () => {
                   <h4 className="font-semibold text-sm text-slate-900 dark:text-white">
                     Select Billing Method
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('vendor_balance')}
@@ -608,41 +606,10 @@ export const VendorPromotionsView: React.FC = () => {
                       <Wallet className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                       <div>
                         <div className="text-xs font-bold text-slate-900 dark:text-white">Store Wallet Balance</div>
-                        <div className="text-[11px] text-slate-500">Deduct from pending payouts</div>
+                        <div className="text-[11px] text-slate-500">Deduct from available store balance</div>
                       </div>
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('momo')}
-                      className={`p-3.5 rounded-xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
-                        paymentMethod === 'momo'
-                          ? 'border-amber-500 bg-amber-500/10 font-semibold'
-                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'
-                      }`}
-                    >
-                      <Smartphone className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                      <div>
-                        <div className="text-xs font-bold text-slate-900 dark:text-white">Mobile Money</div>
-                        <div className="text-[11px] text-slate-500">MTN MoMo / Telecel Cash</div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('card')}
-                      className={`p-3.5 rounded-xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
-                        paymentMethod === 'card'
-                          ? 'border-amber-500 bg-amber-500/10 font-semibold'
-                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'
-                      }`}
-                    >
-                      <CreditCard className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                      <div>
-                        <div className="text-xs font-bold text-slate-900 dark:text-white">Card / Paystack</div>
-                        <div className="text-[11px] text-slate-500">Debit or Credit Card</div>
-                      </div>
-                    </button>
+                    <div className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-xs text-slate-500 flex items-center">Mobile money and card billing will be available when payment processing is connected.</div>
                   </div>
 
                   <div className="flex items-center justify-end gap-3 pt-4">
