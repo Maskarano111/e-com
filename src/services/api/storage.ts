@@ -1,4 +1,5 @@
-export const API_BASE = '/api';
+const configuredApiBase = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, '');
+export const API_BASE = configuredApiBase || '/api';
 
 export const STORAGE_KEYS = {
   PRODUCTS: 'novamart_products',

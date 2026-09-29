@@ -16,6 +16,34 @@ async function startServer() {
     crossOriginEmbedderPolicy: false
   }));
 
+  const normalizeOrigin = (value: string) => {
+    try { return new URL(value.trim()).origin; } catch { return ''; }
+  };
+  const allowedOrigins = new Set(
+    [process.env.APP_URL, ...(process.env.CORS_ORIGINS || '').split(',')]
+      .map((origin) => normalizeOrigin(origin || ''))
+      .filter(Boolean)
+  );
+  if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.add('http://localhost:4179');
+    allowedOrigins.add('http://localhost:5173');
+  }
+  app.use((req, res, next) => {
+    const origin = req.get('Origin');
+    if (origin) {
+      const normalizedOrigin = normalizeOrigin(origin);
+      if (!normalizedOrigin || !allowedOrigins.has(normalizedOrigin)) {
+        return res.status(403).json({ error: 'This origin is not allowed to access the API.' });
+      }
+      res.setHeader('Access-Control-Allow-Origin', normalizedOrigin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    }
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
   // Rate limiting for auth routes (prevents credential brute-forcing)
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

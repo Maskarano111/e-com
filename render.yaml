@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: novamart-api
+    runtime: node
+    plan: 0.5c-512mb
+    region: frankfurt
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: novamart-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+      - key: APP_URL
+        value: https://ecomassite.netlify.app
+      - key: CORS_ORIGINS
+        value: https://ecomassite.netlify.app
+      - key: JWT_SECRET
+        generateValue: true
