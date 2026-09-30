@@ -33,7 +33,7 @@ export interface LifecycleRunResult {
     vendorId: string;
     vendorName: string;
     tier: string;
-    action: 'renewed' | 'cancelled_insufficient_funds';
+    action: 'renewed' | 'cancelled_insufficient_funds' | 'expired_term_complete';
     amountDeducted?: number;
     balanceRemaining?: number;
     message: string;

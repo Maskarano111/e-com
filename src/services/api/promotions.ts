@@ -137,33 +137,47 @@ export const promotionsApi = {
   /**
    * Subscribe to or upgrade a promotion tier
    */
-  async subscribePromotionPlan(vendorId: string, planId: string, paymentMethod = 'vendor_balance') {
+  async subscribePromotionPlan(vendorId: string, planId: string, paymentMethod = 'vendor_balance', durationMonths = 1) {
     return safeFetch<{ success: boolean; message: string; subscription: VendorPromotionSubscription }>(
       `${API_BASE}/vendor/subscribe-plan`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vendorId, planId, paymentMethod })
+        body: JSON.stringify({ vendorId, planId, paymentMethod, durationMonths })
       },
       () => {
-        const plans: Record<string, { tier: VendorPromotionSubscription['tier']; name: string; price: number; slots: number }> = {
-          'plan-starter': { tier: 'starter', name: 'Starter Boost', price: 99, slots: 3 },
-          'plan-growth': { tier: 'growth', name: 'Growth Accelerator', price: 249, slots: 10 },
-          'plan-enterprise': { tier: 'enterprise', name: 'Enterprise Dominance', price: 599, slots: 999 }
+        const validDurations = [1, 3, 6, 12];
+        if (!validDurations.includes(durationMonths)) {
+          return {
+            success: false,
+            message: 'Choose a plan term of 1, 3, 6, or 12 months.',
+            subscription: {} as VendorPromotionSubscription
+          };
+        }
+        const plans: Record<string, { tier: VendorPromotionSubscription['tier']; name: string; priceGH: number; priceNG: number; slots: number }> = {
+          'plan-starter': { tier: 'starter', name: 'Starter Boost', priceGH: 99, priceNG: 9500, slots: 3 },
+          'plan-growth': { tier: 'growth', name: 'Growth Accelerator', priceGH: 249, priceNG: 24000, slots: 10 },
+          'plan-enterprise': { tier: 'enterprise', name: 'Enterprise Dominance', priceGH: 599, priceNG: 59000, slots: 999 }
         };
         const plan = plans[planId];
         const vendors = getLocal<Vendor[]>(STORAGE_KEYS.VENDORS, initialVendors);
         const index = vendors.findIndex((vendor) => vendor.id === vendorId || vendor.userId === vendorId);
         if (!plan || index < 0) return { success: false, message: 'Demo seller or plan was not found.', subscription: {} as VendorPromotionSubscription };
+        const isNigeria = vendors[index].countryCode === 'NG';
+        const monthlyPrice = isNigeria ? plan.priceNG : plan.priceGH;
         const now = new Date();
+        const expiresAt = new Date(now);
+        expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
         const subscription: VendorPromotionSubscription = {
           tier: plan.tier,
           planName: plan.name,
           status: 'active',
-          price: plan.price,
-          currency: 'GHS',
+          durationMonths,
+          price: monthlyPrice,
+          totalPrice: monthlyPrice * durationMonths,
+          currency: isNigeria ? 'NGN' : 'GHS',
           startedAt: now.toISOString(),
-          expiresAt: new Date(now.getTime() + 30 * 86400000).toISOString(),
+          expiresAt: expiresAt.toISOString(),
           slotsTotal: plan.slots,
           slotsUsed: Math.min(plan.slots, getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, []).filter((product) => product.vendorId === vendors[index].id && product.isPromoted).length),
           autoRenew: false,

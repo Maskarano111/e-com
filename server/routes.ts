@@ -2962,6 +2962,7 @@ router.get('/vendor/:id/promotion-status', (req, res) => {
 // Subscribe to or upgrade a promotion plan
 router.post('/vendor/subscribe-plan', (req, res) => {
   const { vendorId, planId, paymentMethod } = req.body;
+  const durationMonths = Number(req.body.durationMonths ?? 1);
   const vendors = db.get('vendors') || [];
   const plans = (db.get('promotionPlans') || []) as PromotionPlan[];
 
@@ -2974,15 +2975,26 @@ router.post('/vendor/subscribe-plan', (req, res) => {
   if (!selectedPlan) {
     return res.status(400).json({ success: false, message: 'Invalid promotion plan selected' });
   }
+  if (![1, 3, 6, 12].includes(durationMonths)) {
+    return res.status(400).json({ success: false, message: 'Choose a plan term of 1, 3, 6, or 12 months.' });
+  }
   if ((paymentMethod || 'vendor_balance') !== 'vendor_balance') {
     return res.status(400).json({ success: false, message: 'Mobile money and card payments are not connected yet. Choose the store balance method.' });
   }
-  if ((vendors[vendorIndex].balance || 0) < selectedPlan.priceGH) {
-    return res.status(400).json({ success: false, message: 'Your available store balance is too low for this plan.' });
+  const isNigeria = vendors[vendorIndex].countryCode === 'NG';
+  const monthlyPrice = isNigeria ? selectedPlan.priceNG : selectedPlan.priceGH;
+  const totalPrice = monthlyPrice * durationMonths;
+  if ((vendors[vendorIndex].balance || 0) < totalPrice) {
+    const currencySymbol = isNigeria ? '₦' : 'GH₵';
+    return res.status(400).json({ success: false, message: `Your available store balance is too low. This ${durationMonths}-month term costs ${currencySymbol} ${totalPrice.toLocaleString()}.` });
   }
 
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + 30 * 86400000); // 30-day billing cycle
+  const expiresAt = new Date(now);
+  const startingDay = expiresAt.getDate();
+  expiresAt.setDate(1);
+  expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
+  expiresAt.setDate(Math.min(startingDay, new Date(expiresAt.getFullYear(), expiresAt.getMonth() + 1, 0).getDate()));
   const ref = `BOOST-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
   const currentProducts = db.get('products') || [];
@@ -2992,20 +3004,22 @@ router.post('/vendor/subscribe-plan', (req, res) => {
     tier: selectedPlan.tier,
     planName: selectedPlan.name,
     status: 'active',
-    price: selectedPlan.priceGH,
-    currency: 'GHS',
+    durationMonths,
+    price: monthlyPrice,
+    totalPrice,
+    currency: isNigeria ? 'NGN' : 'GHS',
     startedAt: now.toISOString(),
     expiresAt: expiresAt.toISOString(),
     slotsTotal: selectedPlan.maxSlots,
     slotsUsed: activePromoted.length,
-    autoRenew: true,
+    autoRenew: false,
     paymentMethod: paymentMethod || 'vendor_balance',
     transactionRef: ref
   };
 
   vendors[vendorIndex].subscription = newSubscription;
 
-  vendors[vendorIndex].balance = Math.max(0, (vendors[vendorIndex].balance || 0) - selectedPlan.priceGH);
+  vendors[vendorIndex].balance = Math.max(0, (vendors[vendorIndex].balance || 0) - totalPrice);
 
   db.set('vendors', vendors);
 
@@ -3168,7 +3182,7 @@ router.post('/admin/subscriptions/process-renewals', (req, res) => {
   const result = db.processSubscriptionLifecycle();
   return res.json({
     success: true,
-    message: `Processed ${result.processedCount} subscriptions: ${result.renewedCount} auto-deducted & renewed, ${result.cancelledCount} auto-cancelled due to insufficient balance.`,
+    message: `Processed ${result.processedCount} subscriptions: ${result.renewedCount} auto-renewed, ${result.cancelledCount} expired or cancelled.`,
     result
   });
 });
@@ -3201,7 +3215,9 @@ router.post('/admin/subscriptions/simulate-expiry', (req, res) => {
     success: true,
     message: simulateShortBalance
       ? `Simulated expiration with ₵0 balance: subscription cancelled and products unboosted.`
-      : `Simulated expiration with ₵${vendor.balance} balance: auto-deducted renewal fee and extended validity.`,
+      : result.actions[0]?.action === 'expired_term_complete'
+        ? 'Simulated end of prepaid term: plan expired without a renewal charge.'
+        : `Simulated expiration with ₵${vendor.balance} balance: auto-deducted renewal fee and extended validity.`,
     result,
     vendor
   });

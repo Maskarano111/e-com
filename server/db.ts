@@ -535,7 +535,7 @@ class Database {
       vendorId: string;
       vendorName: string;
       tier: string;
-      action: 'renewed' | 'cancelled_insufficient_funds';
+      action: 'renewed' | 'cancelled_insufficient_funds' | 'expired_term_complete';
       amountDeducted?: number;
       balanceRemaining?: number;
       message: string;
@@ -564,6 +564,36 @@ class Database {
         const plan = plans.find((p) => p.tier === vendor.subscription?.tier) || plans[0];
         const renewalFee = plan ? plan.priceGH : 99;
         const currentBalance = vendor.balance || 0;
+
+        if (!vendor.subscription.autoRenew) {
+          vendor.subscription.status = 'expired';
+          vendor.subscription.slotsUsed = 0;
+          products.forEach((product) => {
+            if (product.vendorId === vendor.id) product.isPromoted = false;
+          });
+          notifications.unshift({
+            id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+            userId: vendor.userId,
+            target: 'customer',
+            title: `NovaBoost Plan Expired`,
+            message: `Your prepaid ${vendor.subscription.planName} term has ended. Promoted products have been paused. Choose a new plan to boost them again.`,
+            type: 'promo',
+            read: false,
+            createdAt: now.toISOString()
+          });
+          actions.push({
+            vendorId: vendor.id,
+            vendorName: vendor.storeName,
+            tier: vendor.subscription.tier,
+            action: 'expired_term_complete',
+            amountDeducted: 0,
+            balanceRemaining: currentBalance,
+            message: `Prepaid ${vendor.subscription.planName} term ended. No renewal payment was taken.`
+          });
+          cancelledCount++;
+          modified = true;
+          continue;
+        }
 
         if (currentBalance >= renewalFee) {
           // CASE A: AUTO-DEDUCT AND RENEW

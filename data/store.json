@@ -83,6 +83,20 @@
       "passwordHash": "customer123",
       "createdAt": "2026-03-10T00:00:00.000Z",
       "updatedAt": "2026-08-19T00:00:00.000Z"
+    },
+    {
+      "id": "usr-kofi-seller",
+      "firstName": "Kofi",
+      "lastName": "Boateng",
+      "email": "kofi.seller@novamart.com.gh",
+      "phone": "+233 24 888 1234",
+      "role": "vendor",
+      "vendorId": "vend-kofi",
+      "vendorStoreName": "Kofi Tech & Audio Hub",
+      "profileImage": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
+      "passwordHash": "$2b$10$U4jAGMXez4eldKgocrUMWePIXaY215x2wZmIk5e3bNQycmVHjun8y",
+      "createdAt": "2026-01-10T10:00:00Z",
+      "updatedAt": "2026-09-29T17:24:21.104Z"
     }
   ],
   "products": [
@@ -1381,7 +1395,9 @@
           "sku": "NK-BLND-USB380",
           "unitPrice": 64,
           "quantity": 2,
-          "total": 128
+          "total": 128,
+          "vendorId": "vend-kofi",
+          "vendorName": "Kofi Tech & Audio Hub"
         },
         {
           "id": "item-2",
@@ -1391,7 +1407,9 @@
           "sku": "MC-BPM-ARM99",
           "unitPrice": 98,
           "quantity": 1,
-          "total": 98
+          "total": 98,
+          "vendorId": "vend-ama",
+          "vendorName": "Ama Organic & Beauty"
         }
       ],
       "subtotal": 226,
@@ -1696,9 +1714,9 @@
     "freeDeliveryThreshold": 500,
     "taxRate": 0.035,
     "enableCOD": true,
-    "enableMoMo": true,
-    "enableCard": true,
-    "enablePaystack": true,
+    "enableMoMo": false,
+    "enableCard": false,
+    "enablePaystack": false,
     "socialLinks": {
       "facebook": "https://facebook.com/novamartgh",
       "instagram": "https://instagram.com/novamartgh",

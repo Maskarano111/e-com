@@ -369,7 +369,9 @@ export interface VendorPromotionSubscription {
   tier: PromotionPlanTier;
   planName: string;
   status: 'active' | 'expired' | 'cancelled';
+  durationMonths?: number;
   price: number;
+  totalPrice?: number;
   currency: string;
   startedAt: string;
   expiresAt: string;

@@ -53,6 +53,7 @@ export const VendorPromotionsView: React.FC = () => {
   const [filterTab, setFilterTab] = useState<'all' | 'promoted' | 'standard'>('all');
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<PromotionPlan | null>(null);
+  const [selectedDurationMonths, setSelectedDurationMonths] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'vendor_balance' | 'momo' | 'card'>('vendor_balance');
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [togglingProductId, setTogglingProductId] = useState<string | null>(null);
@@ -117,9 +118,9 @@ export const VendorPromotionsView: React.FC = () => {
     setIsSubmittingPayment(true);
 
     try {
-      const res = await api.subscribePromotionPlan(vendorId, selectedPlanForCheckout.id, paymentMethod);
+      const res = await api.subscribePromotionPlan(vendorId, selectedPlanForCheckout.id, paymentMethod, selectedDurationMonths);
       if (res?.success) {
-        showToast(`🎉 ${selectedPlanForCheckout.name} activated successfully!`, 'success');
+        showToast(`${selectedPlanForCheckout.name} activated for ${selectedDurationMonths} month${selectedDurationMonths === 1 ? '' : 's'}!`, 'success');
         setIsSubscribeModalOpen(false);
         setSelectedPlanForCheckout(null);
         await loadPromotionData();
@@ -147,6 +148,9 @@ export const VendorPromotionsView: React.FC = () => {
 
   const daysLeft = subscription?.expiresAt
     ? Math.max(0, Math.ceil((new Date(subscription.expiresAt).getTime() - Date.now()) / 86400000))
+    : 0;
+  const selectedMonthlyPrice = selectedPlanForCheckout
+    ? (country === 'NG' ? selectedPlanForCheckout.priceNG : selectedPlanForCheckout.priceGH)
     : 0;
 
   return (
@@ -224,7 +228,7 @@ export const VendorPromotionsView: React.FC = () => {
                   {formatPrice(subscription.price)} / mo
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  {daysLeft} days remaining
+                  {subscription.durationMonths || 1} month{(subscription.durationMonths || 1) === 1 ? '' : 's'} · {formatPrice(subscription.totalPrice || subscription.price * (subscription.durationMonths || 1))} prepaid · {daysLeft} days remaining
                 </div>
               </div>
             )}
@@ -589,6 +593,7 @@ export const VendorPromotionsView: React.FC = () => {
                           </span>
                           <span className="text-xs text-slate-500">/ month</span>
                         </div>
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Billed monthly · choose a 1, 3, 6, or 12 month term</p>
 
                         <div className="mt-2 text-xs font-semibold text-amber-600 dark:text-amber-400">
                           {p.maxSlots === 999 ? 'Unlimited Boost Slots' : `${p.maxSlots} Promoted Product Slots`}
@@ -622,6 +627,30 @@ export const VendorPromotionsView: React.FC = () => {
               {/* Payment Method Selector & Confirmation */}
               {selectedPlanForCheckout && (
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-sm text-slate-900 dark:text-white">Choose your subscription term</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Select how many months to pay for upfront. Your plan expires at the end of the selected term.</p>
+                    <div role="group" aria-label="Subscription term" className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+                      {[1, 3, 6, 12].map((months) => {
+                        const total = selectedMonthlyPrice * months;
+                        const isSelected = selectedDurationMonths === months;
+                        return (
+                          <button
+                            key={months}
+                            type="button"
+                            aria-pressed={isSelected}
+                            onClick={() => setSelectedDurationMonths(months)}
+                            className={`rounded-xl border p-3 text-left transition-colors ${isSelected ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-200 dark:border-slate-700 hover:border-amber-300'}`}
+                          >
+                            <span className="block text-sm font-bold text-slate-900 dark:text-white">{months} month{months === 1 ? '' : 's'}</span>
+                            <span className="block mt-1 text-xs text-slate-600 dark:text-slate-300">{formatPrice(total)} total</span>
+                            <span className="block text-[10px] text-slate-500">{formatPrice(selectedMonthlyPrice)} / month</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <h4 className="font-semibold text-sm text-slate-900 dark:text-white">
                     Select Billing Method
                   </h4>
@@ -638,7 +667,7 @@ export const VendorPromotionsView: React.FC = () => {
                       <Wallet className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                       <div>
                         <div className="text-xs font-bold text-slate-900 dark:text-white">Store Wallet Balance</div>
-                        <div className="text-[11px] text-slate-500">Deduct from available store balance</div>
+                        <div className="text-[11px] text-slate-500">{isDemoMode ? 'Demo only · no balance is charged' : 'Pay the selected term from store balance'}</div>
                       </div>
                     </button>
                     <div className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-xs text-slate-500 flex items-center">Mobile money and card billing will be available when payment processing is connected.</div>
@@ -666,7 +695,7 @@ export const VendorPromotionsView: React.FC = () => {
                       ) : (
                         <>
                           <CheckCircle2 className="w-4 h-4" />
-                          Confirm & Activate {selectedPlanForCheckout.name}
+                          {isDemoMode ? 'Activate Demo Plan' : `Pay ${formatPrice(selectedMonthlyPrice * selectedDurationMonths)} & Activate`}
                         </>
                       )}
                     </button>

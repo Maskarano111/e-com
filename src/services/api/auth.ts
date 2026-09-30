@@ -1,6 +1,23 @@
 import { User, DeliveryAddress } from '../../types/index';
 import { API_BASE, STORAGE_KEYS, getLocal, setLocal, safeFetch } from './storage';
 
+const hydrateVendorUser = (user: User): User => {
+  if (user.role !== 'vendor' || user.vendorId) return user;
+
+  const vendors = getLocal<any[]>(STORAGE_KEYS.VENDORS, []);
+  const vendor = vendors.find((entry) => entry.userId === user.id || entry.email?.toLowerCase() === user.email.toLowerCase());
+  if (!vendor) return user;
+
+  const hydratedUser = {
+    ...user,
+    vendorId: vendor.id,
+    vendorStoreName: user.vendorStoreName || vendor.storeName,
+    profileImage: user.profileImage || vendor.logo
+  };
+  saveDemoUser(hydratedUser);
+  return hydratedUser;
+};
+
 const saveDemoUser = (user: User) => {
   const users = getLocal<User[]>(STORAGE_KEYS.USERS, []);
   const index = users.findIndex((entry) => entry.id === user.id || entry.email.toLowerCase() === user.email.toLowerCase());
@@ -58,8 +75,9 @@ export const authApi = {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        saveDemoUser(user);
-        return { user, token: `mock-token-${user.id}` };
+        const hydratedUser = hydrateVendorUser(user);
+        saveDemoUser(hydratedUser);
+        return { user: hydratedUser, token: `mock-token-${hydratedUser.id}` };
       }
     );
   },
@@ -126,7 +144,7 @@ export const authApi = {
         const userId = token.match(/(usr-[\w-]+)$/)?.[1];
         const user = getLocal<User[]>(STORAGE_KEYS.USERS, []).find((entry) => entry.id === userId);
         if (!user) throw new Error('Your demo session expired. Choose a demo profile again.');
-        return { user };
+        return { user: hydrateVendorUser(user) };
       }
     );
   },
