@@ -27,6 +27,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
+import { isDemoMode } from '../../services/api/storage';
 import { Product, PromotionPlan, VendorPromotionSubscription, PromotionAnalytics } from '../../types/index';
 
 export const VendorPromotionsView: React.FC = () => {
@@ -172,13 +173,13 @@ export const VendorPromotionsView: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => {
-                setSelectedPlanForCheckout(plans.find((p) => p.tier === 'growth') || plans[0] || null);
+                setSelectedPlanForCheckout(null);
                 setIsSubscribeModalOpen(true);
               }}
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-sm shadow-lg shadow-orange-500/25 active:scale-95 transition-all cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
-              {subscription ? 'Upgrade / Renew Plan' : 'Subscribe to NovaBoost'}
+              {subscription ? 'Change / Renew Plan' : 'Choose a Promotion Plan'}
             </button>
             <button
               onClick={loadPromotionData}
@@ -265,12 +266,12 @@ export const VendorPromotionsView: React.FC = () => {
           </div>
           <button
             onClick={() => {
-              setSelectedPlanForCheckout(plans.find((p) => p.tier === 'enterprise') || plans[0] || null);
+              setSelectedPlanForCheckout(null);
               setIsSubscribeModalOpen(true);
             }}
             className="mt-4 inline-flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold text-xs hover:opacity-90 transition-opacity"
           >
-            Explore Enterprise Tiers
+            Explore All Plans
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -340,11 +341,23 @@ export const VendorPromotionsView: React.FC = () => {
               Manage Promoted Products
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Toggle which items receive priority visibility in search results and homepage deals.
+              Choose a plan, then boost individual listings. Each plan controls how many products you can promote.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedPlanForCheckout(null);
+                setIsSubscribeModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Choose plan
+            </button>
+
             {/* Filter Tabs */}
             <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
               <button
@@ -503,6 +516,9 @@ export const VendorPromotionsView: React.FC = () => {
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                     Choose Your Growth Tier
                   </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Select the plan that fits your catalog. You can change plans later.
+              </p>
                 </div>
                 <button
                   onClick={() => setIsSubscribeModalOpen(false)}
@@ -513,7 +529,13 @@ export const VendorPromotionsView: React.FC = () => {
               </div>
 
               {/* Pricing Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {isDemoMode && (
+                <p className="-mt-2 rounded-xl bg-sky-50 dark:bg-sky-950/40 px-4 py-3 text-xs text-sky-800 dark:text-sky-200">
+                  Demo preview: activating a plan only updates this browser. No payment will be processed.
+                </p>
+              )}
+
+              <div role="radiogroup" aria-label="Promotion plan" className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {plans.map((p) => {
                   const isSelected = selectedPlanForCheckout?.id === p.id;
                   const priceFormatted = country === 'NG'
@@ -524,6 +546,16 @@ export const VendorPromotionsView: React.FC = () => {
                     <div
                       key={p.id}
                       onClick={() => setSelectedPlanForCheckout(p)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setSelectedPlanForCheckout(p);
+                        }
+                      }}
+                      role="radio"
+                      aria-checked={isSelected}
+                      aria-label={`${p.name}, ${priceFormatted} per month, ${p.maxSlots === 999 ? 'unlimited' : p.maxSlots} product slots`}
+                      tabIndex={0}
                       className={`relative rounded-2xl p-5 border-2 transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
                           ? 'border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 ring-2 ring-amber-500/20'
@@ -572,8 +604,8 @@ export const VendorPromotionsView: React.FC = () => {
                         </ul>
                       </div>
 
-                      <button
-                        type="button"
+                      <div
+                        aria-hidden="true"
                         className={`mt-6 w-full py-2.5 rounded-xl font-semibold text-xs transition-all ${
                           isSelected
                             ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs'
@@ -581,7 +613,7 @@ export const VendorPromotionsView: React.FC = () => {
                         }`}
                       >
                         {isSelected ? 'Selected Tier' : 'Select Plan'}
-                      </button>
+                      </div>
                     </div>
                   );
                 })}
